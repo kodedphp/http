@@ -19,6 +19,11 @@ class FileStreamTest extends TestCase
 
         $this->assertSame('w', $stream->getMetadata('mode'));
         $this->assertSame('', $stream->getContents());
+
+        $this->assertFalse($stream->isReadable());
+        $this->assertFalse($stream->isSeekable());
+        $this->assertTrue($stream->isWritable());
+
     }
 
     public function test_should_create_read_write_stream_by_default()
@@ -28,5 +33,9 @@ class FileStreamTest extends TestCase
 
         $this->assertSame('w+', $stream->getMetadata('mode'));
         $this->assertSame('hello world', $stream->getContents());
+
+        $this->assertTrue($stream->isReadable());
+        $this->assertTrue($stream->isSeekable());
+        $this->assertTrue($stream->isWritable());
     }
 }

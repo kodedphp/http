@@ -5,7 +5,6 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
 use Koded\Stdlib\Arguments;
-use function Koded\Stdlib\dump;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
 
@@ -18,17 +17,20 @@ class ServerRequestTest extends TestCase
     public function test_defaults()
     {
         $this->assertSame(Request::POST, $this->SUT->getMethod());
-        //$this->assertSame('http://example.org', $this->SUT->baseuri());
-        $this->assertAttributeSame('', 'server', $this->SUT);
-        //$this->assertFalse($this->SUT->isXHR());
+
+        // makes a difference
+        $this->assertSame('/', $this->SUT->getPath(), 'Much useful and predictable');
+        $this->assertSame('', $this->SUT->getUri()->getPath(), 'Weird PSR-7 logic satisfied');
+
+        $this->assertSame('http://example.org:8080', $this->SUT->getBaseuri());
+        $this->assertAttributeSame('', 'server', $this->SUT, 'In testing environment there is no server');
+        $this->assertFalse($this->SUT->isXHR());
         $this->assertSame('1.1', $this->SUT->getProtocolVersion());
-        //$this->assertSame('/', $this->SUT->path());
-        //$this->assertSame('/', $this->SUT->basepath());
 
         $this->assertSame([], $this->SUT->getAttributes());
         $this->assertSame([], $this->SUT->getQueryParams());
         $this->assertSame([], $this->SUT->getCookieParams());
-//        $this->assertSame([], $this->SUT->getUploadedFiles());
+        $this->assertSame([], $this->SUT->getUploadedFiles());
         $this->assertNull($this->SUT->getParsedBody());
         $this->assertTrue(count($this->SUT->getHeaders()) > 0);
         $this->assertSame($_SERVER, $this->SUT->getServerParams());
@@ -106,6 +108,14 @@ class ServerRequestTest extends TestCase
         $this->assertSame(['example.org'], $request->getHeader('host'));
     }
 
+    public function test_should_return_empty_baseuri_if_host_is_unknown()
+    {
+        unset($_SERVER['SERVER_NAME'], $_SERVER['SERVER_ADDR'], $_SERVER['HTTP_HOST']);
+
+        $request = new ServerRequest;
+        $this->assertSame('', $request->getBaseuri());
+    }
+
     public function test_should_replace_object_attributes()
     {
         $request = new ServerRequest(['foo' => 'bar']);
@@ -135,7 +145,7 @@ class ServerRequestTest extends TestCase
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
         $_SERVER['SERVER_NAME']     = 'example.org';
         $_SERVER['SERVER_PORT']     = 8080;
-        $_SERVER['REQUEST_URI']     = '/';
+        $_SERVER['REQUEST_URI']     = '';
         $_SERVER['SCRIPT_FILENAME'] = '/index.php';
 
         $_SERVER['HTTP_CONTENT_TYPE'] = 'application/json';

@@ -21,7 +21,7 @@ class ClientRequestTest extends TestCase {
         $this->assertSame('', $this->SUT->getRequestTarget());
     }
 
-    public function testUri()
+    public function test_uri()
     {
         $this->assertInstanceOf(Uri::class, $this->SUT->getUri());
     }

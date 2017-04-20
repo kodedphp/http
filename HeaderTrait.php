@@ -33,7 +33,7 @@ trait HeaderTrait
 
     public function getHeader($name): array
     {
-        if ( false === isset($this->headersMap[$name = strtolower($name)])) {
+        if (false === isset($this->headersMap[$name = strtolower($name)])) {
             return [];
         }
 
@@ -46,7 +46,7 @@ trait HeaderTrait
 
     public function getHeaderLine($name): string
     {
-        return join(',', $this->getHeader($name));
+        return join(', ', $this->getHeader($name));
     }
 
     public function withHeader($name, $value)
