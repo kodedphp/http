@@ -21,9 +21,9 @@ class ServerRequest extends ClientRequest implements Request
 
     use CookieTrait, FilesTrait;
 
-    protected $basepath = '';
-    protected $server   = '';
-    protected $xhr      = false;
+    protected $server  = '';
+    protected $baseuri = '';
+    protected $xhr     = false;
 
     protected $attributes  = [];
     protected $queryParams = [];
@@ -37,15 +37,16 @@ class ServerRequest extends ClientRequest implements Request
         $this->extractHttpHeaders();
     }
 
-    /**
-     * Retrieve server parameters.
-     *
-     * Retrieves data related to the incoming request environment,
-     * typically derived from PHP's $_SERVER superglobal. The data IS NOT
-     * REQUIRED to originate from $_SERVER.
-     *
-     * @return array
-     */
+    public function getPath(): string
+    {
+        return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
+    }
+
+    public function getBaseuri(): string
+    {
+        return $this->baseuri;
+    }
+
     public function getServerParams(): array
     {
         return $_SERVER;
@@ -173,6 +174,12 @@ class ServerRequest extends ClientRequest implements Request
         $this->parsedBody   = $_POST;
         $this->cookieParams = $_COOKIE;
         $_FILES and $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
+
+        if (!empty($host = $this->getUri()->getHost())) {
+            $port = $this->getUri()->getPort();
+            $port and $port = ":$port";
+            $this->baseuri = $this->getUri()->getScheme() . "://{$host}{$port}";
+        }
     }
 
     private function extractHttpHeaders(): void

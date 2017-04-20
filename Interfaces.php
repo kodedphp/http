@@ -42,13 +42,29 @@ interface Request extends RequestInterface, ServerRequestInterface
     ];
 
     /**
+     * Returns the path part of the URI.
+     *
+     * This method should defeat the UriInterface::getPath() idea for returning
+     * an empty path, by trying to provide a useful absolute "/" path.
+     *
+     * @return string URI path
+     */
+    public function getPath(): string;
+
+    /**
+     * Returns the schema and server name/address.
+     * The port is omitted if it's a standard port.
+     *
+     * @return string If the schema is not set, returns an empty string.
+     */
+    public function getBaseuri(): string;
+
+    /**
      * @param array $attributes Sets all attributes in the request object
      *
      * @return Request A new immutable response instance
      */
     public function withAttributes(array $attributes): Request;
-
-    //public function getAttributes();
 
     /**
      * Checks if the incoming request is HTTPS.
@@ -75,7 +91,17 @@ interface Request extends RequestInterface, ServerRequestInterface
 interface Response extends ResponseInterface
 {
 
+    /**
+     * Returns the mime type value for the response object.
+     *
+     * @return string The response mime type
+     */
     public function getContentType(): string;
 
+    /**
+     * Returns the charset value for the response object.
+     *
+     * @return string
+     */
     public function getCharset(): string;
 }

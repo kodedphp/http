@@ -3,7 +3,6 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
-use function Koded\Stdlib\dump;
 use PHPUnit\Framework\TestCase;
 
 class FunctionsTest extends TestCase
