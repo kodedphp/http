@@ -32,7 +32,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Koded\\Http\\": ""
+      "Koded\\Http\\": "Tests/"
     },
     "files": [
       "vendor/koded/stdlib//functions-dev.php"
