@@ -85,8 +85,7 @@ class FunctionsTest extends TestCase
     public function test_create_stream_throws_exception_on_unsupported_type()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The provided resource type object is not valid');
-
+        $this->expectExceptionMessage('Failed to create a stream. Expected a file name, StreamInterface instance, or a resource. Given object type');
 
         $stream = create_stream(new \stdClass);
         $this->assertSame('Lorem ipsum dolor sit amet', (string)$stream);
@@ -120,5 +119,13 @@ class FunctionsTest extends TestCase
     {
         $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
         $this->assertEquals($normalized, include __DIR__ . '/fixtures/very-complicated-files-array-normalized.php');
+    }
+
+    public function test_files_array_with_file_instance()
+    {
+        $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
+        $normalized['test'][0]['a']['b']['c'] = new UploadedFile([]);
+
+        $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);
     }
 }
