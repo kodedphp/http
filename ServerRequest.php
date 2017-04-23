@@ -25,7 +25,8 @@ class ServerRequest extends ClientRequest implements Request
     protected $baseuri = '';
     protected $xhr     = false;
 
-    protected $attributes  = [];
+    /** @var Arguments */
+    protected $attributes;
     protected $queryParams = [];
     protected $parsedBody  = [];
 
@@ -91,7 +92,7 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
 
-        throw new InvalidArgumentException('Unsupported data provided, Expects NULL, array or object');
+        throw new InvalidArgumentException('Unsupported data provided, Expects NULL, array or iterable');
     }
 
     public function getAttributes(): array

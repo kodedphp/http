@@ -79,7 +79,7 @@ class ServerRequestTest extends TestCase
     public function test_parsed_body_throws_exception_on_unsupported_values()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported data provided, Expects NULL, array or object');
+        $this->expectExceptionMessage('Unsupported data provided, Expects NULL, array or iterable');
         $this->SUT->withParsedBody('junk');
     }
 
