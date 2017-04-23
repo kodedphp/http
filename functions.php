@@ -25,7 +25,7 @@ use RuntimeException;
  */
 function create_stream($resource, string $mode = 'r+'): StreamInterface
 {
-    if (is_scalar($resource) or null === $resource) {
+    if (is_string($resource) or null === $resource) {
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
         fseek($stream, 0);
@@ -51,7 +51,9 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
         return new CallableStream($resource);
     }
 
-    throw new InvalidArgumentException("The provided resource type {$type} is not valid");
+    throw new InvalidArgumentException('Failed to create a stream. '
+    . 'Expected a file name, StreamInterface instance, or a resource. '
+    . "Given {$type} type.");
 }
 
 /**
@@ -96,7 +98,7 @@ function stream_to_string(StreamInterface $stream): string
  *
  * @param array $files Typically the $_FILES array
  *
- * @return array Normalized _FILES array to sane format
+ * @return array Normalized files array to sane format
  */
 function normalize_files_array(array $files): array
 {
@@ -140,7 +142,7 @@ function build_files_array(array $files): array
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;
         } elseif (is_array($file) and isset($file['tmp_name'])) {
-            $files[$index] = new UploadedFile($file['tmp_name'], $file);
+            $files[$index] = new UploadedFile($file);
         } elseif (is_array($file)) {
             $files[$index] = build_files_array($file);
             continue;
