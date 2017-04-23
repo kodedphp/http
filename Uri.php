@@ -60,7 +60,7 @@ class Uri implements UriInterface
 
     public function __construct(string $uri)
     {
-        $uri and $this->parse($uri);
+        $uri && $this->parse($uri);
     }
 
     public function getScheme(): string
@@ -89,7 +89,7 @@ class Uri implements UriInterface
 
     public function getPort(): ?int
     {
-        if ((!$this->port and !$this->scheme) or $this->isStandardPort()) {
+        if ((!$this->port && !$this->scheme) || $this->isStandardPort()) {
             return null;
         }
 
@@ -146,7 +146,7 @@ class Uri implements UriInterface
             return $instance;
         }
 
-        if (!is_int($port) and $port < 1) {
+        if (!is_int($port) && $port < 1) {
             throw new InvalidArgumentException('Invalid port');
         }
 
@@ -226,7 +226,7 @@ class Uri implements UriInterface
     {
         $path = $this->getPath();
 
-        if ($this->user and $path[0] !== '/') {
+        if ($this->user && $path[0] !== '/') {
             return '/' . $path;
         }
 

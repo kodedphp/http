@@ -37,7 +37,11 @@ class CallableStream implements StreamInterface
 
     public function __toString(): string
     {
-        return $this->getContents();
+        try {
+            return $this->getContents();
+        } catch (RuntimeException $e) {
+            return '';
+        }
     }
 
     public function close()
@@ -131,7 +135,9 @@ class CallableStream implements StreamInterface
             yield from ($this->callable)();
         } else {
             $resource = fopen('php://temp', 'r+');
-            @fwrite($resource, call_user_func($this->callable));
+            if (false === @fwrite($resource, call_user_func($this->callable))) {
+                throw new RuntimeException('Cannot write to stream');
+            }
             fseek($resource, 0);
 
             while (!feof($resource)) {

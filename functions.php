@@ -25,7 +25,7 @@ use RuntimeException;
  */
 function create_stream($resource, string $mode = 'r+'): StreamInterface
 {
-    if (is_string($resource) or null === $resource) {
+    if (is_string($resource) || null === $resource) {
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
         fseek($stream, 0);
@@ -43,7 +43,7 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
         return new Stream($resource);
     }
 
-    if ('object' === $type and method_exists($resource, '__toString')) {
+    if ('object' === $type && method_exists($resource, '__toString')) {
         return create_stream((string)$resource);
     }
 
@@ -117,7 +117,6 @@ function normalize_files_array(array $files): array
                 foreach ($_ as $k) {
                     $copy = &$copy[$k];
                 }
-
                 $copy = $v;
             }
         }
@@ -141,7 +140,7 @@ function build_files_array(array $files): array
     foreach ($files as $index => $file) {
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;
-        } elseif (is_array($file) and isset($file['tmp_name'])) {
+        } elseif (is_array($file) && isset($file['tmp_name'])) {
             $files[$index] = new UploadedFile($file);
         } elseif (is_array($file)) {
             $files[$index] = build_files_array($file);

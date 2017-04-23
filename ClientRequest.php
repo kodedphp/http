@@ -85,7 +85,7 @@ class ClientRequest implements RequestInterface
             return $instance;
         }
 
-        if (empty($instance->getHeader('host')) and $host = $uri->getHost()) {
+        if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
             return $instance->withHeader('Host', $host);
         }
 
@@ -98,7 +98,8 @@ class ClientRequest implements RequestInterface
     protected function setHost(): void
     {
         $this->headersMap['host'] = 'Host';
-        $this->headers            = ['Host' => $this->uri->getHost()] + $this->headers;
+
+        $this->headers = ['Host' => $this->uri->getHost()] + $this->headers;
     }
 
     /**

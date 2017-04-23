@@ -46,7 +46,7 @@ class ServerResponse implements Response
         string $charset = 'UTF-8'
     ) {
         $this->assertStatusCode($statusCode);
-        $statusCode !== HttpStatus::OK and $this->statusCode = $statusCode;
+        $statusCode !== HttpStatus::OK && $this->statusCode = $statusCode;
         $this->reasonPhrase = HttpStatus::CODE[$this->statusCode];
         $this->charset      = $charset;
         $this->contentType  = Mime::type($contentType);
@@ -92,7 +92,7 @@ class ServerResponse implements Response
 
     private function assertStatusCode(int $code)
     {
-        if ($code < 100 or $code > 599) {
+        if ($code < 100 || $code > 599) {
             throw new InvalidArgumentException('Invalid status code, expected range between [100-599]');
         }
     }

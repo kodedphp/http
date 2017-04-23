@@ -51,7 +51,7 @@ class UploadedFile implements UploadedFileInterface
         $this->size  = $uploadedFile['size'] ?? null;
         $this->error = $uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE;
 
-        $this->file and $this->stream = create_stream($this->file);
+        $this->file && $this->stream = create_stream($this->file);
     }
 
     public function getStream(): StreamInterface

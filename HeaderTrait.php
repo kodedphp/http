@@ -51,7 +51,7 @@ trait HeaderTrait
 
     public function withHeader($name, $value)
     {
-        is_array($value) or $value = [$value];
+        is_array($value) || $value = [$value];
         $instance = clone $this;
 
         $instance->headersMap[strtolower($name)] = $name;
@@ -70,7 +70,7 @@ trait HeaderTrait
 
     public function withAddedHeader($name, $value)
     {
-        is_array($value) or $value = [$value];
+        is_array($value) || $value = [$value];
         $instance = clone $this;
 
         if (isset($instance->headersMap[$header = strtolower($name)])) {

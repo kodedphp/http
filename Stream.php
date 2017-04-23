@@ -43,7 +43,7 @@ class Stream implements StreamInterface
 
     public function __construct($stream)
     {
-        if (false === is_resource($stream) or 'stream' !== get_resource_type($stream)) {
+        if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             throw new RuntimeException('The provided resource is not a valid stream resource');
         }
 

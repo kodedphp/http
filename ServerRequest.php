@@ -169,16 +169,16 @@ class ServerRequest extends ClientRequest implements Request
     private function extractServerData(): void
     {
         $this->protocolVersion = str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
-        $this->xhr = strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' or false;
+        $this->xhr = strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' || false;
         $this->server       = $_SERVER['SERVER_SOFTWARE'] ?? '';
         $this->queryParams  = $_GET;
         $this->parsedBody   = $_POST;
         $this->cookieParams = $_COOKIE;
-        $_FILES and $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
+        $_FILES && $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
 
         if (!empty($host = $this->getUri()->getHost())) {
             $port = $this->getUri()->getPort();
-            $port and $port = ":$port";
+            $port && $port = ":$port";
             $this->baseuri = $this->getUri()->getScheme() . "://{$host}{$port}";
         }
     }

@@ -62,11 +62,14 @@ class CallableStreamTest extends TestCase
 
     public function test_should_throw_exception_when_cannot_read()
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot write to stream');
+
         $stream = new CallableStream(function() {
             return new \stdClass;
         });
 
-        $this->assertSame('', $stream->getContents());
+        $stream->getContents();
     }
 
     public function test_should_return_empty_string_when_throws_exception_while_typecasted()
