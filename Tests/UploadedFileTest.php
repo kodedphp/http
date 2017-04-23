@@ -69,7 +69,8 @@ class UploadedFileTest extends TestCase
 
     public function test_should_throw_exception_when_file_is_not_set()
     {
-        $this->expectExceptionMessage('No file');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The stream is not available for the uploaded file');
 
         $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
         unset($file['tmp_name']);

@@ -50,8 +50,8 @@ class MoveUploadedFileTest extends TestCase
 
     public function test_move_to_when_file_is_null()
     {
-        $this->expectException(UploadedFileException::class);
-        $this->expectExceptionMessage('No file');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The stream is not available for the uploaded file');
 
         $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
         $file['tmp_name'] = null;
