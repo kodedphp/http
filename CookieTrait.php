@@ -52,8 +52,6 @@ trait CookieTrait
      */
     public function withCookieParams(array $cookies): ServerRequest
     {
-        // TODO: Implement withCookieParams() method.
-
         $instance = clone $this;
 
         $instance->cookieParams = $cookies;

@@ -17,6 +17,7 @@ use Koded\Exceptions\KodedException;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
+use Throwable;
 
 class UploadedFile implements UploadedFileInterface
 {
@@ -42,59 +43,53 @@ class UploadedFile implements UploadedFileInterface
     /** @var StreamInterface */
     private $stream;
 
-    public function __construct($resource, array $uploadedFile)
+    public function __construct(array $uploadedFile)
     {
         $this->file  = $uploadedFile['tmp_name'] ?? null;
         $this->name  = $uploadedFile['name'] ?? null;
         $this->type  = $uploadedFile['type'] ?? null;
         $this->size  = $uploadedFile['size'] ?? null;
-        $this->error = $uploadedFile['error'] ?? UPLOAD_ERR_OK;
+        $this->error = $uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE;
 
-        if ($this->error === UPLOAD_ERR_OK) {
-            $this->createStream($resource);
-        }
+        $this->file and $this->stream = create_stream($this->file);
     }
 
-    /**
-     * Retrieve a stream representing the uploaded file.
-     *
-     * This method MUST return a StreamInterface instance, representing the
-     * uploaded file. The purpose of this method is to allow utilizing native PHP
-     * stream functionality to manipulate the file upload, such as
-     * stream_copy_to_stream() (though the result will need to be decorated in a
-     * native PHP stream wrapper to work with such functions).
-     *
-     * If the moveTo() method has been called previously, this method MUST raise
-     * an exception.
-     *
-     * @return StreamInterface Stream representation of the uploaded file.
-     * @throws RuntimeException in cases when no stream is available or can be
-     *     created.
-     */
     public function getStream(): StreamInterface
     {
         $this->assertMoved();
-        $this->assertError();
+
+        if (!$this->stream instanceof StreamInterface) {
+            throw new RuntimeException('The stream is not available for the uploaded file');
+        }
 
         return $this->stream;
     }
 
     public function moveTo($targetPath)
     {
-        if (empty($targetPath)) {
-            // TODO this wont allow path with name "0"
-            throw new InvalidArgumentException('The provided path for moveTo operation cannot be empty');
+        $this->assertUploadError();
+
+        if ('' === trim($targetPath)) {
+            throw new InvalidArgumentException('The provided path for moveTo operation is not valid');
         }
 
-        if (null === $this->file) {
-            $this->moved = stream_copy($this->getStream(), new FileStream($targetPath, 'w')) > 0;
-        } else {
-            $this->assertMoved();
-            $this->assertError();
+        if (empty($this->file)) {
+            throw new UploadedFileException(UPLOAD_ERR_NO_FILE, []);
+        }
+
+        $destination = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->name;
+
+        try {
+            stream_copy($this->getStream(), create_stream($targetPath, 'w'));
 
             $this->moved = ('cli' === php_sapi_name())
-                ? rename($this->file, $targetPath)
-                : move_uploaded_file($this->file, $targetPath);
+                ? rename($this->file, $destination) : move_uploaded_file($this->file, $destination);
+
+            $this->stream = null;
+            @unlink($this->file);
+
+        } catch (Throwable $e) {
+            throw new RuntimeException($e->getMessage());
         }
 
         if (false === $this->moved) {
@@ -109,7 +104,7 @@ class UploadedFile implements UploadedFileInterface
 
     public function getError(): int
     {
-        return $this->error;
+        return $this->error ?? UPLOAD_ERR_NO_FILE;
     }
 
     public function getClientFilename(): ?string
@@ -117,28 +112,22 @@ class UploadedFile implements UploadedFileInterface
         return $this->name;
     }
 
-    /**
-     * Retrieve the media type sent by the client.
-     *
-     * Do not trust the value returned by this method. A client could send
-     * a malicious media type with the intention to corrupt or hack your
-     * application.
-     *
-     * Implementations SHOULD return the value stored in the "type" key of
-     * the file in the $_FILES array.
-     *
-     * @return string|null The media type sent by the client or null if none
-     *     was provided.
-     */
     public function getClientMediaType(): ?string
     {
-        return $this->type;
+        try {
+            return (new \finfo(FILEINFO_MIME_TYPE))->file($this->file);
+            // @codeCoverageIgnoreStart
+        } catch (Throwable $e) {
+            return $this->type;
+        }
+        // @codeCoverageIgnoreEnd
+
     }
 
     /**
      * @throws UploadedFileException If the resource upload failed
      */
-    private function assertError(): void
+    private function assertUploadError(): void
     {
         if ($this->error !== UPLOAD_ERR_OK) {
             throw new UploadedFileException($this->error, [':file' => $this->file]);
@@ -153,35 +142,6 @@ class UploadedFile implements UploadedFileInterface
         if ($this->moved) {
             throw new RuntimeException('Failed to get the stream because it was previously moved');
         }
-    }
-
-    /**
-     * @param resource|StreamInterface|string $resource A gypsy argument for all the resource things
-     *
-     * @return UploadedFile
-     */
-    private function createStream($resource): UploadedFile
-    {
-        if (is_string($resource)) {
-            $this->stream = new FileStream($resource, 'r+');
-
-            return $this;
-        }
-
-        if ($resource instanceof StreamInterface) {
-            $this->stream = $resource;
-
-            return $this;
-        }
-
-        if (is_resource($resource)) {
-            $this->stream = create_stream($resource);
-
-            return $this;
-        }
-
-        throw new InvalidArgumentException('Invalid resource provided for UploadedFile. ' .
-            'Expected a file name, StreamInterface instance, or resource');
     }
 }
 

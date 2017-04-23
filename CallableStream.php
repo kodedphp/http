@@ -102,7 +102,7 @@ class CallableStream implements StreamInterface
 
     public function getContents(): string
     {
-        return $this->read(8192);
+        return $this->read(1048576); // 1MB
     }
 
     public function getMetadata($key = null)
