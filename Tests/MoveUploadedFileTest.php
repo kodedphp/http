@@ -18,10 +18,11 @@ class MoveUploadedFileTest extends TestCase
         [$targetPath, $expected] = $this->prepareToMove();
         $this->SUT->moveTo($targetPath);
 
-        $this->assertFileExists($targetPath);
         $this->assertAttributeSame(true, 'moved', $this->SUT);
+        $this->assertDirectoryExists($targetPath);
         $this->assertFileExists($expected);
         $this->assertFileNotExists($this->file, 'Original file should be deleted after moving');
+        $this->assertSame('hello', file_get_contents($expected));
 
         // cleanup
         unlink($expected);
@@ -33,7 +34,7 @@ class MoveUploadedFileTest extends TestCase
         $this->SUT->getStream();
     }
 
-    public function test_move_cannot_be_moved_twice()
+    public function test_moved_file_cannot_be_moved_twice()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Failed to get the stream because it was previously moved');
@@ -48,7 +49,7 @@ class MoveUploadedFileTest extends TestCase
         $this->SUT->moveTo($targetPath);
     }
 
-    public function test_move_to_when_file_is_null()
+    public function test_should_throw_exception_when_file_is_null()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not available for the uploaded file');
