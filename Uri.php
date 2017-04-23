@@ -74,7 +74,7 @@ class Uri implements UriInterface
             return '';
         }
 
-        return $this->getUserInfo() . '@'. $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
+        return $this->getUserInfo() . '@' . $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
     }
 
     public function getUserInfo(): string
@@ -230,6 +230,6 @@ class Uri implements UriInterface
             return '/' . $path;
         }
 
-        return '/'. ltrim($path, '/');
+        return '/' . ltrim($path, '/');
     }
 }

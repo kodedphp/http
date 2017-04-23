@@ -2,8 +2,8 @@
   "name": "koded/http",
   "type": "library",
   "license": "BSD-3-Clause",
-  "description": "",
-  "keywords": ["request", "response", "http", "php7"],
+  "description": "Koded HTTP component.",
+  "keywords": ["request", "response", "http", "stream", "php7"],
   "authors": [
     {
       "name": "Mihail Binev",
@@ -11,7 +11,7 @@
     }
   ],
   "require": {
-    "php": "~7",
+    "php": "~7.1",
     "koded/stdlib": "~1",
     "psr/http-message": "~1"
   },
