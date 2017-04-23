@@ -73,14 +73,10 @@ class UploadedFile implements UploadedFileInterface
             throw new InvalidArgumentException('The provided path for moveTo operation is not valid');
         }
 
-        if (empty($this->file)) {
-            throw new UploadedFileException(UPLOAD_ERR_NO_FILE, []);
-        }
-
-        $destination = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->name;
-
         try {
             stream_copy($this->getStream(), create_stream($targetPath, 'w'));
+
+            $destination = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->name;
 
             $this->moved = ('cli' === php_sapi_name())
                 ? rename($this->file, $destination) : move_uploaded_file($this->file, $destination);
@@ -90,10 +86,6 @@ class UploadedFile implements UploadedFileInterface
 
         } catch (Throwable $e) {
             throw new RuntimeException($e->getMessage());
-        }
-
-        if (false === $this->moved) {
-            throw new RuntimeException('Failed to move the file to the requested location');
         }
     }
 
@@ -148,7 +140,7 @@ class UploadedFile implements UploadedFileInterface
 class UploadedFileException extends KodedException
 {
     protected $messages = [
-        UPLOAD_ERR_INI_SIZE   => 'Init size',
+        UPLOAD_ERR_INI_SIZE   => 'Ini size',
         UPLOAD_ERR_FORM_SIZE  => 'Form size',
         UPLOAD_ERR_PARTIAL    => 'Partial',
         UPLOAD_ERR_NO_FILE    => 'No file',
