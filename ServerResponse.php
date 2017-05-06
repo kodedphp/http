@@ -50,10 +50,7 @@ class ServerResponse implements Response
         $this->reasonPhrase = HttpStatus::CODE[$this->statusCode];
         $this->charset      = $charset;
         $this->contentType  = Mime::type($contentType);
-
-        if ('' !== $content) {
-            $this->stream = create_stream($content);
-        }
+        $this->stream       = create_stream($content);
 
         $this->headers['Content-Type']    = $this->contentType;
         $this->headersMap['content-type'] = 'Content-Type';

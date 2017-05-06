@@ -4,6 +4,7 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\StreamInterface;
 
 class ServerResponseTest extends TestCase
 {
@@ -18,7 +19,7 @@ class ServerResponseTest extends TestCase
         $this->assertSame('UTF-8', $response->getCharset());
         $this->assertSame('1.1', $response->getProtocolVersion());
 
-        $this->assertSame(null, $response->getBody());
+        $this->assertInstanceOf(StreamInterface::class, $response->getBody());
         $this->assertSame(['Content-Type' => 'text/html'], $response->getHeaders());
     }
 
