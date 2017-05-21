@@ -43,7 +43,7 @@ class ServerRequest extends ClientRequest implements Request
         return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
     }
 
-    public function getBaseuri(): string
+    public function getBaseUri(): string
     {
         return $this->baseuri;
     }

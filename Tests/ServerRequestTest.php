@@ -22,7 +22,7 @@ class ServerRequestTest extends TestCase
         $this->assertSame('/', $this->SUT->getPath(), 'Much useful and predictable');
         $this->assertSame('', $this->SUT->getUri()->getPath(), 'Weird PSR-7 logic satisfied');
 
-        $this->assertSame('http://example.org:8080', $this->SUT->getBaseuri());
+        $this->assertSame('http://example.org:8080', $this->SUT->getBaseUri());
         $this->assertAttributeSame('', 'server', $this->SUT, 'In testing environment there is no server');
         $this->assertFalse($this->SUT->isXHR());
         $this->assertSame('1.1', $this->SUT->getProtocolVersion());
@@ -113,7 +113,7 @@ class ServerRequestTest extends TestCase
         unset($_SERVER['SERVER_NAME'], $_SERVER['SERVER_ADDR'], $_SERVER['HTTP_HOST']);
 
         $request = new ServerRequest;
-        $this->assertSame('', $request->getBaseuri());
+        $this->assertSame('', $request->getBaseUri());
     }
 
     public function test_should_replace_object_attributes()
