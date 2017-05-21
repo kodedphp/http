@@ -78,6 +78,27 @@ class HeaderTraitTest extends TestCase
         $this->assertFalse($response->hasHeader('Foo'));
     }
 
+    public function test_replace_headers()
+    {
+        $SUT = $this->SUT->withHeader('FOO_BAR', 'baz');
+        $this->assertSame(['baz'], $SUT->getHeader('foo_bar'));
+
+        $SUT = $SUT->replaceHeaders([
+            'HEADER_1' => 'header1',
+            'HEADER_2' => 'header2'
+        ]);
+
+        $this->assertAttributeSame([
+            'Header-1' => 'header1',
+            'Header-2' => 'header2',
+        ], 'headers', $SUT);
+
+        $this->assertAttributeSame([
+            'header-1' => 'Header-1',
+            'header-2' => 'Header-2',
+        ], 'headersMap', $SUT);
+    }
+
     protected function setUp()
     {
         $this->SUT = new MockHttpHeader;
