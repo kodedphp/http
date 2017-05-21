@@ -13,7 +13,9 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Interfaces\Request;
 use Koded\Http\Interfaces\Response;
+use function Koded\Stdlib\dump;
 use Koded\Stdlib\Mime;
 
 /**
@@ -52,7 +54,7 @@ class ServerResponse implements Response
         $this->contentType  = Mime::type($contentType);
         $this->stream       = create_stream($content);
 
-        $this->headers['Content-Type']    = $this->contentType;
+        $this->headers['Content-Type']    = [$this->contentType];
         $this->headersMap['content-type'] = 'Content-Type';
     }
 
@@ -85,6 +87,30 @@ class ServerResponse implements Response
     public function getCharset(): string
     {
         return $this->charset;
+    }
+
+    public function send(): string
+    {
+        $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
+
+        if (Request::HEAD == $_SERVER['REQUEST_METHOD'] ?? '') {
+            $this->stream = create_stream(null);
+        }
+
+        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+            $this->stream = create_stream(null);
+        }
+
+        header(sprintf('HTTP/%s %s', $this->getProtocolVersion(), $this->getReasonPhrase()),
+            true, $this->getStatusCode()
+        );
+
+        foreach ($this->getHeaders() as $name => $values) {
+            header($name . ': ' . join(', ', (array)$values));
+        }
+
+        return $this->stream->getContents();
     }
 
     private function assertStatusCode(int $code)
