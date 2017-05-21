@@ -102,7 +102,7 @@ class ServerResponse implements Response
             $this->stream = create_stream(null);
         }
 
-        header(sprintf('HTTP/%s %s', $this->getProtocolVersion(), $this->getReasonPhrase()),
+        header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
             true, $this->getStatusCode()
         );
 

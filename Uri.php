@@ -215,10 +215,9 @@ class Uri implements UriInterface
     }
 
     /**
-     * - If the path is rootless and an authority is present, the path MUST
-     *   be prefixed by "/".
-     * - If the path is starting with more than one "/" and no authority is
-     *   present, the starting slashes MUST be reduced to one.
+     * - If the path is rootless and an authority is present, the path MUST be prefixed by "/"
+     * - If the path is starting with more than one "/" and no authority is present,
+     * the starting slashes MUST be reduced to one
      *
      * @return string
      */
