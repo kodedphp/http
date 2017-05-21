@@ -3,6 +3,7 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use function Koded\Stdlib\dump;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
@@ -20,7 +21,7 @@ class ServerResponseTest extends TestCase
         $this->assertSame('1.1', $response->getProtocolVersion());
 
         $this->assertInstanceOf(StreamInterface::class, $response->getBody());
-        $this->assertSame(['Content-Type' => 'text/html'], $response->getHeaders());
+        $this->assertSame(['Content-Type' => ['text/html']], $response->getHeaders());
     }
 
     public function test_constructor_arguments()
@@ -58,6 +59,40 @@ class ServerResponseTest extends TestCase
         $this->expectExceptionMEssage('Invalid status code, expected range between [100-599]');
 
         (new ServerResponse)->withStatus(999);
+    }
 
+    public function test_send_method()
+    {
+        $response = new ServerResponse('hello world');
+        $output = $response->send();
+
+        $this->assertSame('hello world', $output);
+        $this->assertSame(['11'], $response->getHeader('Content-Length'), 'The number is transformed to string by normalizeHeader()');
+    }
+
+    public function test_send_with_bodiless_status_code()
+    {
+        $response = new ServerResponse('hello world', 204);
+        $output = $response->send();
+
+        $this->assertSame('', $output);
+        $this->assertFalse($response->hasHeader('Content-Length'));
+        $this->assertSame(204, $response->getStatusCode());
+    }
+
+    public function test_send_with_head_http_method()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'HEAD';
+
+        $response = new ServerResponse('hello world');
+        $output = $response->send();
+
+        $this->assertSame('', $output, 'Body is empty');
+        $this->assertSame(['11'], $response->getHeader('Content-Length'), 'Content length is not');
     }
 }
+
+/**
+ * Override the native header() function
+ */
+function header() {}

@@ -57,7 +57,7 @@ interface Request extends RequestInterface, ServerRequestInterface
      *
      * @return string If the schema is not set, returns an empty string.
      */
-    public function getBaseuri(): string;
+    public function getBaseUri(): string;
 
     /**
      * @param array $attributes Sets all attributes in the request object

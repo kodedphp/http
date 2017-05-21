@@ -89,6 +89,26 @@ trait HeaderTrait
     }
 
     /**
+     * Replaces all headers with provided ones.
+     * This method is not part of the PSR-7.
+     *
+     * @param array $headers
+     *
+     * @return $this
+     */
+    public function replaceHeaders(array $headers)
+    {
+        $instance = clone $this;
+        $instance->headers = $instance->headersMap = [];
+
+        foreach ($headers as $key => $value) {
+            $instance->normalizeHeader($key, $value, false);
+        }
+
+        return $instance;
+    }
+
+    /**
      * @param string $key
      * @param array  $value
      * @param bool   $skipKey
