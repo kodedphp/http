@@ -70,10 +70,10 @@ class UriGettersTest extends TestCase
     public function it_should_decode_encoded_path()
     {
         $uri = new Uri('https://example.com/foo%252/index.php');
-        $this->assertSame('/foo%2/index.php', $uri->getPath());
+        $this->assertSame('/foo%2', $uri->getPath(), 'index.php should be removed');
 
         $uri = new Uri('foo/index.php');
-        $this->assertSame('foo/index.php', $uri->getPath());
+        $this->assertSame('foo', $uri->getPath(), 'index.php should be removed');
 
         $uri = new Uri('');
         $this->assertSame('', $uri->getPath());
@@ -206,27 +206,27 @@ class UriGettersTest extends TestCase
     public function it_should_create_an_expected_representation_when_typecast_to_string()
     {
         $template = 'https://example.org/foo/bar?a[]=1&a[]=2&foo=bar&qux#frag';
-        $uri = new Uri($template);
+        $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
         $template = 'https://username:password@example.org/foo/bar?a[]=1&a[]=2&foo=bar&qux#frag';
-        $uri = new Uri($template);
+        $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
         $template = '/foo/bar?a[]=1&a[]=2&foo=bar&qux#frag';
-        $uri = new Uri($template);
+        $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
         // - If the path is rootless and an authority is present, the path MUST be prefixed by "/"
         $template = 'foo/bar';
-        $uri = new Uri($template);
-        $uri = $uri->withUserInfo('username');
+        $uri      = new Uri($template);
+        $uri      = $uri->withUserInfo('username');
         $this->assertSame("username@/$template", (string)$uri, 'Not sure about this...');
 
         // If the path is starting with more than one "/" and no authority is
         // present, the starting slashes MUST be reduced to one
         $template = 'http://localhost///foo/bar';
-        $uri = new Uri($template);
+        $uri      = new Uri($template);
         $this->assertSame('http://localhost/foo/bar', (string)$uri);
     }
 }

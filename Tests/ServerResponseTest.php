@@ -3,7 +3,6 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
-use function Koded\Stdlib\dump;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
@@ -37,9 +36,13 @@ class ServerResponseTest extends TestCase
     public function test_should_set_status_code_without_phrase()
     {
         $response = new ServerResponse;
-        $response = $response->withStatus(100);
-        $this->assertSame(100, $response->getStatusCode());
-        $this->assertSame('Continue', $response->getReasonPhrase(), 'Without setting the reason phrase');
+        $this->assertSame(200, $response->getStatusCode());
+
+        $other = $response->withStatus(100);
+        $this->assertNotSame($response, $other, 'The object is immutable');
+
+        $this->assertSame(100, $other->getStatusCode());
+        $this->assertSame('Continue', $other->getReasonPhrase(), 'Without explicitly setting the reason phrase');
     }
 
     public function test_should_set_status_code_with_reason_phrase()
@@ -47,7 +50,7 @@ class ServerResponseTest extends TestCase
         $response = new ServerResponse;
         $response = $response->withStatus(204, 'Custom phrase');
         $this->assertSame(204, $response->getStatusCode());
-        $this->assertSame('Custom phrase', $response->getReasonPhrase(), 'Set the reason phrase with custom crap');
+        $this->assertSame('Custom phrase', $response->getReasonPhrase(), 'Set custom reason phrase');
     }
 
     /**
@@ -56,7 +59,7 @@ class ServerResponseTest extends TestCase
     public function test_should_throw_exception_on_invalid_status_code()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMEssage('Invalid status code, expected range between [100-599]');
+        $this->expectExceptionMEssage('Invalid status code 999, expected range between [100-599]');
 
         (new ServerResponse)->withStatus(999);
     }
@@ -64,19 +67,21 @@ class ServerResponseTest extends TestCase
     public function test_send_method()
     {
         $response = new ServerResponse('hello world');
-        $output = $response->send();
+        $output   = $response->send();
 
         $this->assertSame('hello world', $output);
-        $this->assertSame(['11'], $response->getHeader('Content-Length'), 'The number is transformed to string by normalizeHeader()');
+        $this->assertSame(['11'], $response->getHeader('Content-Length'),
+            'The number is transformed to string by normalizeHeader()');
     }
 
     public function test_send_with_bodiless_status_code()
     {
         $response = new ServerResponse('hello world', 204);
-        $output = $response->send();
+        $output   = $response->send();
 
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
+        $this->assertSame(0, $response->getBody()->getSize());
         $this->assertSame(204, $response->getStatusCode());
     }
 
@@ -85,14 +90,15 @@ class ServerResponseTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'HEAD';
 
         $response = new ServerResponse('hello world');
-        $output = $response->send();
+        $output   = $response->send();
 
-        $this->assertSame('', $output, 'Body is empty');
-        $this->assertSame(['11'], $response->getHeader('Content-Length'), 'Content length is not');
+        $this->assertSame('', $output, 'The body for HEAD request is empty');
+        $this->assertSame(['11'], $response->getHeader('Content-Length'),
+            'Content length for HEAD request is calculated');
     }
 }
 
 /**
- * Override the native header() function
+ * Override the native header() function for testing
  */
-function header() {}
+function header() { }

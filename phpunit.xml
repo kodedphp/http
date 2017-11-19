@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/5.7/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          verbose="true"
          colors="true">
     <testsuites>
         <testsuite name="Koded HTTP Library Test Suite">
-            <directory suffix="Test.php">Tests</directory>
+            <directory>Tests</directory>
         </testsuite>
     </testsuites>
 

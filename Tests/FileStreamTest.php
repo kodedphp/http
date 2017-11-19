@@ -24,7 +24,6 @@ class FileStreamTest extends TestCase
         $this->assertFalse($stream->isReadable());
         $this->assertFalse($stream->isSeekable());
         $this->assertTrue($stream->isWritable());
-
     }
 
     public function test_should_create_read_write_stream_by_default()

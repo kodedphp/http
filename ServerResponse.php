@@ -15,7 +15,6 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
 use Koded\Http\Interfaces\Response;
-use function Koded\Stdlib\dump;
 use Koded\Stdlib\Mime;
 
 /**
@@ -26,6 +25,8 @@ class ServerResponse implements Response
 {
 
     use HeaderTrait, MessageTrait;
+
+    const E_INVALID_STATUS_CODE = 'Invalid status code %s, expected range between [100-599]';
 
     private $statusCode   = HttpStatus::OK;
     private $reasonPhrase = 'OK';
@@ -47,15 +48,21 @@ class ServerResponse implements Response
         string $contentType = '',
         string $charset = 'UTF-8'
     ) {
-        $this->assertStatusCode($statusCode);
-        $statusCode !== HttpStatus::OK && $this->statusCode = $statusCode;
-        $this->reasonPhrase = HttpStatus::CODE[$this->statusCode];
-        $this->charset      = $charset;
-        $this->contentType  = Mime::type($contentType);
-        $this->stream       = create_stream($content);
+        $this->stream = create_stream($content);
 
-        $this->headers['Content-Type']    = [$this->contentType];
-        $this->headersMap['content-type'] = 'Content-Type';
+//        $this->assertStatusCode($statusCode);
+//        $this->statusCode = $statusCode;
+//        $this->reasonPhrase = HttpStatus::CODE[$statusCode];
+
+        $this->setStatus($this, $statusCode);
+
+        $this->contentType = false === strpos($contentType, '/') ? Mime::type($contentType) : $contentType;
+        $this->normalizeHeader('Content-Type', [$this->contentType], true);
+
+//        $this->headers['Content-Type']    = [$this->contentType];
+//        $this->headersMap['content-type'] = 'Content-Type';
+
+        $this->charset = $charset;
     }
 
     public function getStatusCode(): int
@@ -65,13 +72,7 @@ class ServerResponse implements Response
 
     public function withStatus($code, $reasonPhrase = ''): Response
     {
-        $this->assertStatusCode($code);
-        $instance = clone $this;
-
-        $instance->statusCode   = (int)$code;
-        $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : HttpStatus::CODE[$code];
-
-        return $instance;
+        return $this->setStatus(clone $this, $code, $reasonPhrase);
     }
 
     public function getReasonPhrase(): string
@@ -93,7 +94,7 @@ class ServerResponse implements Response
     {
         $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
 
-        if (Request::HEAD == $_SERVER['REQUEST_METHOD'] ?? '') {
+        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
             $this->stream = create_stream(null);
         }
 
@@ -107,16 +108,25 @@ class ServerResponse implements Response
         );
 
         foreach ($this->getHeaders() as $name => $values) {
-            header($name . ': ' . join(', ', (array)$values));
+            header($name . ':' . join(', ', (array)$values));
         }
+
+        $this->stream->rewind();
 
         return $this->stream->getContents();
     }
 
-    private function assertStatusCode(int $code)
+    private function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
     {
-        if ($code < 100 || $code > 599) {
-            throw new InvalidArgumentException('Invalid status code, expected range between [100-599]');
+        if ($statusCode < 100 || $statusCode > 599) {
+            throw new InvalidArgumentException(
+                sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
+            );
         }
+
+        $instance->statusCode   = (int)$statusCode;
+        $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : HttpStatus::CODE[$statusCode];
+
+        return $instance;
     }
 }

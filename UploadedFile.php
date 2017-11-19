@@ -83,7 +83,6 @@ class UploadedFile implements UploadedFileInterface
 
             $this->stream = null;
             @unlink($this->file);
-
         } catch (Throwable $e) {
             throw new RuntimeException($e->getMessage());
         }

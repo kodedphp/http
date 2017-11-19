@@ -14,15 +14,14 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
-class ClientRequest implements RequestInterface
+class ClientRequest implements Request
 {
 
     use HeaderTrait, MessageTrait;
 
-    const E_METHOD_NOT_SUPPORTED = 'HTTP method "%s" is not supported';
+    const E_METHOD_NOT_ALLOWED = 'HTTP method "%s" is not supported';
 
     /** @var string The HTTP method */
     protected $method = Request::GET;
@@ -33,26 +32,32 @@ class ClientRequest implements RequestInterface
     /** @var string */
     protected $requestTarget = '';
 
-    public function __construct(string $method, $uri, $body = null, array $headers = [])
+    /**
+     * ClientRequest constructor.
+     *
+     * If body is provided, internally the content is encoded in JSON
+     * and stored in body Stream object.
+     *
+     * @param string                                                                   $method
+     * @param UriInterface|string                                                      $uri
+     * @param \Psr\Http\Message\StreamInterface|iterable|resource|callable|string|null $body    [optional]
+     * @param iterable                                                                 $headers [optional]
+     */
+    public function __construct(string $method, $uri, $body = null, iterable $headers = [])
     {
-        $this->assertMethod($method);
-        $this->method = strtoupper($method);
-        $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
+        $this->setMethod($method, $this);
+        $this->uri = $uri instanceof UriInterface ? $uri : new Uri($uri);
+
+        if (is_array($body)) {
+            $body = json_encode($body);
+        } elseif (is_iterable($body)) {
+            $body = json_encode(iterator_to_array($body));
+        }
+
+        $this->stream = create_stream($body);
+
+        $this->setHeaders($headers);
         $this->setHost();
-    }
-
-    public function getRequestTarget(): string
-    {
-        return $this->requestTarget;
-    }
-
-    public function withRequestTarget($requestTarget): ClientRequest
-    {
-        $instance = clone $this;
-
-        $instance->requestTarget = $requestTarget;
-
-        return $instance;
     }
 
     public function getMethod(): string
@@ -62,12 +67,7 @@ class ClientRequest implements RequestInterface
 
     public function withMethod($method): ClientRequest
     {
-        $this->assertMethod($method);
-        $instance = clone $this;
-
-        $instance->method = strtoupper($method);
-
-        return $instance;
+        return $this->setMethod($method, clone $this);
     }
 
     public function getUri(): UriInterface
@@ -77,8 +77,7 @@ class ClientRequest implements RequestInterface
 
     public function withUri(UriInterface $uri, $preserveHost = false): ClientRequest
     {
-        $instance = clone $this;
-
+        $instance      = clone $this;
         $instance->uri = $uri;
 
         if (true === $preserveHost) {
@@ -92,26 +91,77 @@ class ClientRequest implements RequestInterface
         return $instance->withHeader('Host', [$uri->getHost()]);
     }
 
+    public function getRequestTarget(): string
+    {
+        return $this->requestTarget;
+    }
+
+    public function withRequestTarget($requestTarget): ClientRequest
+    {
+        $instance                = clone $this;
+        $instance->requestTarget = $requestTarget;
+
+        return $instance;
+    }
+
+    public function getPath(): string
+    {
+        return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
+    }
+
+    public function getBaseUri(): string
+    {
+        if (!empty($host = $this->getUri()->getHost())) {
+            $port = $this->getUri()->getPort();
+            $port && $port = ":$port";
+
+            return $this->getUri()->getScheme() . "://{$host}{$port}";
+        }
+
+        //return '/';
+        return '';
+    }
+
     /**
-     * Move the Host header at the beginning.
+     * @return bool
+     */
+    public function isSecure(): bool
+    {
+        return 'https' === $this->uri->getScheme();
+    }
+
+    public function isMethodSafe(): bool
+    {
+        return in_array($this->method, self::SAFE_METHODS);
+    }
+
+    /**
+     * Move the Host header at the beginning of the headers stack.
      */
     protected function setHost(): void
     {
         $this->headersMap['host'] = 'Host';
-
-        $this->headers = ['Host' => $this->uri->getHost()] + $this->headers;
+        $this->headers            = ['Host' => $this->uri->getHost()] + $this->headers;
     }
 
     /**
-     * @param string $method The HTTP method
+     * @param string        $method The HTTP method
+     * @param ClientRequest $instance
+     *
+     * @return ClientRequest
      */
-    private function assertMethod($method): void
+    protected function setMethod($method, ClientRequest $instance): ClientRequest
     {
-        if (false === in_array(strtoupper($method), Request::HTTP_METHODS)) {
+        $method = strtoupper($method);
+
+        if (false === in_array($method, Request::HTTP_METHODS)) {
             throw new InvalidArgumentException(
-                sprintf(self::E_METHOD_NOT_SUPPORTED, $method),
-                HttpStatus::METHOD_NOT_ALLOWED
+                sprintf(self::E_METHOD_NOT_ALLOWED, $method), HttpStatus::METHOD_NOT_ALLOWED
             );
         }
+
+        $instance->method = $method;
+
+        return $instance;
     }
 }

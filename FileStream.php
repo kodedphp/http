@@ -12,16 +12,13 @@
 
 namespace Koded\Http;
 
-class FileStream extends Stream
-{
+class FileStream extends Stream {
 
-    public function __construct(string $filename, string $mode = 'r')
-    {
+    public function __construct(string $filename, string $mode = 'r') {
         parent::__construct(fopen($filename, $mode));
     }
 
-    public function getContents(): string
-    {
+    public function getContents(): string {
         return stream_to_string($this);
     }
 }

@@ -12,7 +12,6 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
 use Psr\Http\Message\UploadedFileInterface;
 
 trait FilesTrait
@@ -27,8 +26,7 @@ trait FilesTrait
 
     public function withUploadedFiles(array $uploadedFiles): array
     {
-        $instance = clone $this;
-
+        $instance                = clone $this;
         $instance->uploadedFiles = $this->parseUploadedFiles($uploadedFiles);
 
         return $instance->uploadedFiles;

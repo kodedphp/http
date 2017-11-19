@@ -18,13 +18,12 @@ use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 
 /**
- * @param null|callable|StreamInterface|object $resource A gypsy wannabe argument
- * @param string                        $mode
+ * @param null|callable|StreamInterface|object|resource $resource A gypsy wannabe argument
+ * @param string                               $mode
  *
  * @return StreamInterface
  */
-function create_stream($resource, string $mode = 'r+'): StreamInterface
-{
+function create_stream($resource, string $mode = 'r+'): StreamInterface {
     if (is_string($resource) || null === $resource) {
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
@@ -52,8 +51,8 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
     }
 
     throw new InvalidArgumentException('Failed to create a stream. '
-    . 'Expected a file name, StreamInterface instance, or a resource. '
-    . "Given {$type} type.");
+        . 'Expected a file name, StreamInterface instance, or a resource. '
+        . "Given {$type} type.");
 }
 
 /**
@@ -63,14 +62,14 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
  * @return int The total count of bytes copied
  * @throws RuntimeException on failure
  */
-function stream_copy(StreamInterface $source, StreamInterface $destination): int
-{
+function stream_copy(StreamInterface $source, StreamInterface $destination): int {
     $bytes = 0;
     while (false === $source->eof()) {
         $bytes += $destination->write($source->read(8192));
     }
 
     $destination->close();
+
     return $bytes;
 }
 
@@ -80,10 +79,9 @@ function stream_copy(StreamInterface $source, StreamInterface $destination): int
  * @return string
  * @throws RuntimeException on failure
  */
-function stream_to_string(StreamInterface $stream): string
-{
+function stream_to_string(StreamInterface $stream): string {
     $content = '';
-    $stream ->rewind();
+    $stream->rewind();
 
     while (false === $stream->eof()) {
         $content .= $stream->read(1048576); // 1MB
@@ -100,11 +98,10 @@ function stream_to_string(StreamInterface $stream): string
  *
  * @return array Normalized files array to sane format
  */
-function normalize_files_array(array $files): array
-{
+function normalize_files_array(array $files): array {
     $sane = function($files, $file = [], $path = []) use (&$sane) {
         foreach ($files as $k => $v) {
-            $_ = $path;
+            $_   = $path;
             $_[] = $k;
 
             if (is_array($v)) {
@@ -135,8 +132,7 @@ function normalize_files_array(array $files): array
  *
  * @return array An array tree of UploadedFileInterface instances
  */
-function build_files_array(array $files): array
-{
+function build_files_array(array $files): array {
     foreach ($files as $index => $file) {
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;

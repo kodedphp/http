@@ -109,7 +109,7 @@ class FunctionsTest extends TestCase
 
     public function test_stream_to_string()
     {
-        $file = __DIR__ . '/../composer.json';
+        $file   = __DIR__ . '/../composer.json';
         $stream = create_stream(new FileStream($file, 'r'));
 
         $this->assertSame(file_get_contents($file), stream_to_string($stream));
@@ -123,7 +123,7 @@ class FunctionsTest extends TestCase
 
     public function test_files_array_with_file_instance()
     {
-        $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
+        $normalized                           = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
         $normalized['test'][0]['a']['b']['c'] = new UploadedFile([]);
 
         $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);

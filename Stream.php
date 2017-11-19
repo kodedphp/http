@@ -16,8 +16,7 @@ use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 use Throwable;
 
-class Stream implements StreamInterface
-{
+class Stream implements StreamInterface {
 
     protected const MODES = [
         'w+'  => 1,
@@ -41,8 +40,7 @@ class Stream implements StreamInterface
     protected $mode     = 0;
     protected $seekable = false;
 
-    public function __construct($stream)
-    {
+    public function __construct($stream) {
         if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             throw new RuntimeException('The provided resource is not a valid stream resource');
         }
@@ -53,13 +51,11 @@ class Stream implements StreamInterface
         $this->stream   = $stream;
     }
 
-    public function __destruct()
-    {
+    public function __destruct() {
         $this->close();
     }
 
-    public function __toString()
-    {
+    public function __toString() {
         try {
             $this->seek(0);
 
@@ -69,16 +65,14 @@ class Stream implements StreamInterface
         }
     }
 
-    public function close()
-    {
+    public function close() {
         if ($this->stream) {
             fclose($this->stream);
             $this->detach();
         }
     }
 
-    public function detach()
-    {
+    public function detach() {
         if (empty($this->stream)) {
             return null;
         }
@@ -91,8 +85,7 @@ class Stream implements StreamInterface
         return $resource;
     }
 
-    public function getSize(): ?int
-    {
+    public function getSize(): ?int {
         if (empty($this->stream)) {
             return null;
         }
@@ -100,8 +93,7 @@ class Stream implements StreamInterface
         return fstat($this->stream)['size'] ?? null;
     }
 
-    public function tell(): int
-    {
+    public function tell(): int {
         if (false === $position = ftell($this->stream)) {
             throw new RuntimeException('Failed to find the position of the file pointer');
         }
@@ -109,13 +101,11 @@ class Stream implements StreamInterface
         return $position;
     }
 
-    public function eof(): bool
-    {
+    public function eof(): bool {
         return feof($this->stream);
     }
 
-    public function seek($offset, $whence = SEEK_SET): void
-    {
+    public function seek($offset, $whence = SEEK_SET): void {
         if (false === $this->seekable) {
             throw new RuntimeException('The stream is not seekable');
         }
@@ -125,13 +115,11 @@ class Stream implements StreamInterface
         }
     }
 
-    public function rewind(): void
-    {
+    public function rewind(): void {
         $this->seek(0);
     }
 
-    public function write($string): int
-    {
+    public function write($string): int {
         if (false === $this->isWritable()) {
             throw new RuntimeException('The stream is not writable');
         }
@@ -143,8 +131,7 @@ class Stream implements StreamInterface
         return $bytes;
     }
 
-    public function read($length): string
-    {
+    public function read($length): string {
         if (false === $this->isReadable()) {
             throw new RuntimeException('The stream is not readable');
         }
@@ -160,8 +147,7 @@ class Stream implements StreamInterface
         return $data;
     }
 
-    public function getContents(): string
-    {
+    public function getContents(): string {
         if (false === $content = stream_get_contents($this->stream)) {
             throw new RuntimeException('Unable to read the stream content');
         }
@@ -169,8 +155,7 @@ class Stream implements StreamInterface
         return $content;
     }
 
-    public function getMetadata($key = null)
-    {
+    public function getMetadata($key = null) {
         $metadata = stream_get_meta_data($this->stream);
 
         if (null === $key) {
@@ -180,18 +165,15 @@ class Stream implements StreamInterface
         return $metadata[$key] ?? null;
     }
 
-    public function isSeekable(): bool
-    {
+    public function isSeekable(): bool {
         return $this->seekable;
     }
 
-    public function isReadable(): bool
-    {
+    public function isReadable(): bool {
         return isset((self::MODES + ['r' => 1, 'rb' => 1, 'rt' => 1])[$this->mode]);
     }
 
-    public function isWritable(): bool
-    {
+    public function isWritable(): bool {
         return isset((self::MODES + ['w' => 1, 'rw' => 1, 'a' => 1, 'wb' => 1])[$this->mode]);
     }
 }

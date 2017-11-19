@@ -13,10 +13,10 @@
 namespace Koded\Http\Interfaces;
 
 use Psr\Http\Message\{
-    RequestInterface, ResponseInterface, ServerRequestInterface
+    RequestInterface, ResponseInterface
 };
 
-interface Request extends RequestInterface, ServerRequestInterface
+interface Request extends RequestInterface
 {
 
     const GET     = 'GET';
@@ -41,11 +41,20 @@ interface Request extends RequestInterface, ServerRequestInterface
         self::CONNECT
     ];
 
+    const SAFE_METHODS = [
+        self::GET,
+        self::HEAD,
+        self::OPTIONS,
+        self::TRACE,
+        self::CONNECT
+    ];
+
     /**
-     * Returns the path part of the URI.
+     * Returns the absolute path part of the URI.
      *
-     * This method should defeat the UriInterface::getPath() idea for returning
-     * an empty path, by trying to provide a useful absolute "/" path.
+     * This method does not follow the UriInterface::getPath() idea
+     * for returning an empty path, but trying to provide a useful absolute path.
+     * There is not much use of an empty things.
      *
      * @return string URI path
      */
@@ -60,13 +69,6 @@ interface Request extends RequestInterface, ServerRequestInterface
     public function getBaseUri(): string;
 
     /**
-     * @param array $attributes Sets all attributes in the request object
-     *
-     * @return Request A new immutable response instance
-     */
-    public function withAttributes(array $attributes): Request;
-
-    /**
      * Checks if the incoming request is HTTPS.
      *
      * @return bool
@@ -79,6 +81,17 @@ interface Request extends RequestInterface, ServerRequestInterface
      * @return bool
      */
     public function isMethodSafe(): bool;
+}
+
+interface OutgoingRequest extends Request
+{
+
+    /**
+     * @param array $attributes Sets all attributes in the request object
+     *
+     * @return Request A new immutable response instance
+     */
+    public function withAttributes(array $attributes): Request;
 
     /**
      * Checks if the request is AJAX.
@@ -104,4 +117,89 @@ interface Response extends ResponseInterface
      * @return string
      */
     public function getCharset(): string;
+}
+
+interface HttpRequestClient extends RequestInterface
+{
+
+    const USER_AGENT = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
+
+    public function open(): HttpRequestClient;
+
+    /**
+     * Fetch the internet resource using the HTTP client.
+     *
+     * Error response codes:
+     *
+     *  - 400 on bad request
+     *          when you execute body-less request with non empty body
+     *  - 412 when client is not opened before reading
+     *  - 422 when client dropped an error on the resource fetching
+     *  - 500 on whatever code error
+     *
+     * @return ResponseInterface Response object with populated resource.
+     *                           It can return an HTTP response with error status.
+     */
+    public function read(): ResponseInterface;
+
+    /**
+     * @param string $value
+     *
+     * @return HttpRequestClient
+     */
+    public function setUserAgent(string $value): HttpRequestClient;
+
+    /**
+     * Follow Location header redirects.
+     *
+     * @param bool $value Default is TRUE
+     *
+     * @return HttpRequestClient
+     */
+    public function setFollowLocation(bool $value): HttpRequestClient;
+
+    /**
+     * The max number of redirects to follow. Value 1 or less means that no redirects are followed.
+     *
+     * @param int $value Default is 20
+     *
+     * @return HttpRequestClient
+     */
+    public function setMaxRedirects(int $value): HttpRequestClient;
+
+    /**
+     * Read timeout in seconds.
+     *
+     * This method should use the "default_socket_timeout" php.ini setting (usually 60).
+     * or 10 if this value is not set in the ini.php
+     *
+     * @param float $value
+     *
+     * @return HttpRequestClient
+     */
+
+    public function setTimeout(float $value): HttpRequestClient;
+
+    /**
+     * Fetch the content even on failure status codes.
+     *
+     * @param bool $value Default is false
+     *
+     * @return HttpRequestClient
+     */
+    public function setIgnoreErrors(bool $value): HttpRequestClient;
+
+    /**
+     * @param bool $value
+     *
+     * @return HttpRequestClient
+     */
+    public function setVerifySslHost(bool $value): HttpRequestClient;
+
+    /**
+     * @param bool $value
+     *
+     * @return HttpRequestClient
+     */
+    public function setVerifySslPeer(bool $value): HttpRequestClient;
 }

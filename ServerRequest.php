@@ -13,39 +13,37 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Interfaces\OutgoingRequest;
 use Koded\Http\Interfaces\Request;
 use Koded\Stdlib\Arguments;
+use Psr\Http\Message\ServerRequestInterface;
 
-class ServerRequest extends ClientRequest implements Request
+class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequestInterface
 {
 
     use CookieTrait, FilesTrait;
 
-    protected $server  = '';
-    protected $baseuri = '';
-    protected $xhr     = false;
+    /** @var string */
+    protected $serverSoftware = '';
 
     /** @var Arguments */
     protected $attributes;
-    protected $queryParams = [];
-    protected $parsedBody  = [];
 
+    /** @var array */
+    protected $queryParams = [];
+    protected $parsedBody  = null;
+
+    /**
+     * ServerRequest constructor.
+     *
+     * @param array $attributes
+     */
     public function __construct(array $attributes = [])
     {
         parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
         $this->attributes = new Arguments($attributes);
-        $this->extractServerData();
         $this->extractHttpHeaders();
-    }
-
-    public function getPath(): string
-    {
-        return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
-    }
-
-    public function getBaseUri(): string
-    {
-        return $this->baseuri;
+        $this->extractServerData();
     }
 
     public function getServerParams(): array
@@ -60,8 +58,7 @@ class ServerRequest extends ClientRequest implements Request
 
     public function withQueryParams(array $query): ServerRequest
     {
-        $instance = clone $this;
-
+        $instance              = clone $this;
         $instance->queryParams = array_merge($instance->queryParams, $query);
 
         return $instance;
@@ -69,8 +66,14 @@ class ServerRequest extends ClientRequest implements Request
 
     public function getParsedBody(): ?array
     {
-        if (empty($this->parsedBody)) {
-            return null;
+        // @see \Psr\Http\Message\ServerRequestInterface::getParsedBody()
+        if (self::POST === $this->method && array_filter($this->getHeader('content-type'), function($value) {
+                $value = strtolower($value);
+
+                return in_array($value, ['application/x-www-form-urlencoded', 'multipart/form-data']);
+            })
+        ) {
+            $this->parsedBody = $_POST;
         }
 
         return $this->parsedBody;
@@ -80,14 +83,15 @@ class ServerRequest extends ClientRequest implements Request
     {
         $instance = clone $this;
 
-        if (empty($data)) {
-            $instance->parsedBody = [];
+        if (is_iterable($data)) {
+            $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
 
             return $instance;
         }
 
-        if (is_iterable($data)) {
-            $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
+        // If nothing was available to parse as body
+        if (null === $data) {
+            $instance->parsedBody = $data;
 
             return $instance;
         }
@@ -121,23 +125,8 @@ class ServerRequest extends ClientRequest implements Request
         return $instance;
     }
 
-    public function isSecure(): bool
-    {
-        return 'https' === $this->uri->getScheme();
-    }
-
-    public function isMethodSafe(): bool
-    {
-        return in_array($this->method, [self::GET, self::HEAD, self::OPTIONS, self::TRACE, self::CONNECT]);
-    }
-
-    public function isXHR(): bool
-    {
-        return $this->xhr;
-    }
-
     /**
-     * Replace all attributes.
+     * Replace all attributes with provided
      * This method is not part of the PSR-7.
      *
      * @param array $attributes Sets all attributes in the request object
@@ -146,11 +135,15 @@ class ServerRequest extends ClientRequest implements Request
      */
     public function withAttributes(array $attributes): Request
     {
-        $instance = clone $this;
-
+        $instance             = clone $this;
         $instance->attributes = new Arguments($attributes);
 
         return $instance;
+    }
+
+    public function isXHR(): bool
+    {
+        return strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' || false;
     }
 
     protected function buildUri(): Uri
@@ -166,28 +159,11 @@ class ServerRequest extends ClientRequest implements Request
         return new Uri('');
     }
 
-    private function extractServerData(): void
-    {
-        $this->protocolVersion = str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
-        $this->xhr = strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' || false;
-        $this->server       = $_SERVER['SERVER_SOFTWARE'] ?? '';
-        $this->queryParams  = $_GET;
-        $this->parsedBody   = $_POST;
-        $this->cookieParams = $_COOKIE;
-        $_FILES && $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
-
-        if (!empty($host = $this->getUri()->getHost())) {
-            $port = $this->getUri()->getPort();
-            $port && $port = ":$port";
-            $this->baseuri = $this->getUri()->getScheme() . "://{$host}{$port}";
-        }
-    }
-
     private function extractHttpHeaders(): void
     {
         foreach ($_SERVER as $k => $v) {
             // Calisthenics :)
-            0 === strpos($k, 'HTTP_', 0) and $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
+            0 === strpos($k, 'HTTP_', 0) && $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
 
         if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
@@ -195,6 +171,19 @@ class ServerRequest extends ClientRequest implements Request
             $this->headers['ETag']    = str_replace('-gzip', '', $_SERVER['HTTP_IF_NONE_MATCH']);
             $this->headersMap['etag'] = 'ETag';
         }
+
         $this->setHost();
+    }
+
+    private function extractServerData(): void
+    {
+        $this->protocolVersion = str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
+        $this->serverSoftware  = $_SERVER['SERVER_SOFTWARE'] ?? '';
+        $this->queryParams     = $_GET;
+        $this->cookieParams    = $_COOKIE;
+
+        if ($_FILES) {
+            $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
+        }
     }
 }

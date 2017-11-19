@@ -16,8 +16,7 @@ namespace Koded\Http;
  * Holds HTTP status codes with their text.
  *
  */
-class HttpStatus
-{
+class HttpStatus {
 
     const CODE                = [
 
@@ -55,9 +54,9 @@ class HttpStatus
 
         // Client Error 4xx
         400 => 'Bad Request',
-        401 => 'Unauthorized',
+        401 => 'Unauthorized',     // Really means "Unauthenticated"
         402 => 'Payment Required',
-        403 => 'Forbidden',
+        403 => 'Forbidden',        // Really means "Unauthorized"
         404 => 'Not Found',
         405 => 'Method Not Allowed',
         406 => 'Not Acceptable',
@@ -184,12 +183,11 @@ class HttpStatus
 
     /**
      * @param string $code
-     * @param mixed $withCode [optional]
+     * @param mixed  $withCode [optional]
      *
      * @return string The status code
      */
-    public static function __callStatic(string $code, $withCode = false)
-    {
+    public static function __callStatic(string $code, $withCode = false) {
         $status = constant("self::$code");
 
         return ($withCode ? $status . ' ' : '') . self::CODE[$status];

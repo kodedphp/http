@@ -24,8 +24,7 @@ trait CookieTrait
 
     public function withCookieParams(array $cookies): self
     {
-        $instance = clone $this;
-
+        $instance               = clone $this;
         $instance->cookieParams = $cookies;
 
         return $instance;

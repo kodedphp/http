@@ -17,7 +17,7 @@ class StreamTest extends TestCase
         new Stream('');
     }
 
-    public function test_should_initialize_the_stream()
+    public function test_should_initialize_the_stream_modes()
     {
         $stream = new Stream(fopen('php://temp', 'r'));
         $this->assertFalse($stream->isWritable());
@@ -127,7 +127,6 @@ class StreamTest extends TestCase
 
         try {
             $stream->seek(20);
-
         } catch (Throwable $e) {
             // NOOP, continue
         }
@@ -170,7 +169,7 @@ class StreamTest extends TestCase
     public function test_write()
     {
         $stream = new Stream(fopen('php://temp', 'w'));
-        $bytes = $stream->write('lorem ipsum');
+        $bytes  = $stream->write('lorem ipsum');
 
         $this->assertSame(11, $bytes);
         $this->assertSame('', $stream->getContents(), 'Returns the remaining contents in the string');
@@ -182,7 +181,7 @@ class StreamTest extends TestCase
         $this->expectExceptionMessage('The stream is not writable');
 
         $resource = fopen('php://stderr', '');
-        $stream = new Stream($resource);
+        $stream   = new Stream($resource);
 
         $stream->write('lorem ipsum');
     }
