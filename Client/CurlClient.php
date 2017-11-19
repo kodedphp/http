@@ -158,7 +158,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     private function formatBody(StreamInterface $body): void
     {
-        if ($body->getSize()) {
+        if ($body->getSize() > 0) {
             $content = json_decode($body->getContents() ?: '[]', true);
 
             $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
@@ -167,7 +167,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     private function formatHeader(): void
     {
-        if ($this->headers) {
+        if ( ! empty($this->headers)) {
             $this->options[CURLOPT_HTTPHEADER] = $this->getFlattenedHeaders();
         }
     }

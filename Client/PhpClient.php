@@ -72,13 +72,12 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             [$statusCode, $contentType] = $this->extractFromHeaders($http_response_header ?? []);
 
             return new ServerResponse(stream_get_contents($stream), $statusCode, $contentType);
-            // @codeCoverageIgnoreStart
+
         } catch (Throwable $e) {
-            //dump((array)$e);
             $statusCode = $e->getCode();// < 400 ? HttpStatus::INTERNAL_SERVER_ERROR : $e->getCode();
 
             return new ServerResponse($e->getMessage(), $statusCode);
-            // @codeCoverageIgnoreEnd
+
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);
@@ -139,18 +138,18 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     private function formatHeader(): void
     {
-        if ($this->getBody()->getSize()) {
+        if ($this->getBody()->getSize() > 0) {
             $this->headers['Content-type'] = $this->headersMap['content-type'] = 'application/x-www-form-urlencoded';
         }
 
-        if ($this->headers) {
+        if ( ! empty($this->headers)) {
             $this->options['header'] = join("\r\n", $this->getFlattenedHeaders()) . "\r\n";
         }
     }
 
     private function formatBody(): void
     {
-        if ($this->getBody()->getSize()) {
+        if ($this->getBody()->getSize() > 0) {
             $content = json_decode($this->getBody()->getContents() ?: '[]', true);
 
             $this->options['content'] = http_build_query($content);
