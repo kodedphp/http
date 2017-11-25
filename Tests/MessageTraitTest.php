@@ -26,7 +26,7 @@ class MessageTraitTest extends TestCase
     {
         $this->assertSame('1.0', $this->SUT->withProtocolVersion('1.0')->getProtocolVersion());
         $this->assertSame('1.1', $this->SUT->withProtocolVersion('1.1')->getProtocolVersion());
-        $this->assertSame('2', $this->SUT->withProtocolVersion('2')->getProtocolVersion());
+        $this->assertSame('2.0', $this->SUT->withProtocolVersion('2.0')->getProtocolVersion());
     }
 
     public function test_should_always_return_instance_of_stream()
