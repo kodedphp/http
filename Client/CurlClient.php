@@ -49,26 +49,24 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     public function open(): HttpRequestClient
     {
         $this->options[CURLOPT_HTTP_VERSION] = $this->getProtocolVersion();
-        $this->options[CURLOPT_TIMEOUT]      = (float)ini_get('default_socket_timeout') ?: 10.0;
+        $this->options[CURLOPT_TIMEOUT]      = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
 
         $this->resource = curl_init((string)$this->getUri());
-        $this->formatBody($this->stream);
 
         return $this;
     }
 
     public function read(): ResponseInterface
     {
-        if (empty($this->resource)) {
+        $this->formatBody($this->stream);
+
+        if (false === $this->resource) {
             return new ServerResponse('The HTTP client is not opened therefore cannot read anything',
                 HttpStatus::PRECONDITION_FAILED);
         }
 
-        if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse(
-                'failed to open stream: you should not set the message body with safe HTTP methods',
-                HttpStatus::BAD_REQUEST
-            );
+        if ($response = $this->assertSafeMethods()) {
+            return $response;
         }
 
         $this->formatHeader();
@@ -77,7 +75,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             $content = curl_exec($this->resource);
             $info    = curl_getinfo($this->resource);
 
-            if (curl_errno($this->resource) > 0) {
+            if (true === $this->hasError()) {
                 return new ServerResponse(
                     curl_error($this->resource), HttpStatus::UNPROCESSABLE_ENTITY, $info['content_type'] ?: 'json'
                 );
@@ -89,10 +87,11 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         } finally {
             unset($content, $info);
 
-            if ($this->resource) {
+            if (is_resource($this->resource)) {
                 curl_close($this->resource);
-                $this->resource = null;
             }
+
+            $this->resource = null;
         }
     }
 
@@ -153,6 +152,11 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->options[CURLOPT_SSL_VERIFYPEER] = $value;
 
         return $this;
+    }
+
+    protected function hasError(): bool
+    {
+        return curl_errno($this->resource) > 0;
     }
 
     private function formatHeader(): void

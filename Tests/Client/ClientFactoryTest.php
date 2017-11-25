@@ -13,13 +13,13 @@ class ClientFactoryTest extends TestCase
 
     public function test_php_factory()
     {
-        $instance = (new ClientFactory)->open('get', self::URI, 'PhpClient is the default');
+        $instance = (new ClientFactory(ClientFactory::PHP))->open('get', self::URI);
         $this->assertInstanceOf(PhpClient::class, $instance);
     }
 
     public function test_curl_factory()
     {
-        $instance = (new ClientFactory(ClientFactory::CURL))->open('get', self::URI);
+        $instance = (new ClientFactory)->open('get', self::URI, 'CurlClient is the default');
         $this->assertInstanceOf(CurlClient::class, $instance);
     }
 

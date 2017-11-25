@@ -141,7 +141,8 @@ class ClientRequest implements Request
     protected function setHost(): void
     {
         $this->headersMap['host'] = 'Host';
-        $this->headers            = ['Host' => $this->uri->getHost()] + $this->headers;
+
+        $this->headers = ['Host' => $this->uri->getHost()] + $this->headers;
     }
 
     /**
@@ -163,5 +164,22 @@ class ClientRequest implements Request
         $instance->method = $method;
 
         return $instance;
+    }
+
+    /**
+     * Checks if body is non-empty if HTTP method is one of the safe methods.
+     * The consuming code should disallow this and return the response object.
+     *
+     * @return ServerResponse|null
+     */
+    protected function assertSafeMethods(): ?ServerResponse
+    {
+        if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
+            return new ServerResponse('failed to open stream: you should not set the message body with safe HTTP methods',
+                HttpStatus::BAD_REQUEST
+            );
+        }
+
+        return null;
     }
 }

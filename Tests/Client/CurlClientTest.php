@@ -4,6 +4,7 @@ namespace Koded\Http\Client;
 
 use Koded\Http\HttpStatus;
 use Koded\Http\Interfaces\HttpRequestClient;
+use Koded\Http\ServerResponse;
 use PHPUnit\Framework\TestCase;
 
 class CurlClientTest extends TestCase
@@ -66,11 +67,42 @@ class CurlClientTest extends TestCase
         $client   = new \ReflectionClass($this->SUT);
         $resource = $client->getProperty('resource');
         $resource->setAccessible(true);
-        $resource->setValue($this->SUT, null);
+        $resource->setValue($this->SUT, false);
 
         $response = $this->SUT->read();
         $this->assertSame(HttpStatus::PRECONDITION_FAILED, $response->getStatusCode());
         $this->assertSame('The HTTP client is not opened therefore cannot read anything', (string)$response->getBody());
+    }
+
+    public function test_internal_server_exception()
+    {
+        $client   = new \ReflectionClass($this->SUT);
+        $resource = $client->getProperty('resource');
+        $resource->setAccessible(true);
+        $resource->setValue($this->SUT, new \stdClass); // this throws exception from curl_exec()
+
+        $response = $this->SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame(HttpStatus::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertSame('curl_exec() expects parameter 1 to be resource, object given', (string)$response->getBody());
+    }
+
+    public function test_when_curl_returns_error()
+    {
+        $SUT = new class('get', 'http://example.org') extends CurlClient
+        {
+            protected function hasError(): bool
+            {
+                return true;
+            }
+        };
+
+        $SUT->open();
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame(HttpStatus::UNPROCESSABLE_ENTITY, $response->getStatusCode());
     }
 
     protected function setUp()

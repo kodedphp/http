@@ -34,7 +34,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             'protocol_version' => (float)$this->getProtocolVersion(),
             'user_agent'       => HttpRequestClient::USER_AGENT,
             'method'           => $this->getMethod(),
-            'timeout'          => ini_get('default_socket_timeout') * 1.0 ?: 10.0,
+            'timeout'          => (ini_get('default_socket_timeout') ?: 10.0) * 1.0,
             'max_redirects'    => 20,
             'follow_location'  => 1,
             'ignore_errors'    => false,
@@ -47,38 +47,36 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
+    /**
+     * @return ResponseInterface
+     */
     public function read(): ResponseInterface
     {
-        $stream = null;
         $this->formatBody();
 
-        if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse('failed to open stream: you should not set the message body with safe HTTP methods',
-                HttpStatus::BAD_REQUEST
-            );
+        if ($response = $this->assertSafeMethods()) {
+            return $response;
         }
 
         $this->formatHeader();
 
         try {
             $context = stream_context_create(['http' => $this->options]);
-            $stream  = $this->createStream($context);
-
-            if (false === $stream) {
+            if (false === $response = $this->createResource($context)) {
                 return new ServerResponse(error_get_last()['message'], HttpStatus::UNPROCESSABLE_ENTITY);
             }
 
             [$statusCode, $contentType] = $this->extractFromHeaders($http_response_header ?? []);
 
-            return new ServerResponse(stream_get_contents($stream), $statusCode, $contentType);
+            return new ServerResponse(stream_get_contents($response), $statusCode, $contentType);
         } catch (Throwable $e) {
             return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
+            if (is_resource($response)) {
+                fclose($response);
             }
 
-            unset($context, $stream);
+            unset($context, $response);
         }
     }
 
@@ -131,6 +129,16 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
+    /**
+     * @param resource $context from stream_context_create()
+     *
+     * @return bool|resource
+     */
+    protected function createResource($context)
+    {
+        return @fopen((string)$this->getUri(), 'r', false, $context);
+    }
+
     private function formatHeader(): void
     {
         $this->headers['Content-type'] = $this->headersMap['content-type'] = 'application/x-www-form-urlencoded';
@@ -147,6 +155,13 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         $this->options['content'] = http_build_query($content);
     }
 
+    /**
+     * Extracts the status code and content type from response headers.
+     *
+     * @param array $headers Response headers
+     *
+     * @return array[statusCode, contentType]
+     */
     private function extractFromHeaders(array $headers): array
     {
         $statusCode  = explode(' ', $headers[0] ?? ' 200 ')[1];
@@ -159,15 +174,5 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         }
 
         return [(int)$statusCode, trim($contentType)];
-    }
-
-    /**
-     * @param resource $context from stream_context_create()
-     *
-     * @return bool|resource
-     */
-    private function createStream($context)
-    {
-        return @fopen((string)$this->getUri(), 'r', false, $context);
     }
 }

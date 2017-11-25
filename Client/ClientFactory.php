@@ -24,7 +24,7 @@ class ClientFactory
 
     private $clientType = self::CURL;
 
-    public function __construct(int $clientType = ClientFactory::PHP)
+    public function __construct(int $clientType = ClientFactory::CURL)
     {
         $this->clientType = $clientType;
     }
