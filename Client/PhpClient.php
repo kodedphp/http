@@ -49,12 +49,11 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     public function read(): ResponseInterface
     {
-        $this->formatBody();
         $stream = null;
+        $this->formatBody();
 
         if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse(
-                'failed to open stream: you should not set the message body with safe HTTP methods',
+            return new ServerResponse('failed to open stream: you should not set the message body with safe HTTP methods',
                 HttpStatus::BAD_REQUEST
             );
         }
@@ -72,12 +71,8 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             [$statusCode, $contentType] = $this->extractFromHeaders($http_response_header ?? []);
 
             return new ServerResponse(stream_get_contents($stream), $statusCode, $contentType);
-
         } catch (Throwable $e) {
-            $statusCode = $e->getCode();// < 400 ? HttpStatus::INTERNAL_SERVER_ERROR : $e->getCode();
-
-            return new ServerResponse($e->getMessage(), $statusCode);
-
+            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);
@@ -138,22 +133,18 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     private function formatHeader(): void
     {
-        if ($this->getBody()->getSize() > 0) {
-            $this->headers['Content-type'] = $this->headersMap['content-type'] = 'application/x-www-form-urlencoded';
-        }
+        $this->headers['Content-type'] = $this->headersMap['content-type'] = 'application/x-www-form-urlencoded';
 
-        if ( ! empty($this->headers)) {
+        if (!empty($this->headers)) {
             $this->options['header'] = join("\r\n", $this->getFlattenedHeaders()) . "\r\n";
         }
     }
 
     private function formatBody(): void
     {
-        if ($this->getBody()->getSize() > 0) {
-            $content = json_decode($this->getBody()->getContents() ?: '[]', true);
+        $content = json_decode($this->getBody()->getContents() ?: '[]', true);
 
-            $this->options['content'] = http_build_query($content);
-        }
+        $this->options['content'] = http_build_query($content);
     }
 
     private function extractFromHeaders(array $headers): array
