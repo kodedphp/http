@@ -18,7 +18,6 @@ use Koded\Http\Interfaces\HttpRequestClient;
 use Koded\Http\ServerResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -61,7 +60,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     public function read(): ResponseInterface
     {
         if (empty($this->resource)) {
-            throw new RuntimeException('The HTTP client is not opened therefore cannot read anything',
+            return new ServerResponse('The HTTP client is not opened therefore cannot read anything',
                 HttpStatus::PRECONDITION_FAILED);
         }
 
@@ -156,19 +155,15 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
-    private function formatBody(StreamInterface $body): void
-    {
-        if ($body->getSize() > 0) {
-            $content = json_decode($body->getContents() ?: '[]', true);
-
-            $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
-        }
-    }
-
     private function formatHeader(): void
     {
-        if ( ! empty($this->headers)) {
-            $this->options[CURLOPT_HTTPHEADER] = $this->getFlattenedHeaders();
-        }
+        $this->options[CURLOPT_HTTPHEADER] = $this->getFlattenedHeaders();
+    }
+
+    private function formatBody(StreamInterface $body): void
+    {
+        $content = json_decode($body->getContents() ?: '[]', true);
+
+        $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
     }
 }

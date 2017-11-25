@@ -68,11 +68,9 @@ class CurlClientTest extends TestCase
         $resource->setAccessible(true);
         $resource->setValue($this->SUT, null);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionCode(HttpStatus::PRECONDITION_FAILED);
-        $this->expectExceptionMessage('The HTTP client is not opened therefore cannot read anything');
-
-        $this->SUT->read();
+        $response = $this->SUT->read();
+        $this->assertSame(HttpStatus::PRECONDITION_FAILED, $response->getStatusCode());
+        $this->assertSame('The HTTP client is not opened therefore cannot read anything', (string)$response->getBody());
     }
 
     protected function setUp()
