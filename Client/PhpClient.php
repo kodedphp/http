@@ -160,7 +160,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
      *
      * @param array $headers Response headers
      *
-     * @return array[statusCode, contentType]
+     * @return array [statusCode, contentType]
      */
     private function extractFromHeaders(array $headers): array
     {
