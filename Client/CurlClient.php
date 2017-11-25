@@ -95,7 +95,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         }
     }
 
-    public function withBody(StreamInterface $body): HttpRequestClient
+    public function withBody(StreamInterface $body): self
     {
         $instance         = clone $this;
         $instance->stream = $body;
