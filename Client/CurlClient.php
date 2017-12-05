@@ -72,6 +72,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->formatHeader();
 
         try {
+            curl_setopt_array($this->resource, $this->options);
             $content = curl_exec($this->resource);
             $info    = curl_getinfo($this->resource);
 
@@ -166,8 +167,8 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     private function formatBody(StreamInterface $body): void
     {
-        $content = json_decode($body->getContents() ?: '[]', true);
-
-        $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
+        if ($content = json_decode($body->getContents() ?: '[]', true)) {
+            $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
+        }
     }
 }

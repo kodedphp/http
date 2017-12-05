@@ -85,7 +85,8 @@ class CurlClientTest extends TestCase
 
         $this->assertInstanceOf(ServerResponse::class, $response);
         $this->assertSame(HttpStatus::INTERNAL_SERVER_ERROR, $response->getStatusCode());
-        $this->assertSame('curl_exec() expects parameter 1 to be resource, object given', (string)$response->getBody());
+        $this->assertSame('curl_setopt_array() expects parameter 1 to be resource, object given',
+            (string)$response->getBody());
     }
 
     public function test_when_curl_returns_error()
