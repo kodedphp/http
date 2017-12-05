@@ -134,8 +134,7 @@ trait HeaderTrait
     protected function normalizeHeader(string $key, $value, bool $skipKey): void
     {
         if (false === $skipKey) {
-            $key = strtolower(str_replace(['_', '-'], ' ', $key));
-            $key = str_replace(' ', '-', ucwords($key));
+            $key = ucwords(str_replace('_', '-', strtolower($key)), '-');
         }
 
         $this->headersMap[strtolower($key)] = $key;

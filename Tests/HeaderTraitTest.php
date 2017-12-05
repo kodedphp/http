@@ -84,18 +84,18 @@ class HeaderTraitTest extends TestCase
         $this->assertSame(['baz'], $SUT->getHeader('foo_bar'));
 
         $SUT = $SUT->replaceHeaders([
-            'HEADER_1' => 'header1',
-            'HEADER_2' => 'header2'
+            'LONG_HEADER_NAME_1' => 'foo',
+            'HEADER_2'           => 'bar'
         ]);
 
         $this->assertAttributeSame([
-            'Header-1' => 'header1',
-            'Header-2' => 'header2',
+            'Long-Header-Name-1' => 'foo',
+            'Header-2'           => 'bar',
         ], 'headers', $SUT);
 
         $this->assertAttributeSame([
-            'header-1' => 'Header-1',
-            'header-2' => 'Header-2',
+            'long-header-name-1' => 'Long-Header-Name-1',
+            'header-2'           => 'Header-2',
         ], 'headersMap', $SUT);
     }
 
