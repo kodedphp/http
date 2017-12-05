@@ -141,8 +141,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     private function formatHeader(): void
     {
-        $this->headers['Content-type'] = $this->headersMap['content-type'] = 'application/x-www-form-urlencoded';
-
         if (!empty($this->headers)) {
             $this->options['header'] = join("\r\n", $this->getFlattenedHeaders()) . "\r\n";
         }
@@ -150,9 +148,9 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     private function formatBody(): void
     {
-        $content = json_decode($this->getBody()->getContents() ?: '[]', true);
-
-        $this->options['content'] = http_build_query($content);
+        if ($content = json_decode($this->getBody()->getContents() ?: '[]', true)) {
+            $this->options['content'] = http_build_query($content);
+        }
     }
 
     /**

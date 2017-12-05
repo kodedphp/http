@@ -8,8 +8,6 @@ use Koded\Http\Uri;
 use ReflectionClass;
 use function Koded\Http\create_stream;
 
-require_once __DIR__ . '/../../vendor/koded/stdlib/functions-dev.php';
-
 /**
  * Trait ClientTestCaseTrait ensures some consistent behaviour
  * across the HTTP client implementations.
