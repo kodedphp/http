@@ -33,7 +33,7 @@ class CurlClientTest extends TestCase
         $this->assertSame(false, $options[CURLOPT_SSL_VERIFYPEER]);
         $this->assertSame(false, $options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertSame(HttpRequestClient::USER_AGENT, $options[CURLOPT_USERAGENT]);
-        $this->assertSame(1, $options[CURLOPT_FAILONERROR]);
+        $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame('1.1', $options[CURLOPT_HTTP_VERSION]);
         $this->assertSame(60.0, $options[CURLOPT_TIMEOUT]);
 

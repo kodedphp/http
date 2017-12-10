@@ -43,7 +43,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_USERAGENT      => HttpRequestClient::USER_AGENT,
-        CURLOPT_FAILONERROR    => 1,
+        CURLOPT_FAILONERROR    => 0,
     ];
 
     public function open(): HttpRequestClient

@@ -37,7 +37,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             'timeout'          => (ini_get('default_socket_timeout') ?: 10.0) * 1.0,
             'max_redirects'    => 20,
             'follow_location'  => 1,
-            'ignore_errors'    => false,
+            'ignore_errors'    => true,
             'ssl'              => [
                 'verify_peer'       => false,
                 'allow_self_signed' => false,

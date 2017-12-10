@@ -32,7 +32,7 @@ class PhpClientTest extends TestCase
         $this->assertSame(60.0, $options['timeout']);
         $this->assertSame(20, $options['max_redirects']);
         $this->assertSame(1, $options['follow_location']);
-        $this->assertFalse($options['ignore_errors']);
+        $this->assertTrue($options['ignore_errors']);
         $this->assertFalse($options['ssl']['allow_self_signed']);
         $this->assertFalse($options['ssl']['verify_peer']);
 
