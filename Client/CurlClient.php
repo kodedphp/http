@@ -15,7 +15,6 @@ namespace Koded\Http\Client;
 use Koded\Http\ClientRequest;
 use Koded\Http\HttpStatus;
 use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\ServerResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Throwable;
@@ -61,8 +60,8 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->formatBody($this->stream);
 
         if (false === $this->resource) {
-            return new ServerResponse('The HTTP client is not opened therefore cannot read anything',
-                HttpStatus::PRECONDITION_FAILED);
+            return new ClientResponse(
+                'The HTTP client is not opened therefore cannot read anything', HttpStatus::PRECONDITION_FAILED);
         }
 
         if ($response = $this->assertSafeMethods()) {
@@ -76,15 +75,17 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             $content = curl_exec($this->resource);
             $info    = curl_getinfo($this->resource);
 
+            [$statusCode, $contentType] = $this->extractFromInfo($info);
+
             if (true === $this->hasError()) {
-                return new ServerResponse(
-                    curl_error($this->resource), HttpStatus::UNPROCESSABLE_ENTITY, $info['content_type'] ?: 'json'
-                );
+                $statusCode = HttpStatus::UNPROCESSABLE_ENTITY;
+
+                return new ClientResponse(curl_error($this->resource), $statusCode, $contentType);
             }
 
-            return new ServerResponse($content, $info['http_code'], $info['content_type']);
+            return new ClientResponse($content, $statusCode, $contentType);
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            return new ClientResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             unset($content, $info);
 
@@ -170,5 +171,13 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         if ($content = json_decode($body->getContents() ?: '[]', true)) {
             $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
         }
+    }
+
+    private function extractFromInfo(array $info): array
+    {
+        return [
+            (int)$info['http_code'] ?: HttpStatus::INTERNAL_SERVER_ERROR,
+            (string)$info['content_type'] ?: ($this->getHeader('Accept')[0] ?? null) ?? 'json'
+        ];
     }
 }

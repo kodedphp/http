@@ -28,11 +28,11 @@ class ServerResponse implements Response
 
     const E_INVALID_STATUS_CODE = 'Invalid status code %s, expected range between [100-599]';
 
-    private $statusCode   = HttpStatus::OK;
-    private $reasonPhrase = 'OK';
+    protected $statusCode   = HttpStatus::OK;
+    protected $reasonPhrase = 'OK';
 
-    private $contentType = 'text/html';
-    private $charset     = 'UTF-8';
+    protected $contentType = 'text/html';
+    protected $charset     = 'UTF-8';
 
     /**
      * ServerResponse constructor.
@@ -116,7 +116,7 @@ class ServerResponse implements Response
         return $this->stream->getContents();
     }
 
-    private function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
+    protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
     {
         if ($statusCode < 100 || $statusCode > 599) {
             throw new InvalidArgumentException(

@@ -15,7 +15,6 @@ namespace Koded\Http\Client;
 use Koded\Http\ClientRequest;
 use Koded\Http\HttpStatus;
 use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\ServerResponse;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -63,14 +62,14 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         try {
             $context = stream_context_create(['http' => $this->options]);
             if (false === $response = $this->createResource($context)) {
-                return new ServerResponse(error_get_last()['message'], HttpStatus::UNPROCESSABLE_ENTITY);
+                return new ClientResponse(error_get_last()['message'], HttpStatus::UNPROCESSABLE_ENTITY);
             }
 
             [$statusCode, $contentType] = $this->extractFromHeaders($http_response_header ?? []);
 
-            return new ServerResponse(stream_get_contents($response), $statusCode, $contentType);
+            return new ClientResponse(stream_get_contents($response), $statusCode, $contentType);
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            return new ClientResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             if (is_resource($response)) {
                 fclose($response);
