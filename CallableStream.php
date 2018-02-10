@@ -12,7 +12,10 @@
 
 namespace Koded\Http;
 
+use Exception;
+use Generator;
 use Psr\Http\Message\StreamInterface;
+use ReflectionException;
 use ReflectionFunction;
 use RuntimeException;
 
@@ -44,7 +47,7 @@ class CallableStream implements StreamInterface
         }
     }
 
-    public function close()
+    public function close(): void
     {
         $this->detach();
     }
@@ -55,7 +58,7 @@ class CallableStream implements StreamInterface
         $this->position = 0;
     }
 
-    public function getSize()
+    public function getSize(): ?int
     {
         return null;
     }
@@ -93,13 +96,16 @@ class CallableStream implements StreamInterface
             return $contents;
         }
 
-        foreach ($this->generator($length) as $chunk) {
-            $contents .= $chunk;
-
-            $this->position = mb_strlen($contents);
+        try {
+            foreach ($this->generator($length) as $chunk) {
+                $contents .= $chunk;
+                $this->position += mb_strlen($chunk);
+            }
+        } catch (Exception $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        } finally {
+            $this->callable = null;
         }
-
-        $this->callable = null;
 
         return $contents;
     }
@@ -129,6 +135,12 @@ class CallableStream implements StreamInterface
         return true;
     }
 
+    /**
+     * @param int $length
+     *
+     * @return Generator
+     * @throws ReflectionException
+     */
     private function generator(int $length)
     {
         if ((new ReflectionFunction($this->callable))->isGenerator()) {
