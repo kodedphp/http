@@ -49,6 +49,9 @@ interface Request extends RequestInterface
         self::CONNECT
     ];
 
+    const E_METHOD_NOT_ALLOWED = 'HTTP method "%s" is not supported';
+    const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
+
     /**
      * Returns the absolute path part of the URI.
      *
@@ -103,6 +106,8 @@ interface OutgoingRequest extends Request
 
 interface Response extends ResponseInterface
 {
+
+    const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
 
     /**
      * Returns the mime type value for the response object.
