@@ -24,7 +24,7 @@ class ServerResponseTest extends TestCase
 
     public function test_constructor_arguments()
     {
-        $response = (new ServerResponse('エンコーディングは難しくない', StatusCode::BAD_GATEWAY, [] /*'json', 'utf-16'*/))
+        $response = (new ServerResponse('エンコーディングは難しくない', StatusCode::BAD_GATEWAY))
             ->withHeader('Content-type', 'application/json');
 
         $this->assertSame(StatusCode::BAD_GATEWAY, $response->getStatusCode());
