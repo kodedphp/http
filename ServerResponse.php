@@ -61,10 +61,7 @@ class ServerResponse implements Response, JsonSerializable
 
     public function getContentType(): string
     {
-        $contentType = $this->getHeader('Content-Type');
-
-        return end($contentType) ?: 'text/html';
-//        return $this->contentType;
+        return $this->getHeaderLine('Content-Type') ?: 'text/html';
     }
 
     // TODO remove it?
