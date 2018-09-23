@@ -17,7 +17,6 @@
       "homepage": "http://kodeart.com"
     }
   ],
-  "minimum-stability": "dev",
   "require": {
     "php": "^7.1.4",
     "koded/cache-simple": "~1",
@@ -46,6 +45,12 @@
   "autoload-dev": {
     "psr-4": {
       "Koded\\Http\\": "Tests/"
+    }
+  },
+  "minimum-stability": "dev",
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.1-dev"
     }
   }
 }
