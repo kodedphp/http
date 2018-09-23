@@ -27,7 +27,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
      */
     private $options = [];
 
-    public function __construct(string $method, $uri, $body = null, iterable $headers = [])
+    public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
 

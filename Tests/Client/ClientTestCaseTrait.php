@@ -28,13 +28,11 @@ trait ClientTestCaseTrait
 
     public function test_should_exit_on_bad_url()
     {
-        $this->markTestIncomplete('Handle the exception from Uri::parse()');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Please provide a valid URI');
+        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
 
-        $SUT = $this->SUT->withUri(new Uri('scheme://host:junk'));
-        $bad = $SUT->read();
-
-        $this->assertSame(StatusCode::BAD_REQUEST, $bad->getStatusCode());
-        $this->assertContains('failed to open stream:', (string)$bad->getBody());
+        $this->SUT->withUri(new Uri('scheme://host:junk'));
     }
 
     public function test_should_exit_on_bad_request()

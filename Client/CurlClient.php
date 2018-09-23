@@ -39,7 +39,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         CURLOPT_FAILONERROR    => 0,
     ];
 
-    public function __construct(string $method, $uri, $body = null, iterable $headers = [])
+    public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
 
