@@ -13,21 +13,21 @@ class ClientFactoryTest extends TestCase
 
     public function test_php_factory()
     {
-        $instance = (new ClientFactory(ClientFactory::PHP))->open('get', self::URI);
+        $instance = (new ClientFactory(ClientFactory::PHP))->get(self::URI);
         $this->assertInstanceOf(PhpClient::class, $instance);
     }
 
     public function test_curl_factory()
     {
-        $instance = (new ClientFactory)->open('get', self::URI, 'CurlClient is the default');
-        $this->assertInstanceOf(CurlClient::class, $instance);
+        $instance = (new ClientFactory)->get(self::URI);
+        $this->assertInstanceOf(CurlClient::class, $instance, 'CurlClient is the default');
     }
 
     public function test_factory_should_throw_exception_for_unknown_client()
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('4 is not a valid HTTP client');
-        (new ClientFactory(4))->open('GET', 'localhost');
+        (new ClientFactory(4))->get('localhost');
     }
 
     public function test_get()

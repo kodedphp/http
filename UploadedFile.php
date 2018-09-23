@@ -14,8 +14,7 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Exceptions\KodedException;
-use Psr\Http\Message\StreamInterface;
-use Psr\Http\Message\UploadedFileInterface;
+use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
 use RuntimeException;
 use Throwable;
 
@@ -45,20 +44,21 @@ class UploadedFile implements UploadedFileInterface
 
     public function __construct(array $uploadedFile)
     {
-        $this->file  = $uploadedFile['tmp_name'] ?? null;
+        if ($this->file = $uploadedFile['tmp_name'] ?? null) {
+            $this->stream = create_stream($this->file);
+        }
+
         $this->name  = $uploadedFile['name'] ?? null;
         $this->type  = $uploadedFile['type'] ?? null;
         $this->size  = $uploadedFile['size'] ?? null;
         $this->error = $uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE;
-
-        $this->file && $this->stream = create_stream($this->file);
     }
 
     public function getStream(): StreamInterface
     {
         $this->assertMoved();
 
-        if (!$this->stream instanceof StreamInterface) {
+        if (empty($this->stream)) {
             throw new RuntimeException('The stream is not available for the uploaded file');
         }
 
@@ -75,7 +75,6 @@ class UploadedFile implements UploadedFileInterface
 
         try {
             stream_copy($this->getStream(), create_stream($targetPath, 'w'));
-
             $destination = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->name;
 
             $this->moved = ('cli' === php_sapi_name())
@@ -131,7 +130,7 @@ class UploadedFile implements UploadedFileInterface
     private function assertMoved(): void
     {
         if ($this->moved) {
-            throw new RuntimeException('Failed to get the stream because it was previously moved');
+            throw new RuntimeException('Failed to get the file stream, because it was previously moved');
         }
     }
 }
@@ -139,12 +138,12 @@ class UploadedFile implements UploadedFileInterface
 class UploadedFileException extends KodedException
 {
     protected $messages = [
-        UPLOAD_ERR_INI_SIZE   => 'Ini size',
-        UPLOAD_ERR_FORM_SIZE  => 'Form size',
-        UPLOAD_ERR_PARTIAL    => 'Partial',
-        UPLOAD_ERR_NO_FILE    => 'No file',
-        UPLOAD_ERR_NO_TMP_DIR => 'No tmp directory',
-        UPLOAD_ERR_CANT_WRITE => "Can't write",
-        UPLOAD_ERR_EXTENSION  => 'Extension',
+        UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the "upload_max_filesize" directive in php.ini',
+        UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the "MAX_FILE_SIZE" directive that was specified in the HTML form',
+        UPLOAD_ERR_PARTIAL    => 'The uploaded file was only partially uploaded',
+        UPLOAD_ERR_NO_FILE    => 'No file was uploaded',
+        UPLOAD_ERR_NO_TMP_DIR => 'The temporary directory to write to is missing',
+        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+        UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload',
     ];
 }

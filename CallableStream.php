@@ -12,9 +12,13 @@
 
 namespace Koded\Http;
 
+use Exception;
+use Generator;
 use Psr\Http\Message\StreamInterface;
+use ReflectionException;
 use ReflectionFunction;
 use RuntimeException;
+
 
 class CallableStream implements StreamInterface
 {
@@ -25,9 +29,13 @@ class CallableStream implements StreamInterface
     /** @var int Current position of the pointer in the buffer */
     private $position = 0;
 
+    /** @var bool If callable is Generator instance */
+    private $isGenerator = false;
+
     public function __construct(callable $callable)
     {
-        $this->callable = $callable;
+        $this->callable    = $callable;
+        $this->isGenerator = (new ReflectionFunction($this->callable))->isGenerator();
     }
 
     public function __destruct()
@@ -44,7 +52,7 @@ class CallableStream implements StreamInterface
         }
     }
 
-    public function close()
+    public function close(): void
     {
         $this->detach();
     }
@@ -55,7 +63,7 @@ class CallableStream implements StreamInterface
         $this->position = 0;
     }
 
-    public function getSize()
+    public function getSize(): ?int
     {
         return null;
     }
@@ -93,13 +101,16 @@ class CallableStream implements StreamInterface
             return $contents;
         }
 
-        foreach ($this->generator($length) as $chunk) {
-            $contents .= $chunk;
-
-            $this->position = mb_strlen($contents);
+        try {
+            foreach ($this->reader($length) as $chunk) {
+                $contents       .= $chunk;
+                $this->position += mb_strlen($chunk);
+            }
+        } catch (Exception $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        } finally {
+            $this->callable = null;
         }
-
-        $this->callable = null;
 
         return $contents;
     }
@@ -129,13 +140,18 @@ class CallableStream implements StreamInterface
         return true;
     }
 
-    private function generator(int $length)
+    /**
+     * @param int $length
+     *
+     * @return Generator
+     * @throws RuntimeException
+     */
+    private function reader(int $length): Generator
     {
-        if ((new ReflectionFunction($this->callable))->isGenerator()) {
+        if ($this->isGenerator) {
             yield from ($this->callable)();
-        } else {
-            $resource = fopen('php://temp', 'r+');
-            if (false === @fwrite($resource, call_user_func($this->callable))) {
+        } elseif ($resource = fopen('php://temp', 'r+')) {
+            if (false === @fwrite($resource, ($this->callable)())) {
                 throw new RuntimeException('Cannot write to stream');
             }
             fseek($resource, 0);

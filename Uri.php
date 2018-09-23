@@ -16,56 +16,44 @@ use InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
 use Throwable;
 
-class Uri implements UriInterface {
-    /**
-     * @var string
-     */
+class Uri implements UriInterface
+{
+    /** @var string */
     private $scheme = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $host = '';
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $port = 80;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $path = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $user = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $pass = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $fragment = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $query = '';
 
-    public function __construct(string $uri) {
+    public function __construct(string $uri)
+    {
         $uri && $this->parse($uri);
     }
 
-    public function getScheme(): string {
+    public function getScheme(): string
+    {
         return strtolower($this->scheme);
     }
 
-    public function getAuthority(): string {
+    public function getAuthority(): string
+    {
         if (empty($this->getUserInfo())) {
             return '';
         }
@@ -73,15 +61,18 @@ class Uri implements UriInterface {
         return $this->getUserInfo() . '@' . $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
     }
 
-    public function getUserInfo(): string {
+    public function getUserInfo(): string
+    {
         return $this->user . ($this->pass ? ':' . $this->pass : '');
     }
 
-    public function getHost(): string {
+    public function getHost(): string
+    {
         return strtolower($this->host);
     }
 
-    public function getPort(): ?int {
+    public function getPort(): ?int
+    {
         if ((!$this->port && !$this->scheme) || $this->isStandardPort()) {
             return null;
         }
@@ -89,29 +80,34 @@ class Uri implements UriInterface {
         return $this->port;
     }
 
-    public function getPath(): string {
+    public function getPath(): string
+    {
         // FIXME remove the entry script from the path
         $this->path = str_replace('/index.php', '', $this->path);
 
         return rawurldecode($this->path);
     }
 
-    public function getQuery(): string {
+    public function getQuery(): string
+    {
         return $this->query;
     }
 
-    public function getFragment(): string {
+    public function getFragment(): string
+    {
         return rawurldecode($this->fragment);
     }
 
-    public function withScheme($scheme): UriInterface {
+    public function withScheme($scheme): UriInterface
+    {
         $instance         = clone $this;
         $instance->scheme = empty($scheme) ? null : $scheme;
 
         return $instance;
     }
 
-    public function withUserInfo($user, $password = null): UriInterface {
+    public function withUserInfo($user, $password = null): UriInterface
+    {
         $instance       = clone $this;
         $instance->user = empty($user) ? null : (string)$user;
         $instance->pass = empty($user) ? null : (string)$password;
@@ -119,14 +115,16 @@ class Uri implements UriInterface {
         return $instance;
     }
 
-    public function withHost($host): UriInterface {
+    public function withHost($host): UriInterface
+    {
         $instance       = clone $this;
         $instance->host = empty($host) ? null : (string)$host;
 
         return $instance;
     }
 
-    public function withPort($port): UriInterface {
+    public function withPort($port): UriInterface
+    {
         $instance = clone $this;
 
         if (null === $port) {
@@ -144,20 +142,21 @@ class Uri implements UriInterface {
         return $instance;
     }
 
-    public function withPath($path): UriInterface {
+    public function withPath($path): UriInterface
+    {
         $instance       = clone $this;
         $instance->path = $path;
 
         return $instance;
     }
 
-    public function withQuery($query): UriInterface {
+    public function withQuery($query): UriInterface
+    {
         try {
             $query = rawurldecode($query);
         } catch (Throwable $e) {
             throw new InvalidArgumentException('The provided query string is invalid');
         }
-
 
         $instance        = clone $this;
         $instance->query = empty($query) ? '' : (string)$query;
@@ -165,27 +164,30 @@ class Uri implements UriInterface {
         return $instance;
     }
 
-    public function withFragment($fragment): UriInterface {
+    public function withFragment($fragment): UriInterface
+    {
         $instance           = clone $this;
         $instance->fragment = empty($fragment) ? '' : $fragment;
 
         return $instance;
     }
 
-    public function __toString() {
+    public function __toString()
+    {
         return sprintf('%s%s%s%s%s%s',
             $this->scheme ? $this->getScheme() . '://' : '',
             $this->user ? $this->getAuthority() : $this->getHost(),
-            $this->getPort(),
+            ($this->isStandardPort() ? '' : ':' . $this->port),
             $this->fixPath(),
             $this->query ? '?' . $this->query : null,
             $this->fragment ? '#' . ltrim($this->fragment, '#') : null
         );
     }
 
-    private function parse(string $uri) {
+    private function parse(string $uri)
+    {
         if (false === $parts = parse_url($uri)) {
-            throw new InvalidArgumentException('Please provide a valid URI', HttpStatus::BAD_REQUEST);
+            throw new InvalidArgumentException('Please provide a valid URI', StatusCode::BAD_REQUEST);
         }
 
         foreach ($parts as $k => $v) {
@@ -193,7 +195,8 @@ class Uri implements UriInterface {
         }
     }
 
-    private function isStandardPort(): bool {
+    private function isStandardPort(): bool
+    {
         return in_array($this->port, [80, 443, 21, 23, 70, 110, 119, 143, 389]);
     }
 
@@ -204,7 +207,8 @@ class Uri implements UriInterface {
      *
      * @return string
      */
-    private function fixPath(): string {
+    private function fixPath(): string
+    {
         $path = $this->getPath();
 
         if ($this->user && $path[0] !== '/') {

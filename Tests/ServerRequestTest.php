@@ -19,11 +19,11 @@ class ServerRequestTest extends TestCase
         $this->assertSame(Request::POST, $this->SUT->getMethod());
 
         // makes a difference
-        $this->assertSame('/', $this->SUT->getPath(), 'Much useful and predictable');
-        $this->assertSame('', $this->SUT->getUri()->getPath(), 'Weird PSR-7 logic satisfied');
+        $this->assertSame('/', $this->SUT->getPath(), 'Much useful and predictable for real life apps');
+        $this->assertSame('', $this->SUT->getUri()->getPath(), 'Weird PSR-7 rule satisfied');
 
         $this->assertSame('http://example.org:8080', $this->SUT->getBaseUri());
-//////        $this->assertAttributeSame('', 'server', $this->SUT, 'In testing environment there is no server');
+        $this->assertAttributeSame('', 'serverSoftware', $this->SUT, 'In testing environment there is no server');
         $this->assertFalse($this->SUT->isXHR());
         $this->assertSame('1.1', $this->SUT->getProtocolVersion());
 
@@ -74,6 +74,22 @@ class ServerRequestTest extends TestCase
     {
         $request = $this->SUT->withParsedBody(new Arguments(['foo' => 'bar']));
         $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
+
+        return $request;
+    }
+
+    /**
+     * @depends test_parsed_body_with_iterable_value
+     *
+     * @param ServerRequest $request
+     */
+    public function test_parsed_body_with_post_and_content_type(ServerRequest $request)
+    {
+        $_POST   = ['accept', 'this'];
+        $request = $request->withHeader('Content-type', 'application/x-www-form-urlencoded');
+
+        $request = $request->withParsedBody(['ignored', 'values']);
+        $this->assertSame($_POST, $request->getParsedBody(), 'Supplied data is ignored');
     }
 
     public function test_parsed_body_throws_exception_on_unsupported_values()

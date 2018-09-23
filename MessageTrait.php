@@ -15,6 +15,7 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
 
+
 trait MessageTrait
 {
 
@@ -31,7 +32,7 @@ trait MessageTrait
 
     public function withProtocolVersion($version): self
     {
-        if (false === in_array($version, ['1.0', '1.1', '2.0'], true)) {
+        if (false === in_array($version, ['1.0', '1.1', '2'], true)) {
             throw new InvalidArgumentException('Unsupported HTTP protocol version ' . $version);
         }
 
@@ -46,7 +47,7 @@ trait MessageTrait
         return $this->stream ?? create_stream(null);
     }
 
-    public function withBody(StreamInterface $body): self
+    public function withBody(StreamInterface $body)
     {
         $instance         = clone $this;
         $instance->stream = $body;

@@ -14,6 +14,7 @@ namespace Koded\Http;
 
 use Psr\Http\Message\UploadedFileInterface;
 
+
 trait FilesTrait
 {
 
@@ -42,8 +43,6 @@ trait FilesTrait
      */
     protected function parseUploadedFiles(array $uploadedFiles): array
     {
-        $uploadedFiles = normalize_files_array($uploadedFiles);
-
-        return build_files_array($uploadedFiles);
+        return build_files_array(normalize_files_array($uploadedFiles));
     }
 }
