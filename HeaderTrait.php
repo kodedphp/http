@@ -153,11 +153,11 @@ trait HeaderTrait
     }
 
     /**
-     * @param iterable $headers Associative headers array
+     * @param array $headers Associative headers array
      *
      * @return static
      */
-    protected function setHeaders(iterable $headers)
+    protected function setHeaders(array $headers)
     {
         foreach (array_filter($headers, 'is_string', ARRAY_FILTER_USE_KEY) as $name => $value) {
             $this->normalizeHeader($name, $value, false);

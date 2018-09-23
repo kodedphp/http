@@ -15,6 +15,9 @@ namespace Koded\Http;
 use Koded\Http\Interfaces\{HttpInputValidator, Response};
 use Koded\Stdlib\Immutable;
 
+/**
+ * @method array|null getParsedBody
+ */
 trait ValidatableTrait
 {
 

@@ -45,9 +45,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param string                                                                   $method
      * @param UriInterface|string                                                      $uri
      * @param \Psr\Http\Message\StreamInterface|iterable|resource|callable|string|null $body    [optional]
-     * @param iterable                                                                 $headers [optional]
+     * @param array                                                                    $headers [optional]
      */
-    public function __construct(string $method, $uri, $body = null, iterable $headers = [])
+    public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
         $this->setHost();
         $this->setMethod($method, $this);
@@ -158,9 +158,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param string           $method The HTTP method
      * @param RequestInterface $instance
      *
-     * @return self
+     * @return RequestInterface
      */
-    protected function setMethod($method, RequestInterface $instance): self
+    protected function setMethod($method, RequestInterface $instance): RequestInterface
     {
         $method = strtoupper($method);
 

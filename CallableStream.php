@@ -144,14 +144,13 @@ class CallableStream implements StreamInterface
      * @param int $length
      *
      * @return Generator
-     * @throws ReflectionException
+     * @throws RuntimeException
      */
     private function reader(int $length): Generator
     {
         if ($this->isGenerator) {
             yield from ($this->callable)();
-        } else {
-            $resource = fopen('php://temp', 'r+');
+        } elseif ($resource = fopen('php://temp', 'r+')) {
             if (false === @fwrite($resource, ($this->callable)())) {
                 throw new RuntimeException('Cannot write to stream');
             }

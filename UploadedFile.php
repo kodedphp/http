@@ -58,7 +58,7 @@ class UploadedFile implements UploadedFileInterface
     {
         $this->assertMoved();
 
-        if (!$this->stream instanceof StreamInterface) {
+        if (empty($this->stream)) {
             throw new RuntimeException('The stream is not available for the uploaded file');
         }
 

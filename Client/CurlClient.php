@@ -25,7 +25,7 @@ use Throwable;
 class CurlClient extends ClientRequest implements HttpRequestClient
 {
 
-    /** @var resource */
+    /** @var resource|false */
     private $resource;
 
     /** @var array curl options */

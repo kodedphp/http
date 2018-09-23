@@ -33,11 +33,11 @@ class ServerResponse implements Response, JsonSerializable
     /**
      * ServerResponse constructor.
      *
-     * @param mixed    $content    [optional]
-     * @param int      $statusCode [optional]
-     * @param iterable $headers    [optional]
+     * @param mixed $content    [optional]
+     * @param int   $statusCode [optional]
+     * @param array $headers    [optional]
      */
-    public function __construct($content = '', int $statusCode = StatusCode::OK, iterable $headers = [])
+    public function __construct($content = '', int $statusCode = StatusCode::OK, array $headers = [])
     {
         $this->stream = create_stream($content);
         $this->setStatus($this, $statusCode);
