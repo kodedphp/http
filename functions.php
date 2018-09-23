@@ -13,17 +13,17 @@ namespace Koded\Http;
  */
 
 use InvalidArgumentException;
-use Psr\Http\Message\StreamInterface;
-use Psr\Http\Message\UploadedFileInterface;
+use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
 use RuntimeException;
 
 /**
  * @param null|callable|StreamInterface|object|resource $resource A gypsy wannabe argument
- * @param string                               $mode
+ * @param string                                        $mode
  *
  * @return StreamInterface
  */
-function create_stream($resource, string $mode = 'r+'): StreamInterface {
+function create_stream($resource, string $mode = 'r+'): StreamInterface
+{
     if (is_string($resource) || null === $resource) {
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
@@ -56,16 +56,21 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface {
 }
 
 /**
- * @param StreamInterface $source
- * @param StreamInterface $destination
+ * Copies the stream to another stream object.
+ *
+ * @param StreamInterface $source      The source stream object
+ * @param StreamInterface $destination Destination stream object
+ * @param int             [optional] $length Read up to $length bytes from the source stream.
+ *                                     Fewer than $length bytes may be returned if underlying stream
+ *                                     call returns fewer bytes
  *
  * @return int The total count of bytes copied
- * @throws RuntimeException on failure
  */
-function stream_copy(StreamInterface $source, StreamInterface $destination): int {
+function stream_copy(StreamInterface $source, StreamInterface $destination, int $length = 8192): int
+{
     $bytes = 0;
     while (false === $source->eof()) {
-        $bytes += $destination->write($source->read(8192));
+        $bytes += $destination->write($source->read($length));
     }
 
     $destination->close();
@@ -79,7 +84,8 @@ function stream_copy(StreamInterface $source, StreamInterface $destination): int
  * @return string
  * @throws RuntimeException on failure
  */
-function stream_to_string(StreamInterface $stream): string {
+function stream_to_string(StreamInterface $stream): string
+{
     $content = '';
     $stream->rewind();
 
@@ -91,14 +97,15 @@ function stream_to_string(StreamInterface $stream): string {
 }
 
 /**
- * Transforms the (_FILES) array to much desired array structure.
+ * Transforms the array to much desired files array structure.
  * Deals with any nested level.
  *
  * @param array $files Typically the $_FILES array
  *
- * @return array Normalized files array to sane format
+ * @return array A files array to a sane format
  */
-function normalize_files_array(array $files): array {
+function normalize_files_array(array $files): array
+{
     $sane = function($files, $file = [], $path = []) use (&$sane) {
         foreach ($files as $k => $v) {
             $_   = $path;
@@ -132,7 +139,8 @@ function normalize_files_array(array $files): array {
  *
  * @return array An array tree of UploadedFileInterface instances
  */
-function build_files_array(array $files): array {
+function build_files_array(array $files): array
+{
     foreach ($files as $index => $file) {
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;

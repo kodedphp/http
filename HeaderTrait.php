@@ -12,6 +12,7 @@
 
 namespace Koded\Http;
 
+
 trait HeaderTrait
 {
 
@@ -24,7 +25,6 @@ trait HeaderTrait
      * @var array Used for case-insensitivity header name checks
      */
     protected $headersMap = [];
-
 
     public function getHeaders(): array
     {
@@ -51,11 +51,22 @@ trait HeaderTrait
 
     public function withHeader($name, $value): self
     {
-        is_array($value) || $value = [$value];
         $instance = clone $this;
 
         $instance->headersMap[strtolower($name)] = $name;
-        $instance->headers[$name]                = $value;
+        $instance->headers[$name]                = (array)$value;
+
+        return $instance;
+    }
+
+    public function withHeaders(array $headers): self
+    {
+        $instance = clone $this;
+
+        foreach ($headers as $name => $value) {
+            $instance->headersMap[strtolower($name)] = $name;
+            $instance->headers[$name]                = (array)$value;
+        }
 
         return $instance;
     }
@@ -70,7 +81,7 @@ trait HeaderTrait
 
     public function withAddedHeader($name, $value): self
     {
-        is_array($value) || $value = [$value];
+        $value    = (array)$value;
         $instance = clone $this;
 
         if (isset($instance->headersMap[$header = strtolower($name)])) {
@@ -101,15 +112,15 @@ trait HeaderTrait
         $instance          = clone $this;
         $instance->headers = $instance->headersMap = [];
 
-        foreach ($headers as $key => $value) {
-            $instance->normalizeHeader($key, $value, false);
+        foreach ($headers as $name => $value) {
+            $instance->normalizeHeader($name, $value, false);
         }
 
         return $instance;
     }
 
     /**
-     * Tries to return the nested headers as flatten array.
+     * Transforms the nested headers as a flatten array.
      * This method is not part of the PSR-7.
      *
      * @return array
@@ -125,34 +136,33 @@ trait HeaderTrait
     }
 
     /**
-     * @param string $key
+     * @param string $name
      * @param array  $value
      * @param bool   $skipKey
      *
      * @return void
      */
-    protected function normalizeHeader(string $key, $value, bool $skipKey): void
+    protected function normalizeHeader(string $name, $value, bool $skipKey): void
     {
         if (false === $skipKey) {
-            $key = ucwords(str_replace('_', '-', strtolower($key)), '-');
+            $name = ucwords(str_replace('_', '-', strtolower($name)), '-');
         }
 
-        $this->headersMap[strtolower($key)] = $key;
-        $this->headers[$key]                = str_replace(["\r", "\n"], '', $value);
+        $this->headersMap[strtolower($name)] = $name;
+        $this->headers[$name]                = str_replace(["\r", "\n"], '', $value);
     }
 
     /**
      * @param iterable $headers Associative headers array
      *
-     * @return void
+     * @return static
      */
-    protected function setHeaders(iterable $headers): void
+    protected function setHeaders(iterable $headers)
     {
-        if ($headers) {
-            $headers = array_filter($headers, 'is_string', ARRAY_FILTER_USE_KEY);
-            foreach ($headers as $header => $value) {
-                $this->normalizeHeader($header, $value, false);
-            }
+        foreach (array_filter($headers, 'is_string', ARRAY_FILTER_USE_KEY) as $name => $value) {
+            $this->normalizeHeader($name, $value, false);
         }
+
+        return $this;
     }
 }

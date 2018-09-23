@@ -19,7 +19,7 @@ class ClientRequestTest extends TestCase
     {
         $this->assertSame(Request::POST, $this->SUT->getMethod());
         $this->assertInstanceOf(UriInterface::class, $this->SUT->getUri());
-        $this->assertSame('', $this->SUT->getRequestTarget());
+        $this->assertSame('/', $this->SUT->getRequestTarget(), "No URI (path) and no request-target is provided");
     }
 
     public function test_uri()
@@ -48,11 +48,29 @@ class ClientRequestTest extends TestCase
         $this->assertNotSame($request, $this->SUT);
     }
 
+    public function test_request_target_with_query_string()
+    {
+        $uri     = new Uri('http://example.net/home?foo=bared');
+        $request = $this->SUT->withUri($uri);
+
+        $this->assertSame('/home?foo=bared', $request->getRequestTarget());
+        $this->assertNotSame($request, $this->SUT);
+    }
+
+    public function test_invalid_request_target()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(ClientRequest::E_INVALID_REQUEST_TARGET);
+        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
+
+        $this->SUT->withRequestTarget('foo bar');
+    }
+
     public function test_with_uri_preserving_the_host()
     {
         $uri     = new Uri('http://example.net/42');
         $request = $this->SUT->withUri($uri, true);
-        $this->assertSame(['example.org'], $request->getHeader('host'));
+        $this->assertSame(['example.com'], $request->getHeader('host'));
     }
 
     public function test_with_uri_and_not_preserving_the_host()

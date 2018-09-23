@@ -15,8 +15,9 @@ namespace Koded\Http;
 /**
  * Holds HTTP status codes with their text.
  *
+ * @link https://httpstatuses.com
  */
-class HttpStatus {
+class StatusCode {
 
     const CODE                = [
 
@@ -99,6 +100,8 @@ class HttpStatus {
         510 => 'Not Extended',
         511 => 'Network Authentication Required',
         // 512-599 Unassigned
+
+        596 => 'Service Not Found',
     ];
 
     // Informational 1xx
@@ -181,11 +184,13 @@ class HttpStatus {
     const HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511;
     // 512-599 Unassigned
 
+    const SERVICE_NOT_FOUND = 596;
+
     /**
      * @param string $code
      * @param mixed  $withCode [optional]
      *
-     * @return string The status code
+     * @return string The status text
      */
     public static function __callStatic(string $code, $withCode = false) {
         $status = constant("self::$code");

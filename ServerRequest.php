@@ -13,15 +13,14 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
-use Koded\Http\Interfaces\OutgoingRequest;
 use Koded\Http\Interfaces\Request;
 use Koded\Stdlib\Arguments;
 use Psr\Http\Message\ServerRequestInterface;
 
-class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequestInterface
-{
 
-    use CookieTrait, FilesTrait;
+class ServerRequest extends ClientRequest implements Request
+{
+    use CookieTrait, FilesTrait, ValidatableTrait;
 
     /** @var string */
     protected $serverSoftware = '';
@@ -31,7 +30,9 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
 
     /** @var array */
     protected $queryParams = [];
-    protected $parsedBody  = null;
+
+    /** @var null|array */
+    protected $parsedBody;
 
     /**
      * ServerRequest constructor.
@@ -66,14 +67,12 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
 
     public function getParsedBody(): ?array
     {
-        // @see \Psr\Http\Message\ServerRequestInterface::getParsedBody()
-        if (self::POST === $this->method && array_filter($this->getHeader('content-type'), function($value) {
-                $value = strtolower($value);
+        if ($this->useOnlyPost()) {
+            return $_POST;
+        }
 
-                return in_array($value, ['application/x-www-form-urlencoded', 'multipart/form-data']);
-            })
-        ) {
-            $this->parsedBody = $_POST;
+        if (false === empty($_POST)) {
+            return $_POST;
         }
 
         return $this->parsedBody;
@@ -83,15 +82,22 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
     {
         $instance = clone $this;
 
+        if ($this->useOnlyPost()) {
+            $instance->parsedBody = $_POST;
+
+            return $instance;
+        }
+
+        // Supports only array or iterable object. Also normalize to array
         if (is_iterable($data)) {
             $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
 
             return $instance;
         }
 
-        // If nothing was available to parse as body
+        // If nothing is available for the body
         if (null === $data) {
-            $instance->parsedBody = $data;
+            $instance->parsedBody = null;
 
             return $instance;
         }
@@ -125,14 +131,6 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
         return $instance;
     }
 
-    /**
-     * Replace all attributes with provided
-     * This method is not part of the PSR-7.
-     *
-     * @param array $attributes Sets all attributes in the request object
-     *
-     * @return Request A new immutable response instance
-     */
     public function withAttributes(array $attributes): Request
     {
         $instance             = clone $this;
@@ -159,7 +157,7 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
         return new Uri('');
     }
 
-    private function extractHttpHeaders(): void
+    protected function extractHttpHeaders(): void
     {
         foreach ($_SERVER as $k => $v) {
             // Calisthenics :)
@@ -172,18 +170,48 @@ class ServerRequest extends ClientRequest implements OutgoingRequest, ServerRequ
             $this->headersMap['etag'] = 'ETag';
         }
 
+        if (false === $this->isMethodSafe()) {
+            $this->headers['Content-Type']    = $_SERVER['CONTENT_TYPE'] ?? '';
+            $this->headersMap['content-type'] = 'Content-Type';
+        }
+
         $this->setHost();
     }
 
-    private function extractServerData(): void
+    protected function extractServerData(): void
     {
-        $this->protocolVersion = str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
+        $this->protocolVersion = str_ireplace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
         $this->serverSoftware  = $_SERVER['SERVER_SOFTWARE'] ?? '';
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
+        $this->parsedBody      = $this->getParsedBody();
 
         if ($_FILES) {
             $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
         }
+
+        // Extract PUT request data into parsed body
+        if (Request::PUT === $this->method) {
+            parse_str(file_get_contents('php://input'), $this->parsedBody);
+        }
+    }
+
+    /**
+     * Per recommendation:
+     *
+     * @see ServerRequestInterface::getParsedBody()
+     * @see ServerRequestInterface::withParsedBody()
+     *
+     * @return bool If the request Content-Type is either
+     * application/x-www-form-urlencoded or multipart/form-data
+     * and the request method is POST,
+     * then it MUST return the contents of $_POST
+     */
+    protected function useOnlyPost(): bool
+    {
+        return $this->method === self::POST && in_array($this->getHeader('Content-Type')[0] ?? [], [
+                'application/x-www-form-urlencoded',
+                'multipart/form-data'
+            ]);
     }
 }

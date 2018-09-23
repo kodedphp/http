@@ -13,15 +13,19 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use JsonSerializable;
 use Koded\Http\Interfaces\Request;
-use Psr\Http\Message\UriInterface;
+use Psr\Http\Message\{RequestInterface, UriInterface};
 
-class ClientRequest implements Request
+
+class ClientRequest implements RequestInterface, JsonSerializable
 {
 
-    use HeaderTrait, MessageTrait;
+    use HeaderTrait, MessageTrait, JsonSerializeTrait;
 
-    const E_METHOD_NOT_ALLOWED = 'HTTP method "%s" is not supported';
+    const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
+    const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
+    const E_METHOD_NOT_ALLOWED     = 'HTTP method "%s" is not supported';
 
     /** @var string The HTTP method */
     protected $method = Request::GET;
@@ -35,7 +39,7 @@ class ClientRequest implements Request
     /**
      * ClientRequest constructor.
      *
-     * If body is provided, internally the content is encoded in JSON
+     * If body is provided, the content internally is encoded in JSON
      * and stored in body Stream object.
      *
      * @param string                                                                   $method
@@ -45,19 +49,12 @@ class ClientRequest implements Request
      */
     public function __construct(string $method, $uri, $body = null, iterable $headers = [])
     {
-        $this->setMethod($method, $this);
-        $this->uri = $uri instanceof UriInterface ? $uri : new Uri($uri);
-
-        if (is_array($body)) {
-            $body = json_encode($body);
-        } elseif (is_iterable($body)) {
-            $body = json_encode(iterator_to_array($body));
-        }
-
-        $this->stream = create_stream($body);
-
-        $this->setHeaders($headers);
         $this->setHost();
+        $this->setMethod($method, $this);
+        $this->setHeaders($headers);
+
+        $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
+        $this->stream = create_stream($this->prepareBody($body));
     }
 
     public function getMethod(): string
@@ -93,11 +90,29 @@ class ClientRequest implements Request
 
     public function getRequestTarget(): string
     {
-        return $this->requestTarget;
+        if ($this->requestTarget) {
+            return $this->requestTarget;
+        }
+
+        $path = $this->uri->getPath();
+
+        if (!$path && !$this->requestTarget) {
+            return '/';
+        }
+
+        if ($query = $this->uri->getQuery()) {
+            $path .= '?' . $query;
+        }
+
+        return $path;
     }
 
     public function withRequestTarget($requestTarget): ClientRequest
     {
+        if (preg_match('/\s+/', $requestTarget)) {
+            throw new InvalidArgumentException(self::E_INVALID_REQUEST_TARGET, StatusCode::BAD_REQUEST);
+        }
+
         $instance                = clone $this;
         $instance->requestTarget = $requestTarget;
 
@@ -111,9 +126,9 @@ class ClientRequest implements Request
 
     public function getBaseUri(): string
     {
-        if (!empty($host = $this->getUri()->getHost())) {
+        if (false === empty($host = $this->getUri()->getHost())) {
             $port = $this->getUri()->getPort();
-            $port && $port = ":$port";
+            $port && $port = ":{$port}";
 
             return $this->getUri()->getScheme() . "://{$host}{$port}";
         }
@@ -122,9 +137,6 @@ class ClientRequest implements Request
         return '';
     }
 
-    /**
-     * @return bool
-     */
     public function isSecure(): bool
     {
         return 'https' === $this->uri->getScheme();
@@ -132,32 +144,29 @@ class ClientRequest implements Request
 
     public function isMethodSafe(): bool
     {
-        return in_array($this->method, self::SAFE_METHODS);
+        return in_array($this->method, Request::SAFE_METHODS);
     }
 
-    /**
-     * Move the Host header at the beginning of the headers stack.
-     */
     protected function setHost(): void
     {
         $this->headersMap['host'] = 'Host';
 
-        $this->headers = ['Host' => $this->uri->getHost()] + $this->headers;
+        $this->headers = ['Host' => $_SERVER['HTTP_HOST'] ?? ''] + $this->headers;
     }
 
     /**
-     * @param string        $method The HTTP method
-     * @param ClientRequest $instance
+     * @param string           $method The HTTP method
+     * @param RequestInterface $instance
      *
-     * @return ClientRequest
+     * @return self
      */
-    protected function setMethod($method, ClientRequest $instance): ClientRequest
+    protected function setMethod($method, RequestInterface $instance): self
     {
         $method = strtoupper($method);
 
         if (false === in_array($method, Request::HTTP_METHODS)) {
             throw new InvalidArgumentException(
-                sprintf(self::E_METHOD_NOT_ALLOWED, $method), HttpStatus::METHOD_NOT_ALLOWED
+                sprintf(self::E_METHOD_NOT_ALLOWED, $method), StatusCode::METHOD_NOT_ALLOWED
             );
         }
 
@@ -167,19 +176,37 @@ class ClientRequest implements Request
     }
 
     /**
-     * Checks if body is non-empty if HTTP method is one of the safe methods.
-     * The consuming code should disallow this and return the response object.
+     * Checks if body is non-empty if HTTP method is one of the "safe" methods.
+     * The consuming code may disallow this and return the response object.
      *
      * @return ServerResponse|null
      */
     protected function assertSafeMethods(): ?ServerResponse
     {
         if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse('failed to open stream: you should not set the message body with safe HTTP methods',
-                HttpStatus::BAD_REQUEST
-            );
+            return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, StatusCode::BAD_REQUEST);
         }
 
         return null;
+    }
+
+    /**
+     * @param mixed $body
+     *
+     * @return mixed If $body is iterable returns JSON stringified body, or whatever it is
+     */
+    protected function prepareBody($body)
+    {
+        if (false === is_iterable($body)) {
+            return $body;
+        }
+
+        $options = JSON_UNESCAPED_SLASHES
+            | JSON_PRESERVE_ZERO_FRACTION
+            | JSON_NUMERIC_CHECK
+            | JSON_UNESCAPED_UNICODE
+            | JSON_FORCE_OBJECT;
+
+        return json_encode($body, $options);
     }
 }

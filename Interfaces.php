@@ -12,13 +12,14 @@
 
 namespace Koded\Http\Interfaces;
 
-use Psr\Http\Message\{
-    RequestInterface, ResponseInterface
-};
+use Koded\Stdlib\Interfaces\Data;
+use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
 
-interface Request extends RequestInterface
+
+interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMessageInterface
 {
 
+    /* RFC 7231, 5789 methods */
     const GET     = 'GET';
     const POST    = 'POST';
     const PUT     = 'PUT';
@@ -38,7 +39,7 @@ interface Request extends RequestInterface
         self::HEAD,
         self::OPTIONS,
         self::TRACE,
-        self::CONNECT
+        self::CONNECT,
     ];
 
     const SAFE_METHODS = [
@@ -49,8 +50,22 @@ interface Request extends RequestInterface
         self::CONNECT
     ];
 
-    const E_METHOD_NOT_ALLOWED = 'HTTP method "%s" is not supported';
-    const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
+    /* RFC 3253 methods */
+    const CHECKIN         = 'CHECKIN';
+    const CHECKOUT        = 'CHECKOUT';
+    const REPORT          = 'REPORT';
+    const UNCHECKIN       = 'UNCHECKIN';
+    const UPDATE          = 'UPDATE';
+    const VERSION_CONTROL = 'VERSION-CONTROL';
+
+    const WEBDAV_METHODS = [
+        self::CHECKIN,
+        self::CHECKOUT,
+        self::REPORT,
+        self::UNCHECKIN,
+        self::UPDATE,
+        self::VERSION_CONTROL,
+    ];
 
     /**
      * Returns the absolute path part of the URI.
@@ -72,6 +87,13 @@ interface Request extends RequestInterface
     public function getBaseUri(): string;
 
     /**
+     * @param array $attributes Sets all attributes in the request object
+     *
+     * @return Request A new immutable response instance
+     */
+    public function withAttributes(array $attributes): Request;
+
+    /**
      * Checks if the incoming request is HTTPS.
      *
      * @return bool
@@ -84,17 +106,6 @@ interface Request extends RequestInterface
      * @return bool
      */
     public function isMethodSafe(): bool;
-}
-
-interface OutgoingRequest extends Request
-{
-
-    /**
-     * @param array $attributes Sets all attributes in the request object
-     *
-     * @return Request A new immutable response instance
-     */
-    public function withAttributes(array $attributes): Request;
 
     /**
      * Checks if the request is AJAX.
@@ -104,10 +115,9 @@ interface OutgoingRequest extends Request
     public function isXHR(): bool;
 }
 
-interface Response extends ResponseInterface
-{
 
-    const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
+interface Response extends ResponseInterface, ExtendedMessageInterface
+{
 
     /**
      * Returns the mime type value for the response object.
@@ -124,20 +134,18 @@ interface Response extends ResponseInterface
     public function getCharset(): string;
 }
 
+
 interface HttpRequestClient extends RequestInterface
 {
 
     const USER_AGENT = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
-
-    public function open(): HttpRequestClient;
 
     /**
      * Fetch the internet resource using the HTTP client.
      *
      * Error response codes:
      *
-     *  - 400 on bad request
-     *          when you execute body-less request with non empty body
+     *  - 400 on bad request when you execute body-less request with non empty body
      *  - 412 when client is not opened before reading
      *  - 422 when client dropped an error on the resource fetching
      *  - 500 on whatever code error
@@ -152,7 +160,7 @@ interface HttpRequestClient extends RequestInterface
      *
      * @return HttpRequestClient
      */
-    public function setUserAgent(string $value): HttpRequestClient;
+    public function userAgent(string $value): HttpRequestClient;
 
     /**
      * Follow Location header redirects.
@@ -161,7 +169,7 @@ interface HttpRequestClient extends RequestInterface
      *
      * @return HttpRequestClient
      */
-    public function setFollowLocation(bool $value): HttpRequestClient;
+    public function followLocation(bool $value): HttpRequestClient;
 
     /**
      * The max number of redirects to follow. Value 1 or less means that no redirects are followed.
@@ -170,7 +178,7 @@ interface HttpRequestClient extends RequestInterface
      *
      * @return HttpRequestClient
      */
-    public function setMaxRedirects(int $value): HttpRequestClient;
+    public function maxRedirects(int $value): HttpRequestClient;
 
     /**
      * Read timeout in seconds.
@@ -182,8 +190,7 @@ interface HttpRequestClient extends RequestInterface
      *
      * @return HttpRequestClient
      */
-
-    public function setTimeout(float $value): HttpRequestClient;
+    public function timeout(float $value): HttpRequestClient;
 
     /**
      * Fetch the content even on failure status codes.
@@ -192,19 +199,61 @@ interface HttpRequestClient extends RequestInterface
      *
      * @return HttpRequestClient
      */
-    public function setIgnoreErrors(bool $value): HttpRequestClient;
+    public function ignoreErrors(bool $value): HttpRequestClient;
 
     /**
      * @param bool $value
      *
      * @return HttpRequestClient
      */
-    public function setVerifySslHost(bool $value): HttpRequestClient;
+    public function verifySslHost(bool $value): HttpRequestClient;
 
     /**
      * @param bool $value
      *
      * @return HttpRequestClient
      */
-    public function setVerifySslPeer(bool $value): HttpRequestClient;
+    public function verifySslPeer(bool $value): HttpRequestClient;
+}
+
+
+interface HttpInputValidator
+{
+
+    /**
+     * Validates the provided data with custom rules specific to
+     * some application logic and implementation.
+     *
+     * @param Data $input The data to be validated
+     *
+     * @return array Should return an empty array if validation has passed,
+     *               or a nested data with explanation what failed.
+     */
+    public function validate(Data $input): array;
+}
+
+
+interface ExtendedMessageInterface
+{
+    /**
+     * Bulk set the headers.
+     *
+     * @param array $headers name => value
+     *
+     * @return Request | Response
+     */
+    public function withHeaders(array $headers);
+}
+
+
+interface ValidatableRequest
+{
+
+    /**
+     * Validates the request body using a concrete validation instance.
+     *
+     * @return Response|null Should return a NULL if validation has passed,
+     * or a Response object with status code 400 and explanation what failed
+     */
+    public function validate(HttpInputValidator $validator): ?Response;
 }

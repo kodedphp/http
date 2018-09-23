@@ -15,6 +15,7 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
 
+
 trait MessageTrait
 {
 
@@ -46,7 +47,7 @@ trait MessageTrait
         return $this->stream ?? create_stream(null);
     }
 
-    public function withBody(StreamInterface $body): self
+    public function withBody(StreamInterface $body)
     {
         $instance         = clone $this;
         $instance->stream = $body;

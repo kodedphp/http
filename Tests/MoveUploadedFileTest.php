@@ -30,14 +30,14 @@ class MoveUploadedFileTest extends TestCase
 
         // After moving the file the stream is not available
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to get the stream because it was previously moved');
+        $this->expectExceptionMessage('Failed to get the file stream, because it was previously moved');
         $this->SUT->getStream();
     }
 
     public function test_moved_file_cannot_be_moved_twice()
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to get the stream because it was previously moved');
+        $this->expectExceptionMessage('Failed to get the file stream, because it was previously moved');
 
         [$targetPath, $expected] = $this->prepareToMove();
         $this->SUT->moveTo($targetPath);
@@ -54,7 +54,7 @@ class MoveUploadedFileTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not available for the uploaded file');
 
-        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
+        $file             = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
         $file['tmp_name'] = null;
 
         $SUT = new UploadedFile($file);
@@ -66,9 +66,9 @@ class MoveUploadedFileTest extends TestCase
         touch($this->file);
         file_put_contents($this->file, 'hello');
 
-        $data = include __DIR__ . '/fixtures/simple-file-array.php';
+        $data                     = include __DIR__ . '/fixtures/simple-file-array.php';
         $data['test']['tmp_name'] = $this->file;
-        $this->SUT = new UploadedFile($data['test']);
+        $this->SUT                = new UploadedFile($data['test']);
     }
 
     protected function tearDown()

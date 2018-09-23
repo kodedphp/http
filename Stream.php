@@ -16,6 +16,7 @@ use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 use Throwable;
 
+
 class Stream implements StreamInterface
 {
 

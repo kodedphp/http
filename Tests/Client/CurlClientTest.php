@@ -2,7 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\HttpStatus;
+use Koded\Http\StatusCode;
 use Koded\Http\Interfaces\HttpRequestClient;
 use Koded\Http\ServerResponse;
 use PHPUnit\Framework\TestCase;
@@ -43,13 +43,13 @@ class CurlClientTest extends TestCase
     public function test_methods()
     {
         $this->SUT
-            ->setIgnoreErrors(true)
-            ->setTimeout(5.0)
-            ->setFollowLocation(false)
-            ->setMaxRedirects(2)
-            ->setUserAgent('foo')
-            ->setVerifySslHost(true)
-            ->setVerifySslPeer(true);
+            ->ignoreErrors(true)
+            ->timeout(5.0)
+            ->followLocation(false)
+            ->maxRedirects(2)
+            ->userAgent('foo')
+            ->verifySslHost(true)
+            ->verifySslPeer(true);
 
         $options = $this->getOptions();
 
@@ -70,8 +70,8 @@ class CurlClientTest extends TestCase
         $resource->setValue($this->SUT, false);
 
         $response = $this->SUT->read();
-        $this->assertSame(HttpStatus::PRECONDITION_FAILED, $response->getStatusCode());
-        $this->assertSame('The HTTP client is not opened therefore cannot read anything', (string)$response->getBody());
+        $this->assertSame(StatusCode::PRECONDITION_FAILED, $response->getStatusCode());
+        $this->assertSame('The HTTP client is not created therefore cannot read anything', (string)$response->getBody());
     }
 
     public function test_internal_server_exception()
@@ -84,14 +84,14 @@ class CurlClientTest extends TestCase
         $response = $this->SUT->read();
 
         $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(HttpStatus::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
         $this->assertSame('curl_setopt_array() expects parameter 1 to be resource, object given',
             (string)$response->getBody());
     }
 
     public function test_when_curl_returns_error()
     {
-        $SUT = new class('get', 'http://example.org') extends CurlClient
+        $SUT = new class('get', 'http://kodeart.com') extends CurlClient
         {
             protected function hasError(): bool
             {
@@ -99,11 +99,10 @@ class CurlClientTest extends TestCase
             }
         };
 
-        $SUT->open();
         $response = $SUT->read();
 
         $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(HttpStatus::UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        $this->assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode(), (string)$response->getBody());
     }
 
     protected function setUp()
@@ -112,6 +111,6 @@ class CurlClientTest extends TestCase
             $this->markTestSkipped('cURL extension is not installed on the testing environment');
         }
 
-        $this->SUT = (new ClientFactory(ClientFactory::CURL))->open('get', 'http://example.com');
+        $this->SUT = (new ClientFactory(ClientFactory::CURL))->get('http://example.com');
     }
 }

@@ -1,49 +1,51 @@
 {
-    "name": "koded/http",
-    "type": "library",
-    "license": "BSD-3-Clause",
-    "description": "Koded HTTP component.",
-    "keywords": [
-        "request",
-        "response",
-        "http",
-        "stream",
-        "php7"
-    ],
-    "authors": [
-        {
-            "name": "Mihail Binev",
-            "homepage": "http://kodeart.com"
-        }
-    ],
-    "require": {
-        "php": "~7.1",
-        "koded/stdlib": "~2",
-        "psr/http-message": "~1"
-    },
-    "autoload": {
-        "psr-4": {
-            "Koded\\Http\\": ""
-        },
-        "files": [
-            "functions.php"
-        ],
-        "exclude-from-classmap": [
-            "/Tests/"
-        ]
-    },
-    "require-dev": {
-        "phpunit/phpunit": "~6",
-        "satooshi/php-coveralls": "~1"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Koded\\Http\\": "Tests/"
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "0.9.x-dev"
-        }
+  "name": "koded/http",
+  "type": "library",
+  "license": "BSD-3-Clause",
+  "description": "Koded HTTP component.",
+  "keywords": [
+    "request",
+    "response",
+    "http",
+    "http-client",
+    "stream",
+    "php7"
+  ],
+  "authors": [
+    {
+      "name": "Mihail Binev",
+      "homepage": "http://kodeart.com"
     }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "php": "^7.1.4",
+    "koded/cache-simple": "~1",
+    "psr/http-message": "~1",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Koded\\Http\\": ""
+    },
+    "files": [
+      "functions.php"
+    ],
+    "exclude-from-classmap": [
+      "/Tests/"
+    ]
+  },
+  "suggest": {
+    "ext-curl": "*",
+    "ext-iconv": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~7",
+    "satooshi/php-coveralls": "~1"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Koded\\Http\\": "Tests/"
+    }
+  }
 }

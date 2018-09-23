@@ -13,8 +13,8 @@
 namespace Koded\Http\Client;
 
 use InvalidArgumentException;
-use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\Interfaces\Request;
+use Koded\Http\Interfaces\{HttpRequestClient, Request};
+
 
 class ClientFactory
 {
@@ -29,47 +29,47 @@ class ClientFactory
         $this->clientType = $clientType;
     }
 
-    public function open(string $method, $uri, $body = null, iterable $headers = []): HttpRequestClient
-    {
-        switch ($this->clientType) {
-            case self::CURL:
-                return (new CurlClient($method, $uri, $body, $headers))->open();
-
-            case self::PHP:
-                return (new PhpClient($method, $uri, $body, $headers))->open();
-
-            default:
-                throw new InvalidArgumentException("{$this->clientType} is not a valid HTTP client");
-        }
-    }
-
     public function get($uri, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::GET, $uri, null, $headers)->open();
+        return $this->create(Request::GET, $uri, null, $headers);
     }
 
     public function post($uri, $body, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::POST, $uri, $body, $headers)->open();
+        return $this->create(Request::POST, $uri, $body, $headers);
     }
 
     public function put($uri, $body, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::PUT, $uri, $body, $headers)->open();
+        return $this->create(Request::PUT, $uri, $body, $headers);
     }
 
     public function patch($uri, $body, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::PATCH, $uri, $body, $headers)->open();
+        return $this->create(Request::PATCH, $uri, $body, $headers);
     }
 
     public function delete($uri, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::DELETE, $uri, null, $headers)->open();
+        return $this->create(Request::DELETE, $uri, null, $headers);
     }
 
     public function head($uri, $headers = []): HttpRequestClient
     {
-        return $this->open(Request::HEAD, $uri, null, $headers)->open();
+        return $this->create(Request::HEAD, $uri, null, $headers);
+    }
+
+    protected function create(string $method, $uri, $body = null, iterable $headers = []): HttpRequestClient
+    {
+        switch ($this->clientType) {
+            case self::CURL:
+                return new CurlClient($method, $uri, $body, $headers);
+
+            case self::PHP:
+                return new PhpClient($method, $uri, $body, $headers);
+
+            default:
+                throw new InvalidArgumentException("{$this->clientType} is not a valid HTTP client");
+        }
     }
 }

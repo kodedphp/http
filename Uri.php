@@ -18,44 +18,28 @@ use Throwable;
 
 class Uri implements UriInterface
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     private $scheme = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $host = '';
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $port = 80;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $path = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $user = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $pass = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $fragment = '';
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $query = '';
 
     public function __construct(string $uri)
@@ -193,7 +177,7 @@ class Uri implements UriInterface
         return sprintf('%s%s%s%s%s%s',
             $this->scheme ? $this->getScheme() . '://' : '',
             $this->user ? $this->getAuthority() : $this->getHost(),
-            $this->getPort(),
+            ($this->isStandardPort() ? '' : ':' . $this->port),
             $this->fixPath(),
             $this->query ? '?' . $this->query : null,
             $this->fragment ? '#' . ltrim($this->fragment, '#') : null
@@ -203,7 +187,7 @@ class Uri implements UriInterface
     private function parse(string $uri)
     {
         if (false === $parts = parse_url($uri)) {
-            throw new InvalidArgumentException('Please provide a valid URI', HttpStatus::BAD_REQUEST);
+            throw new InvalidArgumentException('Please provide a valid URI', StatusCode::BAD_REQUEST);
         }
 
         foreach ($parts as $k => $v) {

@@ -15,7 +15,7 @@ class UriGettersTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Please provide a valid URI');
-        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
+        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
 
         new Uri('scheme://host:junk');
     }

@@ -19,6 +19,7 @@ use ReflectionException;
 use ReflectionFunction;
 use RuntimeException;
 
+
 class CallableStream implements StreamInterface
 {
 
@@ -28,9 +29,13 @@ class CallableStream implements StreamInterface
     /** @var int Current position of the pointer in the buffer */
     private $position = 0;
 
+    /** @var bool If callable is Generator instance */
+    private $isGenerator = false;
+
     public function __construct(callable $callable)
     {
-        $this->callable = $callable;
+        $this->callable    = $callable;
+        $this->isGenerator = (new ReflectionFunction($this->callable))->isGenerator();
     }
 
     public function __destruct()
@@ -97,8 +102,8 @@ class CallableStream implements StreamInterface
         }
 
         try {
-            foreach ($this->generator($length) as $chunk) {
-                $contents .= $chunk;
+            foreach ($this->reader($length) as $chunk) {
+                $contents       .= $chunk;
                 $this->position += mb_strlen($chunk);
             }
         } catch (Exception $e) {
@@ -141,13 +146,13 @@ class CallableStream implements StreamInterface
      * @return Generator
      * @throws ReflectionException
      */
-    private function generator(int $length)
+    private function reader(int $length): Generator
     {
-        if ((new ReflectionFunction($this->callable))->isGenerator()) {
+        if ($this->isGenerator) {
             yield from ($this->callable)();
         } else {
             $resource = fopen('php://temp', 'r+');
-            if (false === @fwrite($resource, call_user_func($this->callable))) {
+            if (false === @fwrite($resource, ($this->callable)())) {
                 throw new RuntimeException('Cannot write to stream');
             }
             fseek($resource, 0);

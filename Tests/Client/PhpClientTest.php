@@ -3,10 +3,10 @@
 namespace Koded\Http\Client;
 
 use Exception;
-use Koded\Http\HttpStatus;
+use Koded\Http\StatusCode;
 use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\ServerResponse;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class PhpClientTest extends TestCase
 {
@@ -17,7 +17,8 @@ class PhpClientTest extends TestCase
     {
         $options = $this->getOptions();
 
-        $this->assertArrayNotHasKey('header', $options, 'The header is not built yet');
+        $this->assertNotEmpty($options['header']);
+        $this->assertContains('example.com', $options['header']);
         $this->assertArrayHasKey('protocol_version', $options);
         $this->assertArrayHasKey('user_agent', $options);
         $this->assertArrayHasKey('method', $options);
@@ -42,13 +43,13 @@ class PhpClientTest extends TestCase
     public function test_methods()
     {
         $this->SUT
-            ->setIgnoreErrors(true)
-            ->setTimeout(5)
-            ->setFollowLocation(false)
-            ->setMaxRedirects(2)
-            ->setUserAgent('foo')
-            ->setVerifySslPeer(true)
-            ->setVerifySslHost(true);
+            ->ignoreErrors(true)
+            ->timeout(5)
+            ->followLocation(false)
+            ->maxRedirects(2)
+            ->userAgent('foo')
+            ->verifySslPeer(true)
+            ->verifySslHost(true);
 
         $options = $this->getOptions();
 
@@ -71,11 +72,9 @@ class PhpClientTest extends TestCase
             }
         };
 
-        $SUT->open();
         $response = $SUT->read();
 
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(HttpStatus::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
     }
 
     public function test_when_creating_stream_fails()
@@ -88,15 +87,24 @@ class PhpClientTest extends TestCase
             }
         };
 
-        $SUT->open();
         $response = $SUT->read();
 
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(HttpStatus::UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        $this->assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode(), (string)$response->getBody());
+    }
+
+    public function test_body_prepare()
+    {
+        $SUT = new PhpClient('post', 'http://example.org', ['foo' => 'bar']);
+
+        $proto   = new ReflectionClass($SUT);
+        $options = $proto->getProperty('options');
+        $options->setAccessible(true);
+
+        $this->assertSame('foo=bar', $options->getValue($SUT)['content']);
     }
 
     protected function setUp()
     {
-        $this->SUT = (new ClientFactory(ClientFactory::PHP))->open('get', 'http://example.com');
+        $this->SUT = (new ClientFactory(ClientFactory::PHP))->get('http://example.com');
     }
 }
