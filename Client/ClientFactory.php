@@ -29,37 +29,37 @@ class ClientFactory
         $this->clientType = $clientType;
     }
 
-    public function get($uri, $headers = []): HttpRequestClient
+    public function get($uri, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::GET, $uri, null, $headers);
     }
 
-    public function post($uri, $body, $headers = []): HttpRequestClient
+    public function post($uri, $body, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::POST, $uri, $body, $headers);
     }
 
-    public function put($uri, $body, $headers = []): HttpRequestClient
+    public function put($uri, $body, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::PUT, $uri, $body, $headers);
     }
 
-    public function patch($uri, $body, $headers = []): HttpRequestClient
+    public function patch($uri, $body, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::PATCH, $uri, $body, $headers);
     }
 
-    public function delete($uri, $headers = []): HttpRequestClient
+    public function delete($uri, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::DELETE, $uri, null, $headers);
     }
 
-    public function head($uri, $headers = []): HttpRequestClient
+    public function head($uri, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::HEAD, $uri, null, $headers);
     }
 
-    protected function create(string $method, $uri, $body = null, iterable $headers = []): HttpRequestClient
+    protected function create(string $method, $uri, $body = null, array $headers = []): HttpRequestClient
     {
         switch ($this->clientType) {
             case self::CURL:
