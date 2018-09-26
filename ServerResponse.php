@@ -82,7 +82,7 @@ class ServerResponse implements Response, JsonSerializable
             return $this->stream->getContents();
         }
 
-        $this->prepareHeaders();
+        $this->prepareResponse();
 
         // Headers
         foreach ($this->getHeaders() as $name => $values) {
@@ -111,18 +111,22 @@ class ServerResponse implements Response, JsonSerializable
         return $instance;
     }
 
-    protected function prepareHeaders(): void
+    protected function prepareResponse(): void
     {
-        $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
-
-        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
-            $this->stream = create_stream(null);
-        }
-
         if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
             $this->stream = create_stream(null);
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
             unset($this->headersMap['content-type'], $this->headers['Content-Type']);
+
+            return;
+        }
+
+        if ($size = $this->stream->getSize()) {
+            $this->normalizeHeader('Content-Length', $size, true);
+        }
+
+        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
+            $this->stream = create_stream(null);
         }
 
         if ($this->hasHeader('Transfer-Encoding')) {
