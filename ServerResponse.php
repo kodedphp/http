@@ -82,21 +82,7 @@ class ServerResponse implements Response, JsonSerializable
             return $this->stream->getContents();
         }
 
-        $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
-
-        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
-            $this->stream = create_stream(null);
-        }
-
-        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
-            $this->stream = create_stream(null);
-            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
-            unset($this->headersMap['content-type'], $this->headers['Content-Type']);
-        }
-
-        if ($this->hasHeader('Transfer-Encoding')) {
-            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
-        }
+        $this->prepareHeaders();
 
         // Headers
         foreach ($this->getHeaders() as $name => $values) {
@@ -123,5 +109,24 @@ class ServerResponse implements Response, JsonSerializable
         $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : StatusCode::CODE[$statusCode];
 
         return $instance;
+    }
+
+    protected function prepareHeaders(): void
+    {
+        $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
+
+        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
+            $this->stream = create_stream(null);
+        }
+
+        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
+            $this->stream = create_stream(null);
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+            unset($this->headersMap['content-type'], $this->headers['Content-Type']);
+        }
+
+        if ($this->hasHeader('Transfer-Encoding')) {
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+        }
     }
 }
