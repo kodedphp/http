@@ -80,11 +80,16 @@ class ServerResponseTest extends TestCase
 
     public function test_send_with_bodiless_status_code()
     {
-        $response = new ServerResponse('hello world', 204);
-        $output   = $response->send();
+        $response = new ServerResponse('hello world', 204, [
+            'content-type' => 'text/html'
+        ]);
+
+        $this->assertTrue($response->hasHeader('content-type'));
+        $output = $response->send();
 
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
+        $this->assertFalse($response->hasHeader('Content-Type'));
         $this->assertSame(0, $response->getBody()->getSize());
         $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
     }
