@@ -15,7 +15,6 @@ namespace Koded\Http;
 use Exception;
 use Generator;
 use Psr\Http\Message\StreamInterface;
-use ReflectionException;
 use ReflectionFunction;
 use RuntimeException;
 
@@ -156,7 +155,7 @@ class CallableStream implements StreamInterface
             }
             fseek($resource, 0);
 
-            while (!feof($resource)) {
+            while (false === feof($resource)) {
                 yield fread($resource, $length);
             }
 
