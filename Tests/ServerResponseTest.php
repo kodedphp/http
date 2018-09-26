@@ -86,7 +86,7 @@ class ServerResponseTest extends TestCase
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
         $this->assertSame(0, $response->getBody()->getSize());
-        $this->assertSame(204, $response->getStatusCode());
+        $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
     }
 
     public function test_send_with_head_http_method()
@@ -98,7 +98,20 @@ class ServerResponseTest extends TestCase
 
         $this->assertSame('', $output, 'The body for HEAD request is empty');
         $this->assertSame(['11'], $response->getHeader('Content-Length'),
-            'Content length for HEAD request is calculated');
+            'Content length for HEAD request is provided');
+    }
+
+    public function test_send_with_transfer_encoding()
+    {
+        $response = new ServerResponse('hello world', 200, [
+            'transfer-encoding' => 'chunked'
+        ]);
+
+        $response->send();
+
+        $this->assertArrayNotHasKey('Content-Length', $response->getHeaders());
+        $this->assertAttributeNotContains('content-length', 'headers', $response);
+        $this->assertFalse($response->hasHeader('content-length'));
     }
 }
 

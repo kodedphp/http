@@ -22,7 +22,7 @@ use Koded\Http\Interfaces\{Request, Response};
  */
 class ServerResponse implements Response, JsonSerializable
 {
-    use HeaderTrait, MessageTrait, JsonSerializeTrait;
+    use HeaderTrait, MessageTrait, CookieTrait, JsonSerializeTrait;
 
     private const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
     private const E_INVALID_STATUS_CODE  = 'Invalid status code %s, expected range between [100-599]';
@@ -89,17 +89,24 @@ class ServerResponse implements Response, JsonSerializable
         }
 
         if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
-            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
             $this->stream = create_stream(null);
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+            unset($this->headersMap['content-type'], $this->headers['Content-Type']);
         }
 
-        header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
-            true, $this->statusCode
-        );
+        if ($this->hasHeader('Transfer-Encoding')) {
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+        }
 
+        // Headers
         foreach ($this->getHeaders() as $name => $values) {
             header($name . ':' . join(', ', (array)$values), false, $this->statusCode);
         }
+
+        // Status header
+        header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
+            true, $this->statusCode
+        );
 
         return $this->stream->getContents();
     }
