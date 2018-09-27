@@ -137,7 +137,7 @@ trait HeaderTrait
 
     /**
      * @param string $name
-     * @param array  $value
+     * @param string $value
      * @param bool   $skipKey
      *
      * @return void
