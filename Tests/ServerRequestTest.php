@@ -29,7 +29,7 @@ class ServerRequestTest extends TestCase
 
         $this->assertSame([], $this->SUT->getAttributes());
         $this->assertSame([], $this->SUT->getQueryParams());
-        $this->assertSame([], $this->SUT->getCookieParams());
+        $this->assertSame(['test' => 'fubar'], $this->SUT->getCookieParams());
         $this->assertSame([], $this->SUT->getUploadedFiles());
         $this->assertNull($this->SUT->getParsedBody());
         $this->assertTrue(count($this->SUT->getHeaders()) > 0);
@@ -97,6 +97,15 @@ class ServerRequestTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported data provided, Expects NULL, array or iterable');
         $this->SUT->withParsedBody('junk');
+    }
+
+    public function test_put_method_should_parse_php_input()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_POST = ['foo' => 'bar'];
+
+        $request = new ServerRequest;
+        $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
     }
 
     public function test_extra_methods()

@@ -26,6 +26,8 @@
         <ini name="date.timezone" value="UTC"/>
 
         <server name="HTTP_HOST" value="example.com"/>
+
+        <cookie name="test" value="fubar"/>
     </php>
 
     <logging>
