@@ -86,7 +86,7 @@ class ServerResponse implements Response, JsonSerializable
 
         // Headers
         foreach ($this->getHeaders() as $name => $values) {
-            header($name . ':' . join(', ', (array)$values), false, $this->statusCode);
+            header($name . ':' . join(',', (array)$values), false, $this->statusCode);
         }
 
         // Status header
