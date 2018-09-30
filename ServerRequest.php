@@ -209,7 +209,7 @@ class ServerRequest extends ClientRequest implements Request
      */
     protected function useOnlyPost(): bool
     {
-        return $this->method === self::POST && in_array($this->getHeader('Content-Type')[0] ?? [], [
+        return $this->method === self::POST && in_array($this->getHeaderLine('Content-Type') ?: [], [
                 'application/x-www-form-urlencoded',
                 'multipart/form-data'
             ]);
