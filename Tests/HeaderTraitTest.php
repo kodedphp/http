@@ -35,7 +35,7 @@ class HeaderTraitTest extends TestCase
         $response = $this->SUT->withHeader('foo', 1);
         $response = $response->withAddedHeader('foo', 'two');
 
-        $this->assertSame('1, two', $response->getHeaderLine('foo'));
+        $this->assertSame('1,two', $response->getHeaderLine('foo'));
 
         $response = $this->SUT->withAddedHeader('bar', 'baz');
         $this->assertSame('baz', $response->getHeaderLine('bar'));
@@ -89,14 +89,85 @@ class HeaderTraitTest extends TestCase
         ]);
 
         $this->assertAttributeSame([
-            'Long-Header-Name-1' => 'foo',
-            'Header-2'           => 'bar',
+            'Long-Header-Name-1' => ['foo'],
+            'Header-2'           => ['bar'],
         ], 'headers', $SUT);
 
         $this->assertAttributeSame([
             'long-header-name-1' => 'Long-Header-Name-1',
             'header-2'           => 'Header-2',
         ], 'headersMap', $SUT);
+    }
+
+    public function test_flattened_header()
+    {
+        $this->SUT = $this->SUT->withHeaders([
+            'content-type'   => 'application/json',
+            'content-length' => 1,
+            'x-param'        => ['foo', 'bar'],
+        ]);
+
+        $this->assertSame([
+            'Content-Type:application/json',
+            'Content-Length:1',
+            'X-Param:foo,bar'
+        ],
+            $this->SUT->getFlattenedHeaders(),
+            'The spaces are removed, keys are capitalized');
+    }
+
+    public function test_empty_flattened_headers()
+    {
+        $this->assertSame([], $this->SUT->getFlattenedHeaders());
+    }
+
+    public function test_canonicalized_header()
+    {
+        $this->SUT = $this->SUT->withHeaders([
+            'Content-type'   => 'application/json',
+            'X-Param'        => ['foo', 'bar'],
+            'content-length' => 1,
+            'Accept' => '*/*'
+        ]);
+
+        $this->assertSame(
+            'accept:*/*' . "\n" .
+            'content-length:1' . "\n" .
+            'content-type:application/json' . "\n" .
+            'x-param:foo,bar',
+            $this->SUT->getCanonicalizedHeaders());
+    }
+
+    public function test_empty_canonicalized_headers()
+    {
+        $this->assertSame('', $this->SUT->getCanonicalizedHeaders());
+    }
+
+    public function test_canonicalized_headers_with_names()
+    {
+        $this->SUT = $this->SUT->withHeaders([
+            'Content-type'   => 'application/json',
+            'X-Param'        => ['foo', 'bar'],
+            'content-length' => 1,
+            'Accept' => '*/*'
+        ]);
+
+        $this->assertSame(
+            'content-length:1' . "\n" .
+            'x-param:foo,bar',
+            $this->SUT->getCanonicalizedHeaders(['content-length', 'x-param']));
+    }
+
+    public function test_canonicalized_headers_with_nonexistent_headers()
+    {
+        $this->assertSame("x-fubar:", $this->SUT->getCanonicalizedHeaders([
+            'X_Fubar'
+        ]), 'One matched header does not have a newline');
+
+        $this->assertSame("x-fubar:\nx-param-1:", $this->SUT->getCanonicalizedHeaders([
+            'X_Fubar',
+            'X-PARAM-1'
+        ]), 'The last element is without a newline');
     }
 
     protected function setUp()

@@ -135,7 +135,7 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
 }
 
 
-interface HttpRequestClient extends RequestInterface
+interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface
 {
 
     const USER_AGENT = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
@@ -238,11 +238,46 @@ interface ExtendedMessageInterface
     /**
      * Bulk set the headers.
      *
-     * @param array $headers name => value
+     * The headers are normalized:
+     * - the keys are capitalized and hypened
+     * - the value is type-casted to array
      *
-     * @return Request | Response
+     * @param array $headers name => [value]
+     *
+     * @return $this A new instance with updated headers
      */
     public function withHeaders(array $headers);
+
+    /**
+     * Replaces all headers with provided ones.
+     * This method is not part of the PSR-7.
+     *
+     * @param array $headers
+     *
+     * @return $this
+     */
+    public function replaceHeaders(array $headers);
+
+    /**
+     * Transforms the nested headers as a flatten array.
+     *
+     * @return array Returns the flat header values.
+     */
+    public function getFlattenedHeaders(): array;
+
+    /**
+     * Returns all headers as string
+     * - header name to lowercase
+     * - values with same header field are combined w/o space between values
+     * - name:value concatenated w/o space between the colon
+     * - sorted lexicographically by name
+     * - appended newline to each canonicalized header
+     *
+     * @param array $names [optional] Filter out only these headers
+     *
+     * @return string Canonicalized headers
+     */
+    public function getCanonicalizedHeaders(array $names = []): string;
 }
 
 
