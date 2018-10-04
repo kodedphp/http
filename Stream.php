@@ -45,7 +45,10 @@ class Stream implements StreamInterface
     public function __construct($stream)
     {
         if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
-            throw new RuntimeException('The provided resource is not a valid stream resource');
+            throw new RuntimeException(
+                'The provided resource is not a valid stream resource, ' . gettype($stream) . ' given.',
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
 
         $metadata       = stream_get_meta_data($stream);
