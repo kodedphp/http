@@ -41,10 +41,10 @@ class ServerRequest extends ClientRequest implements Request
      */
     public function __construct(array $attributes = [])
     {
-        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
         $this->attributes = new Arguments($attributes);
         $this->extractHttpHeaders();
         $this->extractServerData();
+        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
     }
 
     public function getServerParams(): array
@@ -146,8 +146,12 @@ class ServerRequest extends ClientRequest implements Request
 
     protected function buildUri(): Uri
     {
+        if (strpos($_SERVER['REQUEST_URI'] ?? '', '://')) {
+            return new Uri($_SERVER['REQUEST_URI']);
+        }
+
         if ($host = $_SERVER['SERVER_NAME'] ?? $_SERVER['SERVER_ADDR'] ?? '') {
-            return new Uri('http' . ($_SERVER['HTTPS'] ?? false ? 's' : '')
+            return new Uri('http' . ($_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? false ? 's' : '')
                 . '://' . $host
                 . ':' . ($_SERVER['SERVER_PORT'] ?? 80)
                 . ($_SERVER['REQUEST_URI'] ?? '')
@@ -163,6 +167,9 @@ class ServerRequest extends ClientRequest implements Request
             // Calisthenics :)
             0 === strpos($k, 'HTTP_', 0) && $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
+
+        unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
+        unset($this->headersMap['x-forwarded-for'], $this->headersMap['x-forwarded-proto']);
 
         if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
             // ETag workaround for various broken Apache2 versions
