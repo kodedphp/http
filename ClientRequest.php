@@ -27,14 +27,12 @@ class ClientRequest implements RequestInterface, JsonSerializable
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
     const E_METHOD_NOT_ALLOWED     = 'HTTP method "%s" is not supported';
 
-    /** @var string The HTTP method */
-    protected $method = Request::GET;
+    protected $method        = Request::GET;
+    protected $isMethodSafe  = true;
+    protected $requestTarget = '';
 
     /** @var UriInterface */
     protected $uri;
-
-    /** @var string */
-    protected $requestTarget = '';
 
     /**
      * ClientRequest constructor.
@@ -53,8 +51,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
 
-        $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
-        $this->stream = create_stream($this->prepareBody($body));
+        $this->isMethodSafe = $this->isMethodSafe();
+        $this->uri          = $uri instanceof UriInterface ? $uri : new Uri($uri);
+        $this->stream       = create_stream($this->prepareBody($body));
     }
 
     public function getMethod(): string
@@ -158,7 +157,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param string           $method The HTTP method
      * @param RequestInterface $instance
      *
-     * @return RequestInterface
+     * @return self
      */
     protected function setMethod($method, RequestInterface $instance): RequestInterface
     {
@@ -201,12 +200,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
             return $body;
         }
 
-        $options = JSON_UNESCAPED_SLASHES
-            | JSON_PRESERVE_ZERO_FRACTION
-            | JSON_NUMERIC_CHECK
-            | JSON_UNESCAPED_UNICODE
-            | JSON_FORCE_OBJECT;
-
-        return json_encode($body, $options);
+        return json_encode($body, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
     }
 }
