@@ -39,9 +39,9 @@ class ServerResponse implements Response, JsonSerializable
      */
     public function __construct($content = '', int $statusCode = StatusCode::OK, array $headers = [])
     {
-        $this->stream = create_stream($content);
         $this->setStatus($this, $statusCode);
         $this->setHeaders($headers);
+        $this->stream = create_stream($content);
     }
 
     public function getStatusCode(): int
@@ -94,7 +94,7 @@ class ServerResponse implements Response, JsonSerializable
             true, $this->statusCode
         );
 
-        return $this->stream->getContents();
+        return stream_get_contents($this->stream->detach());
     }
 
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse

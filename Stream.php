@@ -120,17 +120,17 @@ class Stream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if (false === $this->seekable) {
-            throw new RuntimeException('The stream is not seekable');
-        }
-
-        if (0 !== fseek($this->stream, $offset, $whence)) {
+        if (0 !== @fseek($this->stream, $offset, $whence)) {
             throw new RuntimeException('Failed to seek to file pointer');
         }
     }
 
     public function rewind(): void
     {
+        if (false === $this->seekable) {
+            throw new RuntimeException('The stream is not seekable');
+        }
+
         $this->seek(0);
     }
 

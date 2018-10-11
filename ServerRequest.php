@@ -41,10 +41,10 @@ class ServerRequest extends ClientRequest implements Request
      */
     public function __construct(array $attributes = [])
     {
+        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
         $this->attributes = new Arguments($attributes);
         $this->extractHttpHeaders();
         $this->extractServerData();
-        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
     }
 
     public function getServerParams(): array
@@ -141,7 +141,7 @@ class ServerRequest extends ClientRequest implements Request
 
     public function isXHR(): bool
     {
-        return strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' || false;
+        return strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' or false;
     }
 
     protected function buildUri(): Uri
@@ -165,7 +165,7 @@ class ServerRequest extends ClientRequest implements Request
     {
         foreach ($_SERVER as $k => $v) {
             // Calisthenics :)
-            0 === strpos($k, 'HTTP_', 0) && $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
+            0 === strpos($k, 'HTTP_', 0) and $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
 
         unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
@@ -177,7 +177,7 @@ class ServerRequest extends ClientRequest implements Request
             $this->headersMap['etag'] = 'ETag';
         }
 
-        if (false === $this->isMethodSafe()) {
+        if (false === $this->isSafeMethod) {
             $this->headers['Content-Type']    = $_SERVER['CONTENT_TYPE'] ?? '';
             $this->headersMap['content-type'] = 'Content-Type';
         }
@@ -191,16 +191,8 @@ class ServerRequest extends ClientRequest implements Request
         $this->serverSoftware  = $_SERVER['SERVER_SOFTWARE'] ?? '';
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
-        $this->parsedBody      = $this->getParsedBody();
-
-        if ($_FILES) {
-            $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
-        }
-
-        // Extract PUT request data into parsed body
-        if (Request::PUT === $this->method) {
-            parse_str(file_get_contents('php://input'), $this->parsedBody);
-        }
+        $this->isSafeMethod or $this->parseInput();
+        $_FILES and $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
     }
 
     /**
@@ -216,9 +208,41 @@ class ServerRequest extends ClientRequest implements Request
      */
     protected function useOnlyPost(): bool
     {
-        return $this->method === self::POST && in_array($this->getHeaderLine('Content-Type') ?: [], [
-                'application/x-www-form-urlencoded',
-                'multipart/form-data'
-            ]);
+        if ($this->isSafeMethod) {
+            return false;
+        }
+
+        if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
+            return false;
+        }
+
+        return $this->method === self::POST
+            && (strpos('application/x-www-form-urlencoded', $contentType)
+                || strpos('multipart/form-data', $contentType));
+    }
+
+    /**
+     * Try to unserialize a JSON string or form encoded request body.
+     * Very useful if JavaScript app stringify objects in AJAX requests.
+     */
+    protected function parseInput(): void
+    {
+        if (empty($input = $this->getRawInput())) {
+            return;
+        }
+
+        // Try JSON deserialization
+        if ('{' === $input[0] || '[' === $input[0]) {
+            $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
+        }
+
+        if (json_last_error()) {
+            parse_str($input, $this->parsedBody);
+        }
+    }
+
+    protected function getRawInput(): string
+    {
+        return file_get_contents('php://input') ?: '';
     }
 }

@@ -28,7 +28,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     const E_METHOD_NOT_ALLOWED     = 'HTTP method "%s" is not supported';
 
     protected $method        = Request::GET;
-    protected $isMethodSafe  = true;
+    protected $isSafeMethod  = true;
     protected $requestTarget = '';
 
     /** @var UriInterface */
@@ -51,7 +51,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
 
-        $this->isMethodSafe = $this->isMethodSafe();
+        $this->isSafeMethod = $this->isSafeMethod();
         $this->uri          = $uri instanceof UriInterface ? $uri : new Uri($uri);
         $this->stream       = create_stream($this->prepareBody($body));
     }
@@ -141,7 +141,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return 'https' === $this->uri->getScheme();
     }
 
-    public function isMethodSafe(): bool
+    public function isSafeMethod(): bool
     {
         return in_array($this->method, Request::SAFE_METHODS);
     }
@@ -182,7 +182,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     protected function assertSafeMethods(): ?ServerResponse
     {
-        if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
+        if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
             return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, StatusCode::BAD_REQUEST);
         }
 

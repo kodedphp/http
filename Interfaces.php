@@ -105,7 +105,7 @@ interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMe
      *
      * @return bool
      */
-    public function isMethodSafe(): bool;
+    public function isSafeMethod(): bool;
 
     /**
      * Checks if the request is AJAX.
@@ -150,10 +150,10 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface
      *  - 422 when client dropped an error on the resource fetching
      *  - 500 on whatever code error
      *
-     * @return ResponseInterface Response object with populated resource.
-     *                           It can return an HTTP response with error status.
+     * @return Response The response object with populated resource.
+     * It can return an HTTP response with error status.
      */
-    public function read(): ResponseInterface;
+    public function read(): Response;
 
     /**
      * @param string $value

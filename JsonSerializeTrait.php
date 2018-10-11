@@ -18,7 +18,7 @@ trait JsonSerializeTrait
     /**
      * Serialize the request object as JSON representation.
      *
-     * @return array Request object properties, not a JSON serialized request object
+     * @return array Request object properties (not a JSON serialized request object)
      */
     public function jsonSerialize(): array
     {

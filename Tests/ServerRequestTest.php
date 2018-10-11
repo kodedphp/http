@@ -86,10 +86,10 @@ class ServerRequestTest extends TestCase
     public function test_parsed_body_with_post_and_content_type(ServerRequest $request)
     {
         $_POST   = ['accept', 'this'];
-        $request = $request->withHeader('Content-type', 'application/x-www-form-urlencoded');
+        $request = $request->withHeader('Content-type', 'application/x-www-form-urlencoded; charset=utf-8');
 
         $request = $request->withParsedBody(['ignored', 'values']);
-        $this->assertSame($_POST, $request->getParsedBody(), 'Supplied data is ignored');
+        $this->assertSame($_POST, $request->getParsedBody(), 'Supplied data is ignored per spec (Content-Type)');
     }
 
     public function test_parsed_body_throws_exception_on_unsupported_values()
@@ -99,19 +99,36 @@ class ServerRequestTest extends TestCase
         $this->SUT->withParsedBody('junk');
     }
 
-    public function test_put_method_should_parse_php_input()
+    public function test_put_method_should_parse_the_php_input()
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_POST = ['foo' => 'bar'];
+        $_POST                     = ['foo' => 'bar'];
 
         $request = new ServerRequest;
+        $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
+    }
+
+    public function test_put_method_should_parse_json_input()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+
+        $request = $this->getMockBuilder(ServerRequest::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getRawInput'])
+            ->getMock();
+
+        $request
+            ->expects($this->any())
+            ->method('getRawInput')
+            ->willReturn('{"foo":"bar"}');
+
         $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
     }
 
     public function test_extra_methods()
     {
         $this->assertFalse($this->SUT->isXHR());
-        $this->assertFalse($this->SUT->isMethodSafe());
+        $this->assertFalse($this->SUT->isSafeMethod());
         $this->assertFalse($this->SUT->isSecure());
     }
 

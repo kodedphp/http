@@ -90,7 +90,7 @@ class ServerResponseTest extends TestCase
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
         $this->assertFalse($response->hasHeader('Content-Type'));
-        $this->assertSame(0, $response->getBody()->getSize());
+        $this->assertSame(null, $response->getBody()->getSize());
         $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
     }
 

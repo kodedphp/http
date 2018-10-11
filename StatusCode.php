@@ -247,14 +247,19 @@ class StatusCode
 
     /**
      * @param string $code
-     * @param mixed  $withCode [optional]
+     * @param bool  $withCode [optional]
      *
-     * @return string The status text
+     * @return string|null The status text
      */
-    public static function __callStatic(string $code, $withCode = false)
+    public static function __callStatic(string $code, $withCode): ?string
     {
-        $status = constant("self::$code");
+        try {
+            $withCode += [false];
+            $status   = constant("self::$code");
 
-        return ($withCode ? $status . ' ' : '') . self::CODE[$status];
+            return ($withCode[0] ? $status . ' ' : '') . self::CODE[$status];
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
