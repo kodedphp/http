@@ -56,7 +56,7 @@ class ClientFactory
 
     public function head($uri, array $headers = []): HttpRequestClient
     {
-        return $this->create(Request::HEAD, $uri, null, $headers);
+        return $this->create(Request::HEAD, $uri, null, $headers)->maxRedirects(0);
     }
 
     protected function create(string $method, $uri, $body = null, array $headers = []): HttpRequestClient
