@@ -36,6 +36,10 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
         return $resource;
     }
 
+    if (is_callable($resource)) {
+        return new CallableStream($resource);
+    }
+
     $type = gettype($resource);
 
     if ('resource' === $type) {
@@ -44,10 +48,6 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
 
     if ('object' === $type && method_exists($resource, '__toString')) {
         return create_stream((string)$resource);
-    }
-
-    if (is_callable($resource)) {
-        return new CallableStream($resource);
     }
 
     throw new InvalidArgumentException('Failed to create a stream. '
