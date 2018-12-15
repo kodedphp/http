@@ -2,7 +2,6 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class AcceptCharsetHeaderTest extends TestCase
@@ -10,7 +9,7 @@ class AcceptCharsetHeaderTest extends TestCase
 
     public function test_without_q()
     {
-        $charset = (new AcceptHeaderNegotiate('*'))->match('utf-8, iso-8859-1;q=0.5, *;q=0.1');
+        $charset = (new AcceptHeaderNegotiator('*'))->match('utf-8, iso-8859-1;q=0.5, *;q=0.1');
 
         $this->assertSame('utf-8', $charset->value(), 'Expects utf-8');
         $this->assertSame(1.0, $charset->quality(), 'Expects q=1.0');
@@ -18,18 +17,16 @@ class AcceptCharsetHeaderTest extends TestCase
 
     public function test_quality()
     {
-        $charset = (new AcceptHeaderNegotiate('*'))->match('iso-8859-5;q=0.2, unicode-1-1;q=0.8');
+        $charset = (new AcceptHeaderNegotiator('*'))->match('iso-8859-5;q=0.2, unicode-1-1;q=0.8');
 
         $this->assertSame('unicode-1-1', $charset->value(), 'Expects unicode-1-1');
         $this->assertSame(0.8, $charset->quality(), 'Expects q=0.8');
     }
 
-    public function test_invalid_accept_header()
+    public function test_empty_accept_header()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('"" is not a valid Access header');
-        (new AcceptHeaderNegotiate(''))->match('*');
+        $match = (new AcceptHeaderNegotiator(''))->match('*');
+        $this->assertEquals('', $match->value(), 'Returns empty value with undefined support headers');
     }
 
     /**
@@ -37,7 +34,7 @@ class AcceptCharsetHeaderTest extends TestCase
      */
     public function test_with_preferred_charset($accept, $expect, $quality)
     {
-        $charset = (new AcceptHeaderNegotiate('utf-8, iso-8859-1;q=0.5, *;q=0.1'))->match($accept);
+        $charset = (new AcceptHeaderNegotiator('utf-8, iso-8859-1;q=0.5, *;q=0.1'))->match($accept);
 
         $this->assertSame($expect, $charset->value(), 'Expects ' . $expect);
         $this->assertSame($quality, $charset->quality(), 'Expects q=' . $quality);

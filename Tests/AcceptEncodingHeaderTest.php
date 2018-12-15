@@ -2,24 +2,16 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class AcceptEncodingHeaderTest extends TestCase
 {
-
-    public function test_empty_header()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        (new AcceptHeaderNegotiate('*'))->match('');
-    }
-
     /**
      * @dataProvider dataWithAsterisk
      */
     public function test_with_asterisk($accept, $expect, $quality)
     {
-        $encoding = (new AcceptHeaderNegotiate('*'))->match($accept);
+        $encoding = (new AcceptHeaderNegotiator('*'))->match($accept);
 
         $this->assertSame($expect, $encoding->value(), 'Expects ' . $expect);
         $this->assertSame($quality, $encoding->quality(), 'Expects q=' . $quality);
@@ -30,18 +22,16 @@ class AcceptEncodingHeaderTest extends TestCase
      */
     public function test_with_preferred_encoding($accept, $expect, $quality)
     {
-        $negotiator = (new AcceptHeaderNegotiate('gzip, compress, deflate'))->match($accept);
+        $negotiator = (new AcceptHeaderNegotiator('gzip, compress, deflate'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);
         $this->assertSame($quality, $negotiator->quality(), 'Expects q=' . $quality);
     }
 
-    public function test_invalid_accept_header()
+    public function test_empty_accept_header()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('"" is not a valid Access header');
-        (new AcceptHeaderNegotiate('*'))->match('');
+        $match = (new AcceptHeaderNegotiator('*'))->match('');
+        $this->assertEquals('', $match->value(), 'Empty accept header returns empty match value');
     }
 
     public function dataWithAsterisk()

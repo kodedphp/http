@@ -13,7 +13,7 @@ class AcceptLanguageHeaderTest extends TestCase
      */
     public function test_match_with_asterisk($accept, $expect, $quality)
     {
-        $negotiator = (new AcceptHeaderNegotiate('*'))->match($accept);
+        $negotiator = (new AcceptHeaderNegotiator('*'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);
         $this->assertSame($quality, $negotiator->quality(), 'Expects q=' . $quality);
@@ -24,18 +24,16 @@ class AcceptLanguageHeaderTest extends TestCase
      */
     public function test_with_preferred_languages($accept, $expect, $quality)
     {
-        $negotiator = (new AcceptHeaderNegotiate('de,fr,en'))->match($accept);
+        $negotiator = (new AcceptHeaderNegotiator('de,fr,en'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);
         $this->assertSame($quality, $negotiator->quality(), 'Expects q=' . $quality);
     }
 
-    public function test_invalid_accept_header()
+    public function test_empty_accept_and_support_headers()
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('"" is not a valid Access header');
-        (new AcceptHeaderNegotiate(''))->match('');
+        $match = (new AcceptHeaderNegotiator(''))->match('');
+        $this->assertEquals('', $match->value(), 'Empty headers returns empty matched value');
     }
 
     public function dataForAsteriskSupport()

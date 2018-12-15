@@ -27,177 +27,10 @@ namespace Koded\Http;
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
  */
 
+use Generator;
 use InvalidArgumentException;
 
-
-abstract class AcceptHeader
-{
-//    protected const VALID_MIME_TYPE_REGEX = '~^(\*|[a-zA-Z0-9._\-]+)(/|-|_)?(\*|[a-zA-Z0-9._\-+]+)?$~';
-//    protected const VALID_MIME_TYPE_REGEX = '~^(\*|[a-z0-9\-._]+)([/_-](\*|[a-z0-9.\-_+]+))?$~i';
-    protected const VALID_MIME_TYPE_REGEX = '~^(\*|[a-z0-9._]+)([/|_|-])?(\*|[a-z0-9.\-_+]+)?$~i';
-
-    private $header;
-    private $separator;
-    private $type;
-    private $subtype;
-    private $quality = 1.0;
-    private $weight = 0.0;
-    private $obscure = '';
-    private $catchAll = false;
-    private $params = [];
-
-    public function __construct(string $header)
-    {
-        $this->header = $header;
-
-        $header = preg_replace('/[[:space:]]/', '', $header);
-        $bits   = explode(';', $header);
-        $type   = array_shift($bits);
-
-        if (!preg_match(self::VALID_MIME_TYPE_REGEX, $type, $matches)) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
-        }
-
-        $this->separator = $matches[2] ?? '/';
-        [$type, $this->subtype] = explode($this->separator, $type, 2) + [1 => '*'];
-
-        if ($type === '*' && $this->subtype !== '*') {
-            // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
-        }
-
-        // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
-        $this->type = strtolower($type);
-
-        /* Uses a simple heuristic to check if subtype is part of a
-         * custom media type like "vnd.api-v1+json".
-         * */
-        $this->obscure = explode('+', $this->subtype)[1] ?? '';
-        $this->catchAll = $this->type === '*' && $this->subtype === '*';
-
-        parse_str(join('&', $bits), $this->params);
-        /* NOTE: It is a waste of time to negotiate on the basis
-         * of obscure parameters while using a meaningless media
-         * type like "vnd.whatever". The IT world is a big mess.
-         */
-        $this->quality = (float)($this->params['q'] ?? 1.0);
-        unset($this->params['q']);
-    }
-
-    public function __toString(): string
-    {
-        return $this->value();
-    }
-
-    public function quality(): float
-    {
-        return $this->quality;
-    }
-
-    public function value(): string
-    {
-        // The header is explicitly rejected
-        if (0.0 === $this->quality()) {
-            return '';
-        }
-
-        // If language, encoding or charset
-        if ('*' === $this->subtype) {
-            return $this->type;
-        }
-
-        return $this->type . $this->separator . $this->subtype;
-    }
-
-    public function weight(): float
-    {
-        return $this->weight;
-    }
-
-    /**
-     * @internal
-     *
-     * This method finds the best match from the accept header,
-     * including all the stupidity that may be passed by the
-     * ignorant developers who do not follow standards.
-     *
-     * @param AcceptHeader $accept The accept header part
-     * @param array        $matches Matched types
-     *
-     * @return bool TRUE if the accept header part match
-     * against the supported (this) header part
-     */
-    public function matches(AcceptHeader $accept, array &$matches = null): bool
-    {
-        $matches = (array)$matches;
-        $accept = clone $accept;
-
-        $typeMatch = $this->type === $accept->type;
-
-        if (1.0 === $accept->quality) {
-            $accept->quality = (float)$this->quality;
-        }
-
-        if ($accept->catchAll || ($typeMatch && $this->obscure) || $accept->obscure) {
-            $accept->type = $this->type;
-            $accept->subtype = $this->subtype;
-            $matches[] = $accept;
-            return true;
-        }
-
-        if (0.0 === $this->quality) {
-            // Explicitly denied
-            $matches[] = clone $this;
-            return true;
-        }
-
-        if (0.0 === $accept->quality) {
-            // Explicitly denied
-            $matches[] = $accept;
-            return true;
-        }
-
-        // Type do not match; bail out
-        if (!$typeMatch && $this->type !== '*') {
-            return false;
-        }
-
-        if ($accept->subtype !== $this->subtype && $this->subtype !== '*') {
-            return false;
-        }
-
-        $matches[] = $this->rank(clone $accept);
-
-        return true;
-    }
-
-    private function rank(AcceptHeader $accept): AcceptHeader
-    {
-        // +100 if types are exact match
-        if ($this->type === $accept->type && $accept->type !== '*') {
-            $accept->weight += 100;
-        }
-
-        $accept->weight += $this->catchAll ? 0.0 : $accept->quality;
-
-        // +1 for each parameter that matches, except "q"
-        foreach ($this->params as $k => $v) {
-            if (isset($accept->params[$k]) && $accept->params[$k] === $v) {
-                $accept->weight += 1;
-            } else {
-                $accept->weight -= 1;
-            }
-        }
-
-        // Add "q"
-        $accept->weight += $accept->quality;
-
-        return $accept;
-    }
-}
-
-
-class AcceptHeaderNegotiate
+class AcceptHeaderNegotiator
 {
     /** @var AcceptHeader[] */
     private $supports;
@@ -206,6 +39,7 @@ class AcceptHeaderNegotiate
     {
         $this->supports = $supportHeader;
     }
+
 
     public function match(string $accepts): AcceptHeader
     {
@@ -236,12 +70,184 @@ class AcceptHeaderNegotiate
     /**
      * @param string $header
      *
-     * @return \Generator
+     * @return Generator
      */
-    private function parse(string $header): \Generator
+    private function parse(string $header): Generator
     {
         foreach (explode(',', $header) as $header) {
             yield new class($header) extends AcceptHeader {};
         }
+    }
+}
+
+
+abstract class AcceptHeader
+{
+    private $header;
+    private $separator;
+    private $type;
+    private $subtype;
+    private $quality  = 1.0;
+    private $weight   = 0.0;
+    private $catchAll = false;
+    private $params   = [];
+
+    public function __construct(string $header)
+    {
+        $this->header = $header;
+
+        $header = preg_replace('/[[:space:]]/', '', $header);
+        $bits   = explode(';', $header);
+        $type   = array_shift($bits);
+
+        if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
+        }
+
+        $this->separator = $matches[2] ?? '/';
+        [$type, $subtype] = explode($this->separator, $type, 2) + [1 => '*'];
+
+        if ($type === '*' && $subtype !== '*') {
+            // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
+        }
+
+        // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
+        $this->type = strtolower($type);
+
+        /* Uses a simple heuristic to check if subtype is part of
+         * some obscure media type like "vnd.api-v1+json".
+         */
+        $this->subtype  = explode('+', $subtype)[1] ?? $subtype;
+        $this->catchAll = $this->type === '*' && $this->subtype === '*';
+
+        parse_str(join('&', $bits), $this->params);
+        /* NOTE: It is a waste of time to negotiate on the basis
+         * of obscure parameters while using a meaningless media
+         * type like "vnd.whatever". But the IT world is a big
+         * mess for now and this module supports ignorant devs.
+         */
+        $this->quality = (float)($this->params['q'] ?? 1);
+        unset($this->params['q']);
+    }
+
+
+    public function __toString(): string
+    {
+        return $this->value();
+    }
+
+
+    public function quality(): float
+    {
+        return $this->quality;
+    }
+
+
+    public function value(): string
+    {
+        // The header is explicitly rejected
+        if (0.0 === $this->quality()) {
+            return '';
+        }
+
+        // If language, encoding or charset
+        if ('*' === $this->subtype) {
+            return $this->type;
+        }
+
+        return $this->type . $this->separator . $this->subtype;
+    }
+
+
+    public function weight(): float
+    {
+        return $this->weight;
+    }
+
+    /**
+     * @internal
+     *
+     * This method finds the best match from the accept header,
+     * including all the stupidity that may be passed by the
+     * ignorant developers who do not follow RFC standards.
+     *
+     * @param AcceptHeader   $accept  The accept header part
+     * @param AcceptHeader[] $matches Matched types
+     *
+     * @return bool TRUE if the accept header part is a match
+     * against the supported (this) header part
+     */
+    public function matches(AcceptHeader $accept, array &$matches = null): bool
+    {
+        $matches = (array)$matches;
+        $accept  = clone $accept;
+
+        $typeMatch = $this->type === $accept->type;
+
+        if (1.0 === $accept->quality) {
+            $accept->quality = (float)$this->quality;
+        }
+
+        if ($accept->catchAll) {
+            $accept->type    = $this->type;
+            $accept->subtype = $this->subtype;
+            $matches[]       = $accept;
+            return true;
+        }
+
+        // Explicitly denied
+        if (0.0 === $this->quality) {
+            $matches[] = clone $this;
+            return true;
+        }
+
+        // Explicitly denied
+        if (0.0 === $accept->quality) {
+            $matches[] = $accept;
+            return true;
+        }
+
+        // Explicit type mismatch (w/o asterisk); bail out
+        if (false === $typeMatch && $this->type !== '*') {
+            return false;
+        }
+
+        if ($accept->subtype === '*') {
+            $accept->subtype = $this->subtype;
+        }
+
+        if ($accept->subtype !== $this->subtype && $this->subtype !== '*') {
+            return false;
+        }
+
+        $matches[] = $this->rank($accept);
+
+        return true;
+    }
+
+
+    private function rank(AcceptHeader $accept): AcceptHeader
+    {
+        // +100 if types are exact match w/o asterisk
+        if ($this->type === $accept->type && $accept->type !== '*') {
+            $accept->weight += 100;
+        }
+
+        $accept->weight += $this->catchAll ? 0.0 : $accept->quality;
+
+        // +1 for each parameter that matches, except "q"
+        foreach ($this->params as $k => $v) {
+            if (isset($accept->params[$k]) && $accept->params[$k] === $v) {
+                $accept->weight += 1;
+            } else {
+                $accept->weight -= 1;
+            }
+        }
+
+        // Add "q"
+        $accept->weight += $accept->quality;
+
+        return $accept;
     }
 }
