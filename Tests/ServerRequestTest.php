@@ -108,23 +108,6 @@ class ServerRequestTest extends TestCase
         $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
     }
 
-    public function test_put_method_should_parse_json_input()
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-
-        $request = $this->getMockBuilder(ServerRequest::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getRawInput'])
-            ->getMock();
-
-        $request
-            ->expects($this->any())
-            ->method('getRawInput')
-            ->willReturn('{"foo":"bar"}');
-
-        $this->assertSame(['foo' => 'bar'], $request->getParsedBody());
-    }
-
     public function test_extra_methods()
     {
         $this->assertFalse($this->SUT->isXHR());
@@ -190,6 +173,38 @@ class ServerRequestTest extends TestCase
         $this->assertSame($SUT->getParsedBody(), $_POST);
     }
 
+    public function test_parsed_body_if_method_is_post_with_json_data()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+
+        $SUT = (new class extends ServerRequest
+        {
+
+            protected function getRawInput(): string
+            {
+                return '{"key":"value"}';
+            }
+        });
+
+        $this->assertEquals(['key' => 'value'], $SUT->getParsedBody());
+    }
+
+    public function test_parsed_body_if_method_is_post_with_urlencoded_data()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+
+        $SUT = (new class extends ServerRequest
+        {
+
+            protected function getRawInput(): string
+            {
+                return 'key=value';
+            }
+        });
+
+        $this->assertEquals(['key' => 'value'], $SUT->getParsedBody());
+    }
+
     protected function setUp()
     {
         $_SERVER['REQUEST_METHOD']  = 'POST';
@@ -204,5 +219,11 @@ class ServerRequestTest extends TestCase
         $_SERVER['HTTP_IF_NONE_MATCH'] = '0163b37c-08e0-46f8-9aec-f31991bf6078-gzip';
 
         $this->SUT = new ServerRequest;
+    }
+
+    protected function tearDown()
+    {
+        $_POST     = [];
+        $this->SUT = null;
     }
 }

@@ -35,7 +35,7 @@ class FilesTraitTest extends TestCase
         touch($file1);
         touch($file2);
 
-        // the uber retarded multiple _FILES
+        // the uber lame multiple _FILES
 
         $_FILES = [
             'test' => [
@@ -108,7 +108,8 @@ class FilesTraitTest extends TestCase
         touch($file);
 
         $request = new ServerRequest;
-        $files = $request->withUploadedFiles(include __DIR__ . '/fixtures/simple-file-array.php');
+        $request = $request->withUploadedFiles(include __DIR__ . '/fixtures/simple-file-array.php');
+        $files = $request->getUploadedFiles();
 
         $this->assertInternalType('array', $files);
         $this->assertInstanceOf(UploadedFile::class, $files['test']);

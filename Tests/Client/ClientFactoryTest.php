@@ -6,6 +6,9 @@ use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @group internet
+ */
 class ClientFactoryTest extends TestCase
 {
 

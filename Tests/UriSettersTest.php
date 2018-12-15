@@ -91,7 +91,7 @@ class UriSettersTest extends TestCase
     public function it_should_set_the_standard_port()
     {
         $uri = $this->uri->withPort(80);
-        $this->assertNull($uri->getPort());
+        $this->assertSame(80, $uri->getPort());
         $this->assertNotSame($uri, $this->uri);
     }
 
@@ -144,13 +144,34 @@ class UriSettersTest extends TestCase
     /**
      * @test
      */
+    public function it_should_redice_multiple_slashes_in_path_without_authority()
+    {
+        $uri = $this->uri->withPath('//fubar');
+        $this->assertSame('/fubar', $uri->getPath());
+    }
+
+    /**
+     * @test
+     */
+    public function it_should_keep_multiple_slashes_in_path_with_present_authority()
+    {
+        $uri = $this->uri
+            ->withPath('//fubar')
+            ->withUserInfo('user');
+
+        $this->assertSame('//fubar', $uri->getPath());
+    }
+
+    /**
+     * @test
+     */
     public function it_should_set_the_fragment()
     {
         $uri = $this->uri->withFragment('#foo-1.2.0');
-        $this->assertSame('#foo-1.2.0', $uri->getFragment());
+        $this->assertSame('foo-1.2.0', $uri->getFragment());
 
         $uri = $this->uri->withFragment('%23foo-1.2.0');
-        $this->assertSame('#foo-1.2.0', $uri->getFragment());
+        $this->assertSame('foo-1.2.0', $uri->getFragment());
 
         $uri = $this->uri->withFragment('foo-1.2.0');
         $this->assertSame('foo-1.2.0', $uri->getFragment());

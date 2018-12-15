@@ -3,6 +3,7 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use function Koded\Stdlib\dump;
 use PHPUnit\Framework\TestCase;
 
 class UriGettersTest extends TestCase
@@ -67,14 +68,26 @@ class UriGettersTest extends TestCase
     /**
      * @test
      */
-    public function it_should_decode_encoded_path()
+    public function it_should_not_decode_encoded_path()
     {
         $uri = new Uri('https://example.com/foo%252/index.php');
-        $this->assertSame('/foo%2', $uri->getPath(), 'index.php should be removed');
+        $this->assertSame('/foo%252', $uri->getPath(), 'index.php should be removed');
+    }
 
+    /**
+     * @test
+     */
+    public function it_should_remove_index_php()
+    {
         $uri = new Uri('foo/index.php');
         $this->assertSame('foo', $uri->getPath(), 'index.php should be removed');
+    }
 
+    /**
+     * @test
+     */
+    public function it_should_create_instance_without_url()
+    {
         $uri = new Uri('');
         $this->assertSame('', $uri->getPath());
     }
@@ -123,10 +136,8 @@ class UriGettersTest extends TestCase
     public function it_should_parse_credentials_and_exclude_the_standard_port()
     {
         $uri = new Uri('https://username:password@example.org:80');
-
         $this->assertSame('username:password@example.org', $uri->getAuthority());
         $this->assertSame('username:password', $uri->getUserInfo());
-        $this->assertSame('username:password@example.org', $uri->getAuthority());
 
         // without password
         $uri = new Uri('https://username@example.org');
@@ -140,10 +151,8 @@ class UriGettersTest extends TestCase
     public function it_should_parse_credentials_and_include_the_port()
     {
         $uri = new Uri('https://username:password@example.org:123');
-
         $this->assertSame('username:password@example.org:123', $uri->getAuthority());
         $this->assertSame('username:password', $uri->getUserInfo());
-        $this->assertSame('username:password@example.org:123', $uri->getAuthority());
 
         // without password
         $uri = new Uri('https://username@example.org:8080');
@@ -163,10 +172,10 @@ class UriGettersTest extends TestCase
     /**
      * @test
      */
-    public function it_should_set_and_decode_the_encoded_fragment()
+    public function it_should_set_without_decoding_the_encoded_fragment()
     {
-        $uri = new Uri('#fubar%26yeah');
-        $this->assertSame('fubar&yeah', $uri->getFragment());
+        $uri = new Uri('#fubar%26zim#qux');
+        $this->assertSame('fubar%26zim#qux', $uri->getFragment());
     }
 
     /**
@@ -174,6 +183,8 @@ class UriGettersTest extends TestCase
      */
     public function it_should_add_slash_after_host_when_typecast_to_string()
     {
+        $this->markTestSkipped('Need more info');
+
         $uri = new Uri('https://example.org');
         $this->assertSame('https://example.org/', (string)$uri);
     }
@@ -205,7 +216,7 @@ class UriGettersTest extends TestCase
      */
     public function it_should_create_an_expected_representation_when_typecast_to_string()
     {
-        $template = 'https://example.org/foo/bar?a[]=1&a[]=2&foo=bar&qux#frag';
+        $template = 'https://example.org:123/foo/bar?a[]=1&a[]=2&foo=bar&qux#frag';
         $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
@@ -217,13 +228,14 @@ class UriGettersTest extends TestCase
         $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
-        // - If the path is rootless and an authority is present, the path MUST be prefixed by "/"
+        // - If the path is rootless and an authority is present,
+        // the path MUST be prefixed with "/"
         $template = 'foo/bar';
         $uri      = new Uri($template);
         $uri      = $uri->withUserInfo('username');
-        $this->assertSame("username@/$template", (string)$uri, 'Not sure about this...');
+        $this->assertSame("username@/$template", (string)$uri);
 
-        // If the path is starting with more than one "/" and no authority is
+        // - If the path is starting with more than one "/" and no authority is
         // present, the starting slashes MUST be reduced to one
         $template = 'http://localhost///foo/bar';
         $uri      = new Uri($template);

@@ -70,7 +70,10 @@ class ClientRequestTest extends TestCase
     {
         $uri     = new Uri('http://example.net/42');
         $request = $this->SUT->withUri($uri, true);
-        $this->assertSame(['example.com'], $request->getHeader('host'));
+
+        $this->assertSame(['example.org'], $request->getHeader('host'));
+        $this->assertSame('example.org', $request->getUri()->getHost());
+        $this->assertEquals('/42', $request->getPath());
     }
 
     public function test_with_uri_and_not_preserving_the_host()

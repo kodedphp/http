@@ -16,7 +16,6 @@ class ServerResponseTest extends TestCase
         $this->assertSame(StatusCode::OK, $response->getStatusCode());
         $this->assertSame('OK', $response->getReasonPhrase());
         $this->assertSame('text/html', $response->getContentType());
-        $this->assertSame('UTF-8', $response->getCharset());
         $this->assertSame('1.1', $response->getProtocolVersion());
 
         $this->assertInstanceOf(StreamInterface::class, $response->getBody());
@@ -30,7 +29,6 @@ class ServerResponseTest extends TestCase
         $this->assertSame(StatusCode::BAD_GATEWAY, $response->getStatusCode());
         $this->assertSame('Bad Gateway', $response->getReasonPhrase());
         $this->assertSame('application/json', $response->getContentType());
-        $this->assertSame('UTF-8', $response->getCharset());
 
         $response->getBody()->rewind();
         $this->assertSame('エンコーディングは難しくない', $response->getBody()->getContents());

@@ -3,8 +3,8 @@
 namespace Koded\Http\Client;
 
 use Exception;
-use Koded\Http\StatusCode;
 use Koded\Http\Interfaces\HttpRequestClient;
+use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -18,7 +18,8 @@ class PhpClientTest extends TestCase
         $options = $this->getOptions();
 
         $this->assertNotEmpty($options['header']);
-        $this->assertContains('example.com', $options['header']);
+        $this->assertArraySubset(['Host:example.com'], $options['header']);
+
         $this->assertArrayHasKey('protocol_version', $options);
         $this->assertArrayHasKey('user_agent', $options);
         $this->assertArrayHasKey('method', $options);
@@ -30,14 +31,14 @@ class PhpClientTest extends TestCase
         $this->assertSame(1.1, $options['protocol_version']);
         $this->assertSame(HttpRequestClient::USER_AGENT, $options['user_agent']);
         $this->assertSame('GET', $options['method']);
-        $this->assertSame(60.0, $options['timeout']);
         $this->assertSame(20, $options['max_redirects']);
         $this->assertSame(1, $options['follow_location']);
         $this->assertTrue($options['ignore_errors']);
         $this->assertFalse($options['ssl']['allow_self_signed']);
         $this->assertFalse($options['ssl']['verify_peer']);
-
         $this->assertSame('', (string)$this->SUT->getBody(), 'The body is empty');
+        $this->assertSame(3.0, $options['timeout']);
+
     }
 
     public function test_methods()
@@ -62,6 +63,9 @@ class PhpClientTest extends TestCase
         $this->assertSame(true, $options['ssl']['verify_peer']);
     }
 
+    /**
+     * @group internet
+     */
     public function test_internal_server_exception()
     {
         $SUT = new class('get', 'http://example.org') extends PhpClient
@@ -77,6 +81,9 @@ class PhpClientTest extends TestCase
         $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
     }
 
+    /**
+     * @group internet
+     */
     public function test_when_creating_stream_fails()
     {
         $SUT = new class('get', 'http://example.org') extends PhpClient
@@ -89,9 +96,12 @@ class PhpClientTest extends TestCase
 
         $response = $SUT->read();
 
-        $this->assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode(), (string)$response->getBody());
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
     }
 
+    /**
+     * @group internet
+     */
     public function test_body_prepare()
     {
         $SUT = new PhpClient('post', 'http://example.org', ['foo' => 'bar']);
@@ -105,6 +115,8 @@ class PhpClientTest extends TestCase
 
     protected function setUp()
     {
-        $this->SUT = (new ClientFactory(ClientFactory::PHP))->get('http://example.com');
+        $this->SUT = (new ClientFactory(ClientFactory::PHP))
+            ->get('http://example.com')
+            ->timeout(3);
     }
 }

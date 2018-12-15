@@ -11,9 +11,12 @@ use function Koded\Http\create_stream;
  * across the HTTP client implementations.
  *
  */
+
+/**
+ * @group internet
+ */
 trait ClientTestCaseTrait
 {
-
     /** @var HttpRequestClient */
     private $SUT;
 
@@ -32,7 +35,7 @@ trait ClientTestCaseTrait
         $this->expectExceptionMessage('Please provide a valid URI');
         $this->expectExceptionCode(StatusCode::BAD_REQUEST);
 
-        $this->SUT->withUri(new Uri('scheme://host:junk'));
+        $this->SUT->withUri(new Uri('scheme://host:port'));
     }
 
     public function test_should_exit_on_bad_request()

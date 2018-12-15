@@ -9,7 +9,6 @@ use Throwable;
 class StreamTest extends TestCase
 {
 
-
     public function test_constructor_with_invalid_argument()
     {
         $this->expectException(RuntimeException::class);
@@ -36,7 +35,7 @@ class StreamTest extends TestCase
         $this->assertAttributeSame(null, 'stream', $stream);
     }
 
-    public function test_should_return_content_when_typecasted_to_string()
+    public function test_stream_should_return_content_when_typecasted_to_string()
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, 'lorem ipsum');
@@ -49,21 +48,21 @@ class StreamTest extends TestCase
         $this->assertSame('lorem ipsum', (string)$stream);
     }
 
-    public function test_should_return_empty_string_when_throws_exception_while_typecasted()
+    public function test_stream_should_return_empty_string_when_throws_exception_while_typecasted()
     {
         $resource = fopen('php://stderr', '');
         $stream   = new Stream($resource);
         $this->assertSame('', (string)$stream);
     }
 
-    public function test_should_return_empty_string_with_zero_content_length()
+    public function test_stream_should_return_empty_string_with_zero_content_length()
     {
         $resource = fopen('php://temp', 'r');
         $stream   = new Stream($resource);
         $this->assertSame('', $stream->read(0));
     }
 
-    public function test_should_throw_exception_on_read_when_stream_is_not_readable()
+    public function test_stream_should_throw_exception_on_read_when_stream_is_not_readable()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not readable');
@@ -73,7 +72,7 @@ class StreamTest extends TestCase
         $stream->read(0);
     }
 
-    public function test_should_return_null_if_stream_is_already_detached()
+    public function test_stream_should_return_null_if_stream_is_already_detached()
     {
         $resource = fopen('php://temp', 'r');
         $stream   = new Stream($resource);
@@ -85,7 +84,7 @@ class StreamTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_should_return_the_stream_size()
+    public function test_stream_should_return_the_stream_size()
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, 'lorem ipsum');
@@ -94,7 +93,7 @@ class StreamTest extends TestCase
         $this->assertSame(11, $stream->getSize());
     }
 
-    public function test_should_return_null_when_getting_size_with_empty_stream()
+    public function test_stream_should_return_null_when_getting_size_with_empty_stream()
     {
         $stream = new Stream(fopen('php://temp', 'w'));
         $stream->detach();
@@ -102,7 +101,7 @@ class StreamTest extends TestCase
         $this->assertNull($stream->getSize());
     }
 
-    public function test_tell_and_eof()
+    public function test_stream_tell_and_eof()
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, 'lorem ipsum');
@@ -118,7 +117,7 @@ class StreamTest extends TestCase
         $this->assertFalse($stream->eof(), '');
     }
 
-    public function test_should_throw_exception_when_cannot_tell()
+    public function test_stream_should_throw_exception_when_cannot_tell()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Failed to find the position of the file pointer');
@@ -134,7 +133,7 @@ class StreamTest extends TestCase
         $this->assertSame(29, $stream->tell());
     }
 
-    public function test_should_throw_exception_when_cannot_seek()
+    public function test_stream_should_throw_exception_when_cannot_seek()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Failed to seek to file pointer');
@@ -145,7 +144,7 @@ class StreamTest extends TestCase
         $stream->seek(20);
     }
 
-    public function test_rewind()
+    public function test_stream_rewind()
     {
         $resource = fopen('php://temp', 'w');
         fwrite($resource, 'lorem ipsum');
@@ -157,7 +156,7 @@ class StreamTest extends TestCase
         $this->assertSame(0, $stream->tell());
     }
 
-    public function test_should_throw_exception_when_rewind_but_source_is_not_seekable()
+    public function test_stream_should_throw_exception_when_rewind_but_source_is_not_seekable()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not seekable');
@@ -166,7 +165,7 @@ class StreamTest extends TestCase
         $stream->rewind();
     }
 
-    public function test_write()
+    public function test_stream_write()
     {
         $stream = new Stream(fopen('php://temp', 'w'));
         $bytes  = $stream->write('lorem ipsum');
@@ -175,7 +174,7 @@ class StreamTest extends TestCase
         $this->assertSame('', $stream->getContents(), 'Returns the remaining contents in the string');
     }
 
-    public function test_should_throw_exception_when_writing_and_stream_is_not_writable()
+    public function test_stream_should_throw_exception_when_writing_and_stream_is_not_writable()
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not writable');
@@ -186,7 +185,7 @@ class StreamTest extends TestCase
         $stream->write('lorem ipsum');
     }
 
-    public function test_read()
+    public function test_stream_read()
     {
         $stream = new Stream(fopen('php://temp', 'w'));
         $stream->write('lorem ipsum');
@@ -195,7 +194,7 @@ class StreamTest extends TestCase
         $this->assertSame('ipsum', $stream->read(6));
     }
 
-    public function test_metadata()
+    public function test_stream_metadata()
     {
         $stream = new Stream(fopen('php://temp', 'w'));
         $stream->write('lorem ipsum');
