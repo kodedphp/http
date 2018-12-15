@@ -13,8 +13,7 @@
 namespace Koded\Http\Client;
 
 use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
-use Koded\Http\Interfaces\HttpRequestClient;
-use Psr\Http\Message\ResponseInterface;
+use Koded\Http\Interfaces\{Response, HttpRequestClient};
 use Throwable;
 
 
@@ -40,7 +39,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             'follow_location'  => 1,
             'ignore_errors'    => true,
             'request_fulluri'  => true,
-            'header'           => [],
+            'header'           => $this->getFlattenedHeaders(),
             'ssl'              => [
                 'verify_peer'       => false,
                 'allow_self_signed' => false,
@@ -48,13 +47,10 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         ];
 
         $this->prepareRequestBody();
-        $this->prepareRequestHeaders();
     }
 
-    /**
-     * @return ResponseInterface
-     */
-    public function read(): ResponseInterface
+
+    public function read(): Response
     {
         if ($response = $this->assertSafeMethods()) {
             return $response;
@@ -64,7 +60,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             $context = stream_context_create(['http' => $this->options]);
 
             if (false === $response = $this->createResource($context)) {
-                return new ServerResponse(error_get_last()['message'], StatusCode::UNPROCESSABLE_ENTITY);
+                return new ServerResponse(error_get_last()['message'], StatusCode::FAILED_DEPENDENCY);
             }
 
             $this->extractFromResponseHeaders($response, $statusCode);
@@ -104,7 +100,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     public function timeout(float $value): HttpRequestClient
     {
-        $this->options['timeout'] = $value;
+        $this->options['timeout'] = $value * 1.0;
 
         return $this;
     }
@@ -140,15 +136,10 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         return @fopen((string)$this->getUri(), 'r', false, $context);
     }
 
-    protected function prepareRequestHeaders(): void
-    {
-        if (false === empty($this->headers)) {
-            $this->options['header'] = join("\r\n", $this->getFlattenedHeaders()) . "\r\n";
-        }
-    }
-
     protected function prepareRequestBody(): void
     {
+        $this->stream->seek(0);
+
         if ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->options['content'] = http_build_query($content);
         }
