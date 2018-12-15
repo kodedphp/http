@@ -64,16 +64,6 @@ class ServerResponse implements Response, JsonSerializable
         return $this->getHeaderLine('Content-Type') ?: 'text/html';
     }
 
-    // TODO remove it?
-    public function getCharset(): string
-    {
-        if ($this->stream->getSize() < 1) {
-            return 'UTF-8';
-        }
-
-        return iconv_get_encoding($this->stream->getContents()) ?: 'UTF-8';
-    }
-
     public function send(): string
     {
         $this->stream->rewind();
@@ -129,7 +119,7 @@ class ServerResponse implements Response, JsonSerializable
             $this->stream = create_stream(null);
         }
 
-        if ($this->hasHeader('Transfer-Encoding')) {
+        if ($this->hasHeader('Transfer-Encoding') || !$size) {
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
         }
     }

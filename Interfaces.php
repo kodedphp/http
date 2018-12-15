@@ -125,13 +125,6 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
      * @return string The response mime type
      */
     public function getContentType(): string;
-
-    /**
-     * Returns the charset value for the response object.
-     *
-     * @return string
-     */
-    public function getCharset(): string;
 }
 
 
@@ -239,7 +232,7 @@ interface ExtendedMessageInterface
      * Bulk set the headers.
      *
      * The headers are normalized:
-     * - the keys are capitalized and hypened
+     * - the keys are capitalized and hyphened
      * - the value is type-casted to array
      *
      * @param array $headers name => [value]
