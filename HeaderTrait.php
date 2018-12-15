@@ -73,7 +73,8 @@ trait HeaderTrait
     public function withoutHeader($name): self
     {
         $instance = clone $this;
-        unset($instance->headersMap[strtolower($name)], $instance->headers[$name]);
+        $key      = strtolower($name);
+        unset($instance->headersMap[$key], $instance->headers[$this->headersMap[$key]]);
 
         return $instance;
     }
@@ -84,7 +85,7 @@ trait HeaderTrait
         $instance = clone $this;
 
         if (isset($instance->headersMap[$header = strtolower($name)])) {
-            $instance->headers[$name] = array_merge((array)$this->headers[$name], $value);
+            $instance->headers[$name] = array_unique(array_merge((array)$this->headers[$name], $value));
         } else {
             $instance->headersMap[strtolower($name)] = $name;
             $instance->headers[$name]                = $value;
