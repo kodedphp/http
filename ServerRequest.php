@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
-use Koded\Stdlib\Arguments;
 use Psr\Http\Message\ServerRequestInterface;
 
 
@@ -25,8 +24,8 @@ class ServerRequest extends ClientRequest implements Request
     /** @var string */
     protected $serverSoftware = '';
 
-    /** @var Arguments */
-    protected $attributes;
+    /** @var array */
+    protected $attributes = [];
 
     /** @var array */
     protected $queryParams = [];
@@ -42,9 +41,9 @@ class ServerRequest extends ClientRequest implements Request
     public function __construct(array $attributes = [])
     {
         parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
-        $this->attributes = new Arguments($attributes);
-        $this->extractHttpHeaders();
-        $this->extractServerData();
+        $this->attributes = $attributes;
+        $this->extractHttpHeaders($_SERVER);
+        $this->extractServerData($_SERVER);
     }
 
     public function getServerParams(): array
@@ -65,7 +64,7 @@ class ServerRequest extends ClientRequest implements Request
         return $instance;
     }
 
-    public function getParsedBody(): ?array
+    public function getParsedBody()
     {
         if ($this->useOnlyPost()) {
             return $_POST;
@@ -102,23 +101,29 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
 
+        if (is_object($data)) {
+            $instance->parsedBody = $data;
+
+            return $instance;
+        }
+
         throw new InvalidArgumentException('Unsupported data provided, Expects NULL, array or iterable');
     }
 
     public function getAttributes(): array
     {
-        return $this->attributes->toArray();
+        return $this->attributes;
     }
 
     public function getAttribute($name, $default = null)
     {
-        return $this->attributes->get($name, $default);
+        return $this->attributes[$name] ?? $default;
     }
 
     public function withAttribute($name, $value): ServerRequest
     {
-        $instance = clone $this;
-        $instance->attributes->set($name, $value);
+        $instance                    = clone $this;
+        $instance->attributes[$name] = $value;
 
         return $instance;
     }
@@ -126,7 +131,7 @@ class ServerRequest extends ClientRequest implements Request
     public function withoutAttribute($name): ServerRequest
     {
         $instance = clone $this;
-        $instance->attributes->delete($name);
+        unset($instance->attributes[$name]);
 
         return $instance;
     }
@@ -134,7 +139,7 @@ class ServerRequest extends ClientRequest implements Request
     public function withAttributes(array $attributes): Request
     {
         $instance             = clone $this;
-        $instance->attributes = new Arguments($attributes);
+        $instance->attributes = $attributes;
 
         return $instance;
     }
@@ -158,12 +163,12 @@ class ServerRequest extends ClientRequest implements Request
             );
         }
 
-        return new Uri('');
+        return new Uri($_SERVER['REQUEST_URI'] ?? '');
     }
 
-    protected function extractHttpHeaders(): void
+    protected function extractHttpHeaders(array $server): void
     {
-        foreach ($_SERVER as $k => $v) {
+        foreach ($server as $k => $v) {
             // Calisthenics :)
             0 === strpos($k, 'HTTP_', 0) and $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
@@ -171,28 +176,34 @@ class ServerRequest extends ClientRequest implements Request
         unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
         unset($this->headersMap['x-forwarded-for'], $this->headersMap['x-forwarded-proto']);
 
-        if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+        if (isset($server['HTTP_IF_NONE_MATCH'])) {
             // ETag workaround for various broken Apache2 versions
-            $this->headers['ETag']    = str_replace('-gzip', '', $_SERVER['HTTP_IF_NONE_MATCH']);
+            $this->headers['ETag']    = str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
             $this->headersMap['etag'] = 'ETag';
         }
 
         if (false === $this->isSafeMethod) {
-            $this->headers['Content-Type']    = $_SERVER['CONTENT_TYPE'] ?? '';
+            $this->headers['Content-Type']    = $server['CONTENT_TYPE'] ?? '';
             $this->headersMap['content-type'] = 'Content-Type';
         }
 
         $this->setHost();
     }
 
-    protected function extractServerData(): void
+    protected function extractServerData(array $server): void
     {
-        $this->protocolVersion = str_ireplace('HTTP/', '', $_SERVER['SERVER_PROTOCOL'] ?? $this->protocolVersion);
-        $this->serverSoftware  = $_SERVER['SERVER_SOFTWARE'] ?? '';
+        $this->protocolVersion = str_ireplace('HTTP/', '', $server['SERVER_PROTOCOL'] ?? $this->protocolVersion);
+        $this->serverSoftware  = $server['SERVER_SOFTWARE'] ?? '';
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
-        $this->isSafeMethod or $this->parseInput();
-        $_FILES and $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
+
+        if (false === $this->isSafeMethod) {
+            $this->parseInput();
+        }
+
+        if ($_FILES) {
+            $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
+        }
     }
 
     /**
@@ -216,8 +227,8 @@ class ServerRequest extends ClientRequest implements Request
             return false;
         }
 
-        return $this->method === self::POST
-            && (strpos('application/x-www-form-urlencoded', $contentType)
+        return $this->method === self::POST && (
+                strpos('application/x-www-form-urlencoded', $contentType)
                 || strpos('multipart/form-data', $contentType));
     }
 
@@ -232,11 +243,9 @@ class ServerRequest extends ClientRequest implements Request
         }
 
         // Try JSON deserialization
-        if ('{' === $input[0] || '[' === $input[0]) {
-            $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
-        }
+        $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
 
-        if (json_last_error()) {
+        if (null === $this->parsedBody) {
             parse_str($input, $this->parsedBody);
         }
     }
