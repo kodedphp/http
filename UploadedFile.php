@@ -17,10 +17,11 @@ use Koded\Exceptions\KodedException;
 use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
 use RuntimeException;
 use Throwable;
+use function Koded\Stdlib\randomstring;
+
 
 class UploadedFile implements UploadedFileInterface
 {
-
     /** @var string|null */
     private $file;
 
@@ -34,116 +35,153 @@ class UploadedFile implements UploadedFileInterface
     private $size;
 
     /** @var int See UPLOAD_ERR_* constants */
-    private $error = UPLOAD_ERR_OK;
+    private $error = \UPLOAD_ERR_OK;
 
     /** @var bool */
     private $moved = false;
 
-    /** @var StreamInterface */
-    private $stream;
-
     public function __construct(array $uploadedFile)
     {
-        if ($this->file = $uploadedFile['tmp_name'] ?? null) {
-            $this->stream = create_stream($this->file);
+        $this->size  = $uploadedFile['size'] ?? null;
+        $this->file  = $uploadedFile['tmp_name'] ?? null;
+        $this->name  = $uploadedFile['name'] ?? randomstring(9);
+        $this->error = (int)($uploadedFile['error'] ?? \UPLOAD_ERR_OK);
+
+        // Create a file out of the stream
+        if ($this->file instanceof StreamInterface) {
+            $file = sys_get_temp_dir() . '/' . $this->name;
+            file_put_contents($file, $this->file->getContents());
+            $this->file = $file;
+        } elseif (false === is_string($this->file)) {
+            throw UploadedFileException::fileNotSupported();
+        } elseif (0 === strlen($this->file)) {
+            throw UploadedFileException::filenameCannotBeEmpty();
         }
 
-        $this->name  = $uploadedFile['name'] ?? null;
-        $this->type  = $uploadedFile['type'] ?? null;
-        $this->size  = $uploadedFile['size'] ?? null;
-        $this->error = $uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE;
+        // Never trust the provided mime type
+        $this->type = $this->getClientMediaType();
     }
+
 
     public function getStream(): StreamInterface
     {
-        $this->assertMoved();
-
-        if (empty($this->stream)) {
-            throw new RuntimeException('The stream is not available for the uploaded file');
+        if ($this->moved) {
+            throw UploadedFileException::streamNotAvailable();
         }
 
-        return $this->stream;
+        return new FileStream($this->file, 'w+b');
     }
+
 
     public function moveTo($targetPath)
     {
         $this->assertUploadError();
-
-        if ('' === trim($targetPath)) {
-            throw new InvalidArgumentException('The provided path for moveTo operation is not valid');
-        }
+        $this->assertTargetPath($targetPath);
 
         try {
-            stream_copy($this->getStream(), create_stream($targetPath, 'w'));
-            $destination = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $this->name;
-
             $this->moved = ('cli' === php_sapi_name())
-                ? rename($this->file, $destination) : move_uploaded_file($this->file, $destination);
+                ? rename($this->file, $targetPath)
+                : move_uploaded_file($this->file, $targetPath);
 
-            $this->stream = null;
             @unlink($this->file);
         } catch (Throwable $e) {
             throw new RuntimeException($e->getMessage());
         }
     }
 
+
     public function getSize(): ?int
     {
         return $this->size;
     }
 
+
     public function getError(): int
     {
-        return $this->error ?? UPLOAD_ERR_NO_FILE;
+        return $this->error;
     }
+
 
     public function getClientFilename(): ?string
     {
         return $this->name;
     }
 
+
     public function getClientMediaType(): ?string
     {
         try {
-            return (new \finfo(FILEINFO_MIME_TYPE))->file($this->file);
-            // @codeCoverageIgnoreStart
+            return (new \finfo(\FILEINFO_MIME_TYPE))->file($this->file);
         } catch (Throwable $e) {
             return $this->type;
         }
-        // @codeCoverageIgnoreEnd
-
     }
 
-    /**
-     * @throws UploadedFileException If the resource upload failed
-     */
+
     private function assertUploadError(): void
     {
-        if ($this->error !== UPLOAD_ERR_OK) {
-            throw new UploadedFileException($this->error, [':file' => $this->file]);
+        if ($this->error !== \UPLOAD_ERR_OK) {
+            throw new UploadedFileException($this->error);
         }
     }
 
-    /**
-     * @throws RuntimeException If the moveTo() method has been called previously
-     */
-    private function assertMoved(): void
+
+    private function assertTargetPath($targetPath): void
     {
         if ($this->moved) {
-            throw new RuntimeException('Failed to get the file stream, because it was previously moved');
+            throw UploadedFileException::fileAlreadyMoved();
+        }
+
+        if (false === is_string($targetPath) || 0 === strlen($targetPath)) {
+            throw UploadedFileException::targetPathIsInvalid();
+        }
+
+        if (false === is_dir($dirname = dirname($targetPath))) {
+            @mkdir($dirname, 0777, true);
         }
     }
 }
 
+
 class UploadedFileException extends KodedException
 {
     protected $messages = [
-        UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the "upload_max_filesize" directive in php.ini',
-        UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the "MAX_FILE_SIZE" directive that was specified in the HTML form',
-        UPLOAD_ERR_PARTIAL    => 'The uploaded file was only partially uploaded',
-        UPLOAD_ERR_NO_FILE    => 'No file was uploaded',
-        UPLOAD_ERR_NO_TMP_DIR => 'The temporary directory to write to is missing',
-        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-        UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload',
+        \UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the "upload_max_filesize" directive in php.ini',
+        \UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the "MAX_FILE_SIZE" directive that was specified in the HTML form',
+        \UPLOAD_ERR_PARTIAL    => 'The uploaded file was only partially uploaded',
+        \UPLOAD_ERR_NO_FILE    => 'No file was uploaded',
+        \UPLOAD_ERR_NO_TMP_DIR => 'The temporary directory to write to is missing',
+        \UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+        \UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload',
     ];
+
+    public static function streamNotAvailable()
+    {
+        return new RuntimeException('Stream is not available, because the file was previously moved');
+    }
+
+    public static function targetPathIsInvalid()
+    {
+        return new InvalidArgumentException('The provided path for moveTo operation is not valid');
+    }
+
+    public static function fileAlreadyMoved()
+    {
+        return new RuntimeException('File is not available, because it was previously moved');
+    }
+
+    public static function fileNotSupported()
+    {
+        return new InvalidArgumentException('The uploaded file is not supported');
+    }
+
+    public static function fileNotAvailable()
+    {
+        return new RuntimeException('The file is not available');
+    }
+
+    public static function filenameCannotBeEmpty()
+    {
+        return new InvalidArgumentException('Filename cannot be empty');
+    }
 }
