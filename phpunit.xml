@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/7.4/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="Tests/bootstrap.php"
          verbose="true"
          colors="true">
     <testsuites>
@@ -22,10 +22,11 @@
     </filter>
 
     <php>
-        <ini name="error_reporting" value="-1"/>
         <ini name="date.timezone" value="UTC"/>
 
         <server name="HTTP_HOST" value="example.com"/>
+
+        <cookie name="test" value="fubar"/>
     </php>
 
     <logging>

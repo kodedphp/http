@@ -47,6 +47,17 @@ class Uri implements UriInterface
         $uri && $this->parse($uri);
     }
 
+    public function __toString()
+    {
+        return sprintf('%s%s%s%s%s',
+            $this->scheme ? $this->getScheme() . '://' : '',
+            $this->getAuthority() ?: $this->getHostWithPort(),
+            $this->getPath(),
+            strlen($this->query) ? '?' . $this->query : '',
+            strlen($this->fragment) ? '#' . $this->fragment : ''
+        );
+    }
+
     public function getScheme(): string
     {
         return strtolower($this->scheme);
@@ -54,16 +65,22 @@ class Uri implements UriInterface
 
     public function getAuthority(): string
     {
-        if (empty($this->getUserInfo())) {
+        $userInfo = $this->getUserInfo();
+
+        if (0 === strlen($userInfo)) {
             return '';
         }
 
-        return $this->getUserInfo() . '@' . $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
+        return $userInfo . '@' . $this->getHostWithPort();
     }
 
     public function getUserInfo(): string
     {
-        return $this->user . ($this->pass ? ':' . $this->pass : '');
+        if (0 === strlen($this->user)) {
+            return '';
+        }
+
+        return trim($this->user . ':' . $this->pass, ':');
     }
 
     public function getHost(): string
@@ -73,7 +90,7 @@ class Uri implements UriInterface
 
     public function getPort(): ?int
     {
-        if ((!$this->port && !$this->scheme) || $this->isStandardPort()) {
+        if (!$this->scheme && !$this->port) {
             return null;
         }
 
@@ -82,10 +99,7 @@ class Uri implements UriInterface
 
     public function getPath(): string
     {
-        // FIXME remove the entry script from the path
-        $this->path = str_replace('/index.php', '', $this->path);
-
-        return rawurldecode($this->path);
+        return $this->reduceSlashes($this->path);
     }
 
     public function getQuery(): string
@@ -95,13 +109,17 @@ class Uri implements UriInterface
 
     public function getFragment(): string
     {
-        return rawurldecode($this->fragment);
+        return $this->fragment;
     }
 
     public function withScheme($scheme): UriInterface
     {
+        if (null !== $scheme && false === is_string($scheme)) {
+            throw new InvalidArgumentException('Invalid URI scheme', 400);
+        }
+
         $instance         = clone $this;
-        $instance->scheme = empty($scheme) ? null : $scheme;
+        $instance->scheme = (string)$scheme;
 
         return $instance;
     }
@@ -109,8 +127,14 @@ class Uri implements UriInterface
     public function withUserInfo($user, $password = null): UriInterface
     {
         $instance       = clone $this;
-        $instance->user = empty($user) ? null : (string)$user;
-        $instance->pass = empty($user) ? null : (string)$password;
+        $instance->user = (string)$user;
+        $instance->pass = (string)$password;
+
+        // If the path is rootless and an authority is present,
+        // the path MUST be prefixed with "/"
+        if ('/' !== ($instance->path[0] ?? '')) {
+            $instance->path = '/' . $instance->path;
+        }
 
         return $instance;
     }
@@ -118,7 +142,7 @@ class Uri implements UriInterface
     public function withHost($host): UriInterface
     {
         $instance       = clone $this;
-        $instance->host = empty($host) ? null : (string)$host;
+        $instance->host = (string)$host;
 
         return $instance;
     }
@@ -133,11 +157,11 @@ class Uri implements UriInterface
             return $instance;
         }
 
-        if (!is_int($port) && $port < 1) {
+        if (false === is_int($port) || $port < 1) {
             throw new InvalidArgumentException('Invalid port');
         }
 
-        $instance->port = (int)$port;
+        $instance->port = $port;
 
         return $instance;
     }
@@ -145,7 +169,7 @@ class Uri implements UriInterface
     public function withPath($path): UriInterface
     {
         $instance       = clone $this;
-        $instance->path = $path;
+        $instance->path = $this->fixPath((string)$path);
 
         return $instance;
     }
@@ -159,7 +183,7 @@ class Uri implements UriInterface
         }
 
         $instance        = clone $this;
-        $instance->query = empty($query) ? '' : (string)$query;
+        $instance->query = (string)$query;
 
         return $instance;
     }
@@ -167,21 +191,9 @@ class Uri implements UriInterface
     public function withFragment($fragment): UriInterface
     {
         $instance           = clone $this;
-        $instance->fragment = empty($fragment) ? '' : $fragment;
+        $instance->fragment = str_replace(['#', '%23'], '', $fragment);
 
         return $instance;
-    }
-
-    public function __toString()
-    {
-        return sprintf('%s%s%s%s%s%s',
-            $this->scheme ? $this->getScheme() . '://' : '',
-            $this->user ? $this->getAuthority() : $this->getHost(),
-            ($this->isStandardPort() ? '' : ':' . $this->port),
-            $this->fixPath(),
-            $this->query ? '?' . $this->query : null,
-            $this->fragment ? '#' . ltrim($this->fragment, '#') : null
-        );
     }
 
     private function parse(string $uri)
@@ -193,28 +205,52 @@ class Uri implements UriInterface
         foreach ($parts as $k => $v) {
             $this->$k = $v;
         }
+
+        $this->path = $this->fixPath($parts['path'] ?? '');
+
+        if ($this->isStandardPort()) {
+            $this->port = null;
+        }
+    }
+
+    private function fixPath(string $path): string
+    {
+        if (empty($path)) {
+            return $path;
+        }
+
+        // Percent encode the path
+        $path = explode('/', $path);
+        foreach ($path as $k => $part) {
+            $path[$k] = false !== strpos($part, '%') ? $part : rawurlencode($part);
+        }
+
+        // TODO remove the entry script from the path?
+        $path = str_replace('/index.php', '', join('/', $path));
+
+        return $path;
+    }
+
+    private function reduceSlashes(string $path): string
+    {
+        if ('/' === ($path[0] ?? '') && 0 === strlen($this->user)) {
+            return preg_replace('/\/+/', '/', $path);
+        }
+
+        return $path;
+    }
+
+    private function getHostWithPort(): string
+    {
+        if ($this->port) {
+            return $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
+        }
+
+        return $this->host;
     }
 
     private function isStandardPort(): bool
     {
         return in_array($this->port, [80, 443, 21, 23, 70, 110, 119, 143, 389]);
-    }
-
-    /**
-     * - If the path is rootless and an authority is present, the path MUST be prefixed by "/"
-     * - If the path is starting with more than one "/" and no authority is present,
-     * the starting slashes MUST be reduced to one
-     *
-     * @return string
-     */
-    private function fixPath(): string
-    {
-        $path = $this->getPath();
-
-        if ($this->user && $path[0] !== '/') {
-            return '/' . $path;
-        }
-
-        return '/' . ltrim($path, '/');
     }
 }

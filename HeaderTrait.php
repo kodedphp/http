@@ -46,7 +46,7 @@ trait HeaderTrait
 
     public function getHeaderLine($name): string
     {
-        return join(', ', $this->getHeader($name));
+        return join(',', $this->getHeader($name));
     }
 
     public function withHeader($name, $value): self
@@ -64,8 +64,7 @@ trait HeaderTrait
         $instance = clone $this;
 
         foreach ($headers as $name => $value) {
-            $instance->headersMap[strtolower($name)] = $name;
-            $instance->headers[$name]                = (array)$value;
+            $instance->normalizeHeader($name, $value, false);
         }
 
         return $instance;
@@ -74,7 +73,8 @@ trait HeaderTrait
     public function withoutHeader($name): self
     {
         $instance = clone $this;
-        unset($instance->headersMap[strtolower($name)], $instance->headers[$name]);
+        $key      = strtolower($name);
+        unset($instance->headersMap[$key], $instance->headers[$this->headersMap[$key]]);
 
         return $instance;
     }
@@ -85,7 +85,7 @@ trait HeaderTrait
         $instance = clone $this;
 
         if (isset($instance->headersMap[$header = strtolower($name)])) {
-            $instance->headers[$name] = array_merge((array)$this->headers[$name], $value);
+            $instance->headers[$name] = array_unique(array_merge((array)$this->headers[$name], $value));
         } else {
             $instance->headersMap[strtolower($name)] = $name;
             $instance->headers[$name]                = $value;
@@ -99,15 +99,7 @@ trait HeaderTrait
         return array_key_exists(strtolower($name), $this->headersMap);
     }
 
-    /**
-     * Replaces all headers with provided ones.
-     * This method is not part of the PSR-7.
-     *
-     * @param array $headers
-     *
-     * @return $this
-     */
-    public function replaceHeaders(array $headers): self
+    public function replaceHeaders(array $headers)
     {
         $instance          = clone $this;
         $instance->headers = $instance->headersMap = [];
@@ -129,15 +121,35 @@ trait HeaderTrait
     {
         $flattenHeaders = [];
         foreach ($this->headers as $name => $value) {
-            $flattenHeaders[] = $name . ': ' . join(',', (array)$value);
+            $flattenHeaders[] = $name . ':' . join(',', (array)$value);
         }
 
         return $flattenHeaders;
     }
 
+    public function getCanonicalizedHeaders(array $names = []): string
+    {
+        if (empty($names)) {
+            $names = array_keys($this->headers);
+        }
+
+        if (!$headers = array_reduce($names, function($list, $name) {
+            $name   = str_replace('_', '-', $name);
+            $list[] = strtolower($name) . ':' . join(',', $this->getHeader($name));
+
+            return $list;
+        })) {
+            return '';
+        }
+
+        sort($headers);
+
+        return join("\n", $headers);
+    }
+
     /**
      * @param string $name
-     * @param array  $value
+     * @param string $value
      * @param bool   $skipKey
      *
      * @return void
@@ -149,7 +161,7 @@ trait HeaderTrait
         }
 
         $this->headersMap[strtolower($name)] = $name;
-        $this->headers[$name]                = str_replace(["\r", "\n"], '', $value);
+        $this->headers[$name]                = str_replace(["\r", "\n"], '', (array)$value);
     }
 
     /**

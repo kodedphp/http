@@ -11,83 +11,73 @@ class MoveUploadedFileTest extends TestCase
     /** @var UploadedFile */
     private $SUT;
 
-    private $file = '/tmp/y4k9a7fm';
+    private $file       = '/tmp/y4k9a7fm';
+    private $targetPath = '/tmp/test-moved-to/filename.txt';
 
-    public function test_move_to()
+    public function test_stream_move_to()
     {
-        [$targetPath, $expected] = $this->prepareToMove();
-        $this->SUT->moveTo($targetPath);
+        $this->SUT->moveTo($this->targetPath);
 
         $this->assertAttributeSame(true, 'moved', $this->SUT);
-        $this->assertDirectoryExists($targetPath);
-        $this->assertFileExists($expected);
+        $this->assertFileExists($this->targetPath);
         $this->assertFileNotExists($this->file, 'Original file should be deleted after moving');
-        $this->assertSame('hello', file_get_contents($expected));
-
-        // cleanup
-        unlink($expected);
-        rmdir($targetPath);
+        $this->assertSame('hello', file_get_contents($this->targetPath));
 
         // After moving the file the stream is not available
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to get the file stream, because it was previously moved');
+        $this->expectExceptionMessage('Stream is not available, because the file was previously moved');
         $this->SUT->getStream();
     }
 
-    public function test_moved_file_cannot_be_moved_twice()
+    public function test_stream_moved_file_cannot_be_moved_twice()
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to get the file stream, because it was previously moved');
+        $this->expectExceptionMessage('File is not available, because it was previously moved');
 
-        [$targetPath, $expected] = $this->prepareToMove();
-        $this->SUT->moveTo($targetPath);
+        $this->SUT->moveTo($this->targetPath);
+        $this->SUT->moveTo($this->targetPath);
+    }
 
-        // cleanup
-        unlink($expected);
-        rmdir($targetPath);
+    /**
+     * @dataProvider invalidPathValues
+     */
+    public function test_stream_accept_string_for_target_path($targetPath)
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('The provided path for moveTo operation is not valid');
 
         $this->SUT->moveTo($targetPath);
     }
 
-    public function test_should_throw_exception_when_file_is_null()
+    public function invalidPathValues()
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('The stream is not available for the uploaded file');
-
-        $file             = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
-        $file['tmp_name'] = null;
-
-        $SUT = new UploadedFile($file);
-        $SUT->moveTo('/tmp/test-moved-to');
+        return [
+            [null],
+            [true],
+            [new \stdClass],
+            [[]],
+            [0],
+            [1.2],
+        ];
     }
 
     protected function setUp()
     {
-        touch($this->file);
         file_put_contents($this->file, 'hello');
 
-        $data                     = include __DIR__ . '/fixtures/simple-file-array.php';
-        $data['test']['tmp_name'] = $this->file;
-        $this->SUT                = new UploadedFile($data['test']);
+        if (false === is_readable($this->file)) {
+            $this->markTestSkipped('Unt test failed to create a test file');
+        }
+
+        $data      = include __DIR__ . '/fixtures/simple-file-array.php';
+        $this->SUT = new UploadedFile($data['test']);
     }
 
     protected function tearDown()
     {
         @unlink($this->file);
-    }
-
-    /**
-     * @return array
-     */
-    private function prepareToMove(): array
-    {
-        $targetPath = '/tmp/test-moved-to';
-        $expected   = $targetPath . '/filename.txt';
-
-        if (!is_dir($targetPath)) {
-            mkdir($targetPath, 0777, true);
-        }
-
-        return [$targetPath, $expected];
+        @rmdir(dirname($this->targetPath));
+        parent::tearDown();
     }
 }

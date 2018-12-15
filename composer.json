@@ -19,33 +19,38 @@
   ],
   "require": {
     "php": "^7.1.4",
-    "koded/cache-simple": "~1",
     "psr/http-message": "~1",
-    "ext-json": "*"
+    "psr/http-factory": "~1",
+    "koded/stdlib": "dev-4.0-dev",
+    "ext-json": "*",
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-4": {
       "Koded\\Http\\": ""
     },
     "files": [
-      "functions.php"
+      "functions.php",
+      "Factory.php"
     ],
     "exclude-from-classmap": [
       "/Tests/"
     ]
   },
   "suggest": {
-    "ext-curl": "*",
     "ext-iconv": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "~7",
-    "satooshi/php-coveralls": "~1"
+    "php-http/psr7-integration-tests": "^1.0@dev"
   },
   "autoload-dev": {
     "psr-4": {
       "Koded\\Http\\": "Tests/"
-    }
+    },
+    "files": [
+      "vendor/koded/stdlib/functions-dev.php"
+    ]
   },
   "minimum-stability": "dev",
   "extra": {

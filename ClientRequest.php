@@ -27,14 +27,12 @@ class ClientRequest implements RequestInterface, JsonSerializable
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
     const E_METHOD_NOT_ALLOWED     = 'HTTP method "%s" is not supported';
 
-    /** @var string The HTTP method */
-    protected $method = Request::GET;
+    protected $method        = Request::GET;
+    protected $isSafeMethod  = true;
+    protected $requestTarget = '';
 
     /** @var UriInterface */
     protected $uri;
-
-    /** @var string */
-    protected $requestTarget = '';
 
     /**
      * ClientRequest constructor.
@@ -49,17 +47,19 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
+        $this->uri = $uri instanceof UriInterface ? $uri : new Uri($uri);
+
         $this->setHost();
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
 
-        $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
-        $this->stream = create_stream($this->prepareBody($body));
+        $this->isSafeMethod = $this->isSafeMethod();
+        $this->stream       = create_stream($this->prepareBody($body));
     }
 
     public function getMethod(): string
     {
-        return $this->method;
+        return strtoupper($this->method);
     }
 
     public function withMethod($method): ClientRequest
@@ -74,11 +74,13 @@ class ClientRequest implements RequestInterface, JsonSerializable
 
     public function withUri(UriInterface $uri, $preserveHost = false): ClientRequest
     {
-        $instance      = clone $this;
-        $instance->uri = $uri;
+        $instance = clone $this;
 
         if (true === $preserveHost) {
-            return $instance;
+            $uri      = $uri->withHost($this->uri->getHost());
+            $instance = $instance->withUri($uri);
+        } else {
+            $instance->uri = $uri;
         }
 
         if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
@@ -133,7 +135,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
             return $this->getUri()->getScheme() . "://{$host}{$port}";
         }
 
-        //return '/';
         return '';
     }
 
@@ -142,7 +143,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return 'https' === $this->uri->getScheme();
     }
 
-    public function isMethodSafe(): bool
+    public function isSafeMethod(): bool
     {
         return in_array($this->method, Request::SAFE_METHODS);
     }
@@ -151,20 +152,18 @@ class ClientRequest implements RequestInterface, JsonSerializable
     {
         $this->headersMap['host'] = 'Host';
 
-        $this->headers = ['Host' => $_SERVER['HTTP_HOST'] ?? ''] + $this->headers;
+        $this->headers = ['Host' => $this->uri->getHost() ?: $_SERVER['HTTP_HOST'] ?? ''] + $this->headers;
     }
 
     /**
      * @param string           $method The HTTP method
      * @param RequestInterface $instance
      *
-     * @return RequestInterface
+     * @return self
      */
-    protected function setMethod($method, RequestInterface $instance): RequestInterface
+    protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
-        $method = strtoupper($method);
-
-        if (false === in_array($method, Request::HTTP_METHODS)) {
+        if (false === in_array(strtoupper($method), Request::HTTP_METHODS)) {
             throw new InvalidArgumentException(
                 sprintf(self::E_METHOD_NOT_ALLOWED, $method), StatusCode::METHOD_NOT_ALLOWED
             );
@@ -183,7 +182,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     protected function assertSafeMethods(): ?ServerResponse
     {
-        if ($this->isMethodSafe() && $this->getBody()->getSize() > 0) {
+        if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
             return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, StatusCode::BAD_REQUEST);
         }
 
@@ -201,12 +200,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
             return $body;
         }
 
-        $options = JSON_UNESCAPED_SLASHES
-            | JSON_PRESERVE_ZERO_FRACTION
-            | JSON_NUMERIC_CHECK
-            | JSON_UNESCAPED_UNICODE
-            | JSON_FORCE_OBJECT;
-
-        return json_encode($body, $options);
+        return json_encode($body, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
     }
 }

@@ -16,7 +16,6 @@ class ServerResponseTest extends TestCase
         $this->assertSame(StatusCode::OK, $response->getStatusCode());
         $this->assertSame('OK', $response->getReasonPhrase());
         $this->assertSame('text/html', $response->getContentType());
-        $this->assertSame('UTF-8', $response->getCharset());
         $this->assertSame('1.1', $response->getProtocolVersion());
 
         $this->assertInstanceOf(StreamInterface::class, $response->getBody());
@@ -30,7 +29,6 @@ class ServerResponseTest extends TestCase
         $this->assertSame(StatusCode::BAD_GATEWAY, $response->getStatusCode());
         $this->assertSame('Bad Gateway', $response->getReasonPhrase());
         $this->assertSame('application/json', $response->getContentType());
-        $this->assertSame('UTF-8', $response->getCharset());
 
         $response->getBody()->rewind();
         $this->assertSame('エンコーディングは難しくない', $response->getBody()->getContents());
@@ -80,13 +78,18 @@ class ServerResponseTest extends TestCase
 
     public function test_send_with_bodiless_status_code()
     {
-        $response = new ServerResponse('hello world', 204);
-        $output   = $response->send();
+        $response = new ServerResponse('hello world', 204, [
+            'content-type' => 'text/html'
+        ]);
+
+        $this->assertTrue($response->hasHeader('content-type'));
+        $output = $response->send();
 
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
-        $this->assertSame(0, $response->getBody()->getSize());
-        $this->assertSame(204, $response->getStatusCode());
+        $this->assertFalse($response->hasHeader('Content-Type'));
+        $this->assertSame(null, $response->getBody()->getSize());
+        $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
     }
 
     public function test_send_with_head_http_method()
@@ -98,7 +101,20 @@ class ServerResponseTest extends TestCase
 
         $this->assertSame('', $output, 'The body for HEAD request is empty');
         $this->assertSame(['11'], $response->getHeader('Content-Length'),
-            'Content length for HEAD request is calculated');
+            'Content length for HEAD request is provided');
+    }
+
+    public function test_send_with_transfer_encoding()
+    {
+        $response = new ServerResponse('hello world', 200, [
+            'transfer-encoding' => 'chunked'
+        ]);
+
+        $response->send();
+
+        $this->assertArrayNotHasKey('Content-Length', $response->getHeaders());
+        $this->assertAttributeNotContains('content-length', 'headers', $response);
+        $this->assertFalse($response->hasHeader('content-length'));
     }
 }
 

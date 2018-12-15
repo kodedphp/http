@@ -5,7 +5,6 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
-use RuntimeException;
 
 class UploadedFileTest extends TestCase
 {
@@ -21,42 +20,21 @@ class UploadedFileTest extends TestCase
         $this->assertSame('filename.txt', $this->SUT->getClientFilename());
         $this->assertSame(5, $this->SUT->getSize());
         $this->assertSame(UPLOAD_ERR_OK, $this->SUT->getError());
+        $this->assertSame('w+b', $this->SUT->getStream()->getMetadata('mode'));
+
         $this->assertAttributeSame($this->file, 'file', $this->SUT);
         $this->assertAttributeSame(false, 'moved', $this->SUT);
-
-        $this->assertAttributeInstanceOf(StreamInterface::class, 'stream', $this->SUT);
-        $this->assertSame('w+b', $this->SUT->getStream()->getMetadata('mode'));
     }
 
-    public function test_stream_create_with_resource()
-    {
-        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
-
-        $file['tmp_name'] = fopen($this->file, 'r');
-
-        $SUT = new UploadedFile($file);
-        $this->assertInstanceOf(StreamInterface::class, $SUT->getStream());
-    }
-
-    public function test_stream_create_with_instance()
-    {
-        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
-
-        $file['tmp_name'] = new FileStream($this->file, 'r');
-
-        $SUT = new UploadedFile($file);
-        $this->assertInstanceOf(FileStream::class, $SUT->getStream());
-    }
-
-    public function test_stream_create_with_invalid_resource()
+    /**
+     * @dataProvider invalidTmpName
+     */
+    public function test_stream_should_pass_when_file_is_null($resource)
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Failed to create a stream. Expected a file name, StreamInterface instance, or a resource. Given boolean type');
 
-        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
-
-        $file['tmp_name'] = true;
-        new UploadedFile($file);
+        $SUT = $this->prepareFile($resource);
+        $this->assertInstanceOf(StreamInterface::class, $SUT->getStream());
     }
 
     public function test_move_to_invalid_target_path()
@@ -69,8 +47,8 @@ class UploadedFileTest extends TestCase
 
     public function test_should_throw_exception_when_file_is_not_set()
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('The stream is not available for the uploaded file');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The uploaded file is not supported');
 
         $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
         unset($file['tmp_name']);
@@ -79,16 +57,17 @@ class UploadedFileTest extends TestCase
         $SUT->moveTo('/tmp/test-moved-to');
     }
 
-    public function test_when_stream_is_not_available()
+    public function invalidTmpName()
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('The stream is not available for the uploaded file');
-
-        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
-        unset($file['tmp_name']);
-
-        $SUT = new UploadedFile($file);
-        $SUT->getStream();
+        return [
+            [null],
+            [true],
+            [0],
+            [1.2],
+            [new \stdClass],
+            [''],
+            [[fopen('php://temp', 'r')]],
+        ];
     }
 
     public function test_should_throw_exception_on_upload_error()
@@ -101,7 +80,7 @@ class UploadedFileTest extends TestCase
         $file['error'] = UPLOAD_ERR_CANT_WRITE;
 
         $SUT = new UploadedFile($file);
-        $SUT->moveTo('/tmp/test-moved-to');
+        $SUT->moveTo('/tmp/test-moved-to/test-copy.txt');
     }
 
     protected function setUp()
@@ -109,15 +88,21 @@ class UploadedFileTest extends TestCase
         touch($this->file);
         file_put_contents($this->file, 'hello');
 
-        $data = include __DIR__ . '/fixtures/simple-file-array.php';
-
-        $data['test']['tmp_name'] = $this->file;
-
-        $this->SUT = new UploadedFile($data['test']);
+        $files     = include __DIR__ . '/fixtures/simple-file-array.php';
+        $this->SUT = new UploadedFile($files['test']);
     }
 
     protected function tearDown()
     {
-        @unlink($this->file);
+        unlink($this->file);
+        @unlink('/tmp/test-moved-to/filename.txt');
+    }
+
+    private function prepareFile($resource): UploadedFIle
+    {
+        $file             = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
+        $file['tmp_name'] = $resource;
+
+        return new UploadedFile($file);
     }
 }

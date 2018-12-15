@@ -36,6 +36,10 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
         return $resource;
     }
 
+    if (is_callable($resource)) {
+        return new CallableStream($resource);
+    }
+
     $type = gettype($resource);
 
     if ('resource' === $type) {
@@ -44,10 +48,6 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
 
     if ('object' === $type && method_exists($resource, '__toString')) {
         return create_stream((string)$resource);
-    }
-
-    if (is_callable($resource)) {
-        return new CallableStream($resource);
     }
 
     throw new InvalidArgumentException('Failed to create a stream. '
@@ -108,17 +108,17 @@ function normalize_files_array(array $files): array
 {
     $sane = function($files, $file = [], $path = []) use (&$sane) {
         foreach ($files as $k => $v) {
-            $_   = $path;
-            $_[] = $k;
+            $list   = $path;
+            $list[] = $k;
 
             if (is_array($v)) {
-                $file = $sane($v, $file, $_);
+                $file = $sane($v, $file, $list);
             } else {
-                $next = array_splice($_, 1, 1);
-                $_    = array_merge($_, $next);
+                $next = array_splice($list, 1, 1);
+                $list    = array_merge($list, $next);
 
                 $copy = &$file;
-                foreach ($_ as $k) {
+                foreach ($list as $k) {
                     $copy = &$copy[$k];
                 }
                 $copy = $v;

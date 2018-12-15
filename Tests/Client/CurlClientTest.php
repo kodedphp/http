@@ -2,9 +2,9 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\StatusCode;
 use Koded\Http\Interfaces\HttpRequestClient;
 use Koded\Http\ServerResponse;
+use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 
 class CurlClientTest extends TestCase
@@ -34,8 +34,8 @@ class CurlClientTest extends TestCase
         $this->assertSame(false, $options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertSame(HttpRequestClient::USER_AGENT, $options[CURLOPT_USERAGENT]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
-        $this->assertSame('1.1', $options[CURLOPT_HTTP_VERSION]);
-        $this->assertSame(60.0, $options[CURLOPT_TIMEOUT]);
+        $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
+        $this->assertSame(3.0, $options[CURLOPT_TIMEOUT]);
 
         $this->assertSame('', (string)$this->SUT->getBody(), 'The body is empty');
     }
@@ -44,7 +44,7 @@ class CurlClientTest extends TestCase
     {
         $this->SUT
             ->ignoreErrors(true)
-            ->timeout(5.0)
+            ->timeout(5)
             ->followLocation(false)
             ->maxRedirects(2)
             ->userAgent('foo')
@@ -54,7 +54,7 @@ class CurlClientTest extends TestCase
         $options = $this->getOptions();
 
         $this->assertSame('foo', $options[CURLOPT_USERAGENT]);
-        $this->assertSame(5.0, $options[CURLOPT_TIMEOUT]);
+        $this->assertSame(5.0, $options[CURLOPT_TIMEOUT], 'Expects float (timeout)');
         $this->assertSame(2, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(false, $options[CURLOPT_FOLLOWLOCATION]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
@@ -62,6 +62,19 @@ class CurlClientTest extends TestCase
         $this->assertTrue($options[CURLOPT_SSL_VERIFYPEER]);
     }
 
+    public function test_protocol_version()
+    {
+        $options = $this->getOptions();
+        $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
+
+        $this->SUT = $this->SUT->withProtocolVersion('1.0');
+        $options   = $this->getOptions();
+        $this->assertSame(CURL_HTTP_VERSION_1_0, $options[CURLOPT_HTTP_VERSION]);
+    }
+
+    /**
+     * @group internet
+     */
     public function test_bad_request_response()
     {
         $client   = new \ReflectionClass($this->SUT);
@@ -71,9 +84,13 @@ class CurlClientTest extends TestCase
 
         $response = $this->SUT->read();
         $this->assertSame(StatusCode::PRECONDITION_FAILED, $response->getStatusCode());
-        $this->assertSame('The HTTP client is not created therefore cannot read anything', (string)$response->getBody());
+        $this->assertSame('The HTTP client is not created therefore cannot read anything',
+            (string)$response->getBody());
     }
 
+    /**
+     * @group internet
+     */
     public function test_internal_server_exception()
     {
         $client   = new \ReflectionClass($this->SUT);
@@ -89,9 +106,12 @@ class CurlClientTest extends TestCase
             (string)$response->getBody());
     }
 
+    /**
+     * @group internet
+     */
     public function test_when_curl_returns_error()
     {
-        $SUT = new class('get', 'http://kodeart.com') extends CurlClient
+        $SUT = new class('get', 'http://example.com') extends CurlClient
         {
             protected function hasError(): bool
             {
@@ -102,15 +122,17 @@ class CurlClientTest extends TestCase
         $response = $SUT->read();
 
         $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode(), (string)$response->getBody());
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
     }
 
     protected function setUp()
     {
-        if (false === function_exists('curl_init')) {
+        if (false === extension_loaded('curl')) {
             $this->markTestSkipped('cURL extension is not installed on the testing environment');
         }
 
-        $this->SUT = (new ClientFactory(ClientFactory::CURL))->get('http://example.com');
+        $this->SUT = (new ClientFactory(ClientFactory::CURL))
+            ->get('http://example.com')
+            ->timeout(3);
     }
 }

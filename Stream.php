@@ -45,7 +45,10 @@ class Stream implements StreamInterface
     public function __construct($stream)
     {
         if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
-            throw new RuntimeException('The provided resource is not a valid stream resource');
+            throw new RuntimeException(
+                'The provided resource is not a valid stream resource, ' . gettype($stream) . ' given.',
+                StatusCode::INTERNAL_SERVER_ERROR
+            );
         }
 
         $metadata       = stream_get_meta_data($stream);
@@ -117,17 +120,17 @@ class Stream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if (false === $this->seekable) {
-            throw new RuntimeException('The stream is not seekable');
-        }
-
-        if (0 !== fseek($this->stream, $offset, $whence)) {
+        if (0 !== @fseek($this->stream, $offset, $whence)) {
             throw new RuntimeException('Failed to seek to file pointer');
         }
     }
 
     public function rewind(): void
     {
+        if (false === $this->seekable) {
+            throw new RuntimeException('The stream is not seekable');
+        }
+
         $this->seek(0);
     }
 

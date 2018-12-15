@@ -22,7 +22,7 @@ use Koded\Http\Interfaces\{Request, Response};
  */
 class ServerResponse implements Response, JsonSerializable
 {
-    use HeaderTrait, MessageTrait, JsonSerializeTrait;
+    use HeaderTrait, MessageTrait, CookieTrait, JsonSerializeTrait;
 
     private const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
     private const E_INVALID_STATUS_CODE  = 'Invalid status code %s, expected range between [100-599]';
@@ -39,9 +39,9 @@ class ServerResponse implements Response, JsonSerializable
      */
     public function __construct($content = '', int $statusCode = StatusCode::OK, array $headers = [])
     {
-        $this->stream = create_stream($content);
         $this->setStatus($this, $statusCode);
         $this->setHeaders($headers);
+        $this->stream = create_stream($content);
     }
 
     public function getStatusCode(): int
@@ -64,16 +64,6 @@ class ServerResponse implements Response, JsonSerializable
         return $this->getHeaderLine('Content-Type') ?: 'text/html';
     }
 
-    // TODO remove it?
-    public function getCharset(): string
-    {
-        if ($this->stream->getSize() < 1) {
-            return 'UTF-8';
-        }
-
-        return iconv_get_encoding($this->stream->getContents()) ?: 'UTF-8';
-    }
-
     public function send(): string
     {
         $this->stream->rewind();
@@ -82,26 +72,19 @@ class ServerResponse implements Response, JsonSerializable
             return $this->stream->getContents();
         }
 
-        $this->normalizeHeader('Content-Length', [$this->stream->getSize()], true);
+        $this->prepareResponse();
 
-        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
-            $this->stream = create_stream(null);
+        // Headers
+        foreach ($this->getHeaders() as $name => $values) {
+            header($name . ':' . join(',', (array)$values), false, $this->statusCode);
         }
 
-        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
-            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
-            $this->stream = create_stream(null);
-        }
-
+        // Status header
         header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
             true, $this->statusCode
         );
 
-        foreach ($this->getHeaders() as $name => $values) {
-            header($name . ':' . join(', ', (array)$values), false, $this->statusCode);
-        }
-
-        return $this->stream->getContents();
+        return stream_get_contents($this->stream->detach());
     }
 
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
@@ -116,5 +99,28 @@ class ServerResponse implements Response, JsonSerializable
         $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : StatusCode::CODE[$statusCode];
 
         return $instance;
+    }
+
+    protected function prepareResponse(): void
+    {
+        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
+            $this->stream = create_stream(null);
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+            unset($this->headersMap['content-type'], $this->headers['Content-Type']);
+
+            return;
+        }
+
+        if ($size = $this->stream->getSize()) {
+            $this->normalizeHeader('Content-Length', $size, true);
+        }
+
+        if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
+            $this->stream = create_stream(null);
+        }
+
+        if ($this->hasHeader('Transfer-Encoding') || !$size) {
+            unset($this->headersMap['content-length'], $this->headers['Content-Length']);
+        }
     }
 }
