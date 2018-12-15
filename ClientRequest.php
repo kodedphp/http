@@ -47,18 +47,19 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
+        $this->uri = $uri instanceof UriInterface ? $uri : new Uri($uri);
+
         $this->setHost();
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
 
         $this->isSafeMethod = $this->isSafeMethod();
-        $this->uri          = $uri instanceof UriInterface ? $uri : new Uri($uri);
         $this->stream       = create_stream($this->prepareBody($body));
     }
 
     public function getMethod(): string
     {
-        return $this->method;
+        return strtoupper($this->method);
     }
 
     public function withMethod($method): ClientRequest
@@ -73,11 +74,13 @@ class ClientRequest implements RequestInterface, JsonSerializable
 
     public function withUri(UriInterface $uri, $preserveHost = false): ClientRequest
     {
-        $instance      = clone $this;
-        $instance->uri = $uri;
+        $instance = clone $this;
 
         if (true === $preserveHost) {
-            return $instance;
+            $uri      = $uri->withHost($this->uri->getHost());
+            $instance = $instance->withUri($uri);
+        } else {
+            $instance->uri = $uri;
         }
 
         if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
@@ -132,7 +135,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
             return $this->getUri()->getScheme() . "://{$host}{$port}";
         }
 
-        //return '/';
         return '';
     }
 
@@ -150,7 +152,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     {
         $this->headersMap['host'] = 'Host';
 
-        $this->headers = ['Host' => $_SERVER['HTTP_HOST'] ?? ''] + $this->headers;
+        $this->headers = ['Host' => $this->uri->getHost() ?: $_SERVER['HTTP_HOST'] ?? ''] + $this->headers;
     }
 
     /**
@@ -159,11 +161,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
      *
      * @return self
      */
-    protected function setMethod($method, RequestInterface $instance): RequestInterface
+    protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
-        $method = strtoupper($method);
-
-        if (false === in_array($method, Request::HTTP_METHODS)) {
+        if (false === in_array(strtoupper($method), Request::HTTP_METHODS)) {
             throw new InvalidArgumentException(
                 sprintf(self::E_METHOD_NOT_ALLOWED, $method), StatusCode::METHOD_NOT_ALLOWED
             );
