@@ -25,7 +25,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
 
     const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
-    const E_METHOD_NOT_ALLOWED     = 'HTTP method "%s" is not supported';
 
     protected $method        = Request::GET;
     protected $isSafeMethod  = true;
@@ -163,12 +162,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
-        if (false === in_array(strtoupper($method), Request::HTTP_METHODS)) {
-            throw new InvalidArgumentException(
-                sprintf(self::E_METHOD_NOT_ALLOWED, $method), StatusCode::METHOD_NOT_ALLOWED
-            );
-        }
-
         $instance->method = $method;
 
         return $instance;
