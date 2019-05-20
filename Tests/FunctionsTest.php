@@ -121,11 +121,20 @@ class FunctionsTest extends TestCase
 
     public function test_files_array_with_file_instance()
     {
-        $this->markTestSkipped();
+        $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
 
-        $normalized                           = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
-        $normalized['test'][0]['a']['b']['c'] = new UploadedFile([]);
+        $normalized['test'][0]['a']['b']['c'] = new UploadedFile([
+            'tmp_name' => 'very-complicated-files-array.php',
+        ]);
 
         $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);
+    }
+
+    public function test_files_array_exception()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The uploaded file is not supported');
+
+        new UploadedFile([]);
     }
 }
