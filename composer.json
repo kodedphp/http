@@ -8,8 +8,7 @@
     "response",
     "http",
     "http-client",
-    "stream",
-    "php7"
+    "stream"
   ],
   "authors": [
     {
@@ -18,7 +17,7 @@
     }
   ],
   "require": {
-    "php": "^7.1.4",
+    "php": "^7.3",
     "psr/http-message": "~1",
     "psr/http-factory": "~1",
     "koded/stdlib": "dev-4.0-dev",
@@ -42,15 +41,13 @@
   },
   "require-dev": {
     "phpunit/phpunit": "~7",
-    "php-http/psr7-integration-tests": "^1.0@dev"
+    "php-http/psr7-integration-tests": "^1.0@dev",
+    "codacy/coverage": "dev-master"
   },
   "autoload-dev": {
     "psr-4": {
       "Koded\\Http\\": "Tests/"
-    },
-    "files": [
-      "vendor/koded/stdlib/functions-dev.php"
-    ]
+    }
   },
   "minimum-stability": "dev",
   "extra": {
