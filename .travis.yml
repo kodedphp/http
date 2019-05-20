@@ -1,14 +1,27 @@
 language: php
 
-sudo: false
+php:
+  - 7.1
+  - 7.2
+  - 7.3
 
-php: 7.1
+matrix:
+  fast_finish: true
 
-before_script:
-  - composer -o update --no-interaction
+install:
+  - composer update -o --no-interaction --prefer-stable --ignore-platform-reqs
 
 script:
-  - vendor/bin/phpunit
+  - vendor/bin/phpunit --coverage-clover build/coverage/clover.xml
 
 after_success:
-  - travis_retry php vendor/bin/coveralls
+  - travis_retry vendor/bin/codacycoverage clover build/coverage/clover.xml
+
+sudo: false
+
+notifications:
+  email: false
+
+cache:
+  directories:
+    - $HOME/.composer/cache
