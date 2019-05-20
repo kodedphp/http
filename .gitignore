@@ -2,6 +2,7 @@ build
 vendor
 .DS_Store
 .idea
+.tmp
 composer.lock
 *.yml
 !.travis.yml
