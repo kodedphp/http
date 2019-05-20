@@ -35,9 +35,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_FAILONERROR    => 0,
         CURLOPT_USERAGENT      => HttpRequestClient::USER_AGENT,
         CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+        CURLOPT_FAILONERROR    => 0,
     ];
 
     public function __construct(string $method, $uri, $body = null, array $headers = [])
@@ -177,8 +177,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'uri'     => curl_getinfo($this->resource, CURLINFO_EFFECTIVE_URL),
             'message' => curl_strerror(curl_errno($this->resource)),
             'explain' => curl_error($this->resource),
-
-            //            'code'    => curl_getinfo($this->resource, CURLINFO_HTTP_CODE),
             'code'    => StatusCode::FAILED_DEPENDENCY,
         ]);
 
