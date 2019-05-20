@@ -34,6 +34,9 @@ class ServerRequestTest extends TestCase
         $this->assertNull($this->SUT->getParsedBody());
         $this->assertTrue(count($this->SUT->getHeaders()) > 0);
         $this->assertSame($_SERVER, $this->SUT->getServerParams());
+
+        $this->assertFalse($this->SUT->hasHeader('content-type'), 'Content-type can be explicitly set in the request headers');
+        $this->assertSame('', $this->SUT->getHeaderLine('Content-type'));
     }
 
     public function test_should_handle_arguments()
@@ -214,7 +217,7 @@ class ServerRequestTest extends TestCase
         $_SERVER['REQUEST_URI']     = '';
         $_SERVER['SCRIPT_FILENAME'] = '/index.php';
 
-        $_SERVER['HTTP_CONTENT_TYPE']  = 'application/json';
+//        $_SERVER['HTTP_CONTENT_TYPE']  = 'application/json';
         $_SERVER['HTTP_HOST']          = 'example.org';
         $_SERVER['HTTP_IF_NONE_MATCH'] = '0163b37c-08e0-46f8-9aec-f31991bf6078-gzip';
 
