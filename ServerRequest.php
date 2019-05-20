@@ -182,8 +182,8 @@ class ServerRequest extends ClientRequest implements Request
             $this->headersMap['etag'] = 'ETag';
         }
 
-        if (false === $this->isSafeMethod) {
-            $this->headers['Content-Type']    = $server['CONTENT_TYPE'] ?? '';
+        if (isset($server['CONTENT_TYPE'])) {
+            $this->headers['Content-Type']    = strtolower($server['CONTENT_TYPE']);
             $this->headersMap['content-type'] = 'Content-Type';
         }
 
