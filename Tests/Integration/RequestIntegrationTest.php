@@ -7,17 +7,14 @@ use Psr\Http\Message\RequestInterface;
 class RequestIntegrationTest extends \Http\Psr7Test\RequestIntegrationTest
 {
 
-    /** @var RequestInterface */
-    protected $request;
-
     protected $skippedTests = [
         'testUri'                              => 'Skipped because of the host requirement',
-        'testMethod'                           => 'Implementation uses constants (capitalisation matters)',
+        'testMethod'                           => 'Implementation uses constants where capitalization matters',
         'testMethodWithInvalidArguments'       => 'Does not make sense for strict type implementation',
         'testWithHeaderInvalidArguments'       => 'Does not make sense for strict type implementation',
         'testWithAddedHeaderInvalidArguments'  => 'Does not make sense for strict type implementation',
-        'testWithAddedHeaderArrayValueAndKeys' => 'Skip, the test is weird',
-        'testWithAddedHeader'                  => 'Skip, the test is weird',
+        'testWithAddedHeaderArrayValueAndKeys' => 'Skipped, the test is weird',
+        'testWithAddedHeader'                  => 'Skipped, the test is weird',
         'testUriPreserveHost_NoHost_Host'      => 'Skipped because of the host requirement',
     ];
 
@@ -27,7 +24,7 @@ class RequestIntegrationTest extends \Http\Psr7Test\RequestIntegrationTest
     public function createSubject()
     {
         unset($_SERVER['HTTP_HOST']);
-        return $this->request = new ClientRequest('GET', '');
+        return new ClientRequest('GET', '');
     }
 
 }
