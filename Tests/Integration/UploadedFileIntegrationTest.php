@@ -23,6 +23,7 @@ class UploadedFileIntegrationTest extends \Http\Psr7Test\UploadedFileIntegration
 
     protected function tearDown()
     {
+        \Koded\Stdlib\rmdir('.tmp');
         @unlink('.tmp/test.txt');
         parent::tearDown();
     }
