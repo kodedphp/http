@@ -30,7 +30,7 @@ trait MessageTrait
         return $this->protocolVersion;
     }
 
-    public function withProtocolVersion($version): self
+    public function withProtocolVersion($version)
     {
         if (false === in_array($version, ['1.0', '1.1'], true)) {
             throw new InvalidArgumentException('Unsupported HTTP protocol version ' . $version);
