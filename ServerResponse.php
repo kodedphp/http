@@ -84,7 +84,7 @@ class ServerResponse implements Response, JsonSerializable
             true, $this->statusCode
         );
 
-        return stream_get_contents($this->stream->detach());
+        return (string)$this->stream;
     }
 
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
