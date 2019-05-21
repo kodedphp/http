@@ -8,6 +8,10 @@ use Psr\Http\Message\StreamInterface;
 
 class ServerResponseTest extends TestCase
 {
+    /**
+     * @var bool COntrol the testing headers_sent()
+     */
+    public static $HEADERS_SENT = false;
 
     public function test_constructor_and_default_state()
     {
@@ -67,18 +71,19 @@ class ServerResponseTest extends TestCase
 
     public function test_send_method()
     {
+        self::$HEADERS_SENT = true;
+
         $response = new ServerResponse('hello world');
         $output   = $response->send();
 
         $this->assertSame('hello world', $output);
-
         $this->assertSame(['11'], $response->getHeader('Content-Length'),
             'The length (int) is transformed to string by normalizeHeader()');
     }
 
     public function test_send_with_bodiless_status_code()
     {
-        $response = new ServerResponse('hello world', 204, [
+        $response = new ServerResponse('hello world', StatusCode::NO_CONTENT, [
             'content-type' => 'text/html'
         ]);
 
@@ -116,6 +121,11 @@ class ServerResponseTest extends TestCase
         $this->assertAttributeNotContains('content-length', 'headers', $response);
         $this->assertFalse($response->hasHeader('content-length'));
     }
+
+    protected function tearDown()
+    {
+        self::$HEADERS_SENT = false;
+    }
 }
 
 /**
@@ -124,4 +134,7 @@ class ServerResponseTest extends TestCase
 
 function header() { }
 
-function headers_sent() { }
+function headers_sent()
+{
+    return ServerResponseTest::$HEADERS_SENT;
+}

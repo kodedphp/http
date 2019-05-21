@@ -35,8 +35,17 @@ class ServerRequestTest extends TestCase
         $this->assertTrue(count($this->SUT->getHeaders()) > 0);
         $this->assertSame($_SERVER, $this->SUT->getServerParams());
 
-        $this->assertFalse($this->SUT->hasHeader('content-type'), 'Content-type can be explicitly set in the request headers');
+        $this->assertFalse($this->SUT->hasHeader('content-type'),
+            'Content-type can be explicitly set in the request headers');
         $this->assertSame('', $this->SUT->getHeaderLine('Content-type'));
+    }
+
+    public function test_server_uri_value()
+    {
+        $_SERVER['REQUEST_URI'] = 'https://example.org';
+
+        $request = new ServerRequest;
+        $this->assertSame('https://example.org', (string)$request->getUri());
     }
 
     public function test_should_handle_arguments()
@@ -100,6 +109,26 @@ class ServerRequestTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported data provided, Expects NULL, array or iterable');
         $this->SUT->withParsedBody('junk');
+    }
+
+    public function test_return_posted_body()
+    {
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+        $_POST                        = ['key' => 'value'];
+
+        $SUT = new ServerRequest;
+        $this->assertSame($_POST, $SUT->getParsedBody(), 'Returns the _POST array');
+    }
+
+    public function test_return_posted_body_with_parsed_body()
+    {
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+        $_POST                        = ['key' => 'value'];
+
+        $SUT  = new ServerRequest;
+        $_SUT = $SUT->withParsedBody(['key' => 'value']);
+
+        $this->assertNotSame($SUT, $_SUT, 'Response objects are immutable');
     }
 
     public function test_put_method_should_parse_the_php_input()
@@ -208,6 +237,14 @@ class ServerRequestTest extends TestCase
         $this->assertEquals(['key' => 'value'], $SUT->getParsedBody());
     }
 
+    public function test_headers_with_content_type()
+    {
+        $_SERVER['CONTENT_TYPE'] = 'application/json';
+
+        $SUT = new ServerRequest;
+        $this->assertEquals('application/json', $SUT->getHeaderLine('content-type'));
+    }
+
     protected function setUp()
     {
         $_SERVER['REQUEST_METHOD']  = 'POST';
@@ -217,7 +254,6 @@ class ServerRequestTest extends TestCase
         $_SERVER['REQUEST_URI']     = '';
         $_SERVER['SCRIPT_FILENAME'] = '/index.php';
 
-//        $_SERVER['HTTP_CONTENT_TYPE']  = 'application/json';
         $_SERVER['HTTP_HOST']          = 'example.org';
         $_SERVER['HTTP_IF_NONE_MATCH'] = '0163b37c-08e0-46f8-9aec-f31991bf6078-gzip';
 
@@ -226,6 +262,9 @@ class ServerRequestTest extends TestCase
 
     protected function tearDown()
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI']    = '';
+
         $_POST     = [];
         $this->SUT = null;
     }
