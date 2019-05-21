@@ -172,8 +172,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                      *
                      */
                     $statusCode = explode(' ', $header)[1] ?? 200;
-                } else {
-                    continue;
                 }
             }
         }
