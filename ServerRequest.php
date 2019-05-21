@@ -228,8 +228,8 @@ class ServerRequest extends ClientRequest implements Request
         }
 
         return $this->method === self::POST && (
-                strpos('application/x-www-form-urlencoded', $contentType)
-                || strpos('multipart/form-data', $contentType));
+                false !== strpos('application/x-www-form-urlencoded', $contentType) ||
+                false !== strpos('multipart/form-data', $contentType));
     }
 
     /**
