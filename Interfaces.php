@@ -210,22 +210,6 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface
 }
 
 
-interface HttpInputValidator
-{
-
-    /**
-     * Validates the provided data with custom rules specific to
-     * some application logic and implementation.
-     *
-     * @param Data $input The data to be validated
-     *
-     * @return array Should return an empty array if validation has passed,
-     *               or a nested data with explanation what failed.
-     */
-    public function validate(Data $input): array;
-}
-
-
 interface ExtendedMessageInterface
 {
     /**
@@ -274,11 +258,29 @@ interface ExtendedMessageInterface
 }
 
 
+interface HttpInputValidator
+{
+
+    /**
+     * Validates the provided data with custom rules specific to
+     * some application logic and implementation.
+     *
+     * @param Data $input The data to be validated
+     *
+     * @return array Should return an empty array if validation has passed,
+     *               or a nested data with explanation what failed.
+     */
+    public function validate(Data $input): array;
+}
+
+
 interface ValidatableRequest
 {
 
     /**
      * Validates the request body using a concrete validation instance.
+     *
+     * @param HttpInputValidator $validator
      *
      * @return Response|null Should return a NULL if validation has passed,
      * or a Response object with status code 400 and explanation what failed
