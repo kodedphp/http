@@ -19,7 +19,6 @@ use Throwable;
 
 class Stream implements StreamInterface
 {
-
     protected const MODES = [
         'w+'  => 1,
         'r+'  => 1,
@@ -38,7 +37,6 @@ class Stream implements StreamInterface
 
     /** @var resource The underlying stream resource */
     protected $stream;
-
     protected $mode     = 0;
     protected $seekable = false;
 
