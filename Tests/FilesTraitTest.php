@@ -2,7 +2,7 @@
 
 namespace Koded\Http;
 
-use function Koded\Stdlib\dump;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class FilesTraitTest extends TestCase
@@ -109,7 +109,7 @@ class FilesTraitTest extends TestCase
 
         $request = new ServerRequest;
         $request = $request->withUploadedFiles(include __DIR__ . '/fixtures/simple-file-array.php');
-        $files = $request->getUploadedFiles();
+        $files   = $request->getUploadedFiles();
 
         $this->assertInternalType('array', $files);
         $this->assertInstanceOf(UploadedFile::class, $files['test']);
@@ -117,4 +117,24 @@ class FilesTraitTest extends TestCase
         unlink($file);
         $_FILES = [];
     }
+
+    public function test_files_array_with_file_instance()
+    {
+        $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
+
+        $normalized['test'][0]['a']['b']['c'] = new UploadedFile([
+            'tmp_name' => 'very-complicated-files-array.php',
+        ]);
+
+        $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);
+    }
+
+    public function test_files_array_exception()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The uploaded file is not supported');
+
+        new UploadedFile([]);
+    }
+
 }

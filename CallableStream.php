@@ -31,6 +31,13 @@ class CallableStream implements StreamInterface
     /** @var bool If callable is Generator instance */
     private $isGenerator = false;
 
+    /**
+     * CallableStream constructor.
+     *
+     * @param callable $callable
+     *
+     * @throws \ReflectionException
+     */
     public function __construct(callable $callable)
     {
         $this->callable    = $callable;

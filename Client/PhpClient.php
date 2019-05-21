@@ -13,13 +13,12 @@
 namespace Koded\Http\Client;
 
 use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
-use Koded\Http\Interfaces\{Response, HttpRequestClient};
+use Koded\Http\Interfaces\{HttpRequestClient, Response};
 use Throwable;
 
 
 class PhpClient extends ClientRequest implements HttpRequestClient
 {
-
     /**
      * @var array Stream context options
      * @link http://php.net/manual/en/context.http.php
@@ -57,9 +56,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         }
 
         try {
-            $context = stream_context_create(['http' => $this->options]);
-
-            if (false === $response = $this->createResource($context)) {
+            if (false === $response = $this->createResource(stream_context_create(['http' => $this->options]))) {
                 return new ServerResponse(error_get_last()['message'], StatusCode::FAILED_DEPENDENCY);
             }
 
@@ -73,7 +70,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                 fclose($response);
             }
 
-            unset($context, $response);
+            unset($response);
         }
     }
 
@@ -175,8 +172,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                      *
                      */
                     $statusCode = explode(' ', $header)[1] ?? 200;
-                } else {
-                    continue;
                 }
             }
         }

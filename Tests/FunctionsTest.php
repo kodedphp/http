@@ -119,13 +119,11 @@ class FunctionsTest extends TestCase
         $this->assertEquals($normalized, include __DIR__ . '/fixtures/very-complicated-files-array-normalized.php');
     }
 
-    public function test_files_array_with_file_instance()
+    public function test_files_array_exception()
     {
-        $this->markTestSkipped();
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Failed to process the uploaded files. Invalid file structure provided');
 
-        $normalized                           = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
-        $normalized['test'][0]['a']['b']['c'] = new UploadedFile([]);
-
-        $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);
+        build_files_array(['']);
     }
 }

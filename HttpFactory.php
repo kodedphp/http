@@ -33,17 +33,18 @@ use Psr\Http\Message\{RequestFactoryInterface,
     UriInterface};
 
 
-class RequestFactory implements RequestFactoryInterface
+class HttpFactory implements RequestFactoryInterface,
+    ResponseFactoryInterface,
+    ServerRequestFactoryInterface,
+    StreamFactoryInterface,
+    UploadedFileFactoryInterface,
+    UriFactoryInterface
 {
     public function createRequest(string $method, $uri): RequestInterface
     {
         return new ClientRequest($method, $uri);
     }
-}
 
-
-class ServerRequestFactory implements ServerRequestFactoryInterface
-{
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
         if ($serverParams) {
@@ -55,20 +56,12 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
 
         return new ServerRequest;
     }
-}
 
-
-class ResponseFactory implements ResponseFactoryInterface
-{
     public function createResponse(int $code = 200, string $reasonPhrase = ''): ResponseInterface
     {
         return (new ServerResponse)->withStatus($code, $reasonPhrase);
     }
-}
 
-
-class StreamFactory implements StreamFactoryInterface
-{
     public function createStream(string $content = ''): StreamInterface
     {
         return create_stream($content);
@@ -83,20 +76,12 @@ class StreamFactory implements StreamFactoryInterface
     {
         return create_stream($resource);
     }
-}
 
-
-class UriFactory implements UriFactoryInterface
-{
     public function createUri(string $uri = ''): UriInterface
     {
         return new Uri($uri);
     }
-}
 
-
-class UploadedFileFactory implements UploadedFileFactoryInterface
-{
     public function createUploadedFile(
         StreamInterface $stream,
         int $size = null,

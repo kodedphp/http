@@ -13,13 +13,13 @@ class FactoriesTest extends TestCase
 
     public function test_request_factory()
     {
-        $request = (new RequestFactory)->createRequest(Request::HEAD, '/');
+        $request = (new HttpFactory)->createRequest(Request::HEAD, '/');
         $this->assertInstanceOf(RequestInterface::class, $request);
     }
 
     public function test_server_request_factory()
     {
-        $request = (new ServerRequestFactory)->createServerRequest(
+        $request = (new HttpFactory)->createServerRequest(
             Request::HEAD, '/', ['X_Request_Id' => '123']
         );
 
@@ -31,14 +31,14 @@ class FactoriesTest extends TestCase
     public function test_response_factory()
     {
         $reason   = 'My custom reason phrase';
-        $response = (new ResponseFactory)->createResponse(201, $reason);
+        $response = (new HttpFactory)->createResponse(201, $reason);
         $this->assertSame(201, $response->getStatusCode());
         $this->assertSame($reason, $response->getReasonPhrase());
     }
 
     public function test_create_stream()
     {
-        $stream = (new StreamFactory)->createStream('hello');
+        $stream = (new HttpFactory)->createStream('hello');
         $this->assertSame('hello', $stream->getContents());
         $this->assertTrue($stream->isSeekable());
         $this->assertTrue($stream->isWritable());
@@ -48,7 +48,7 @@ class FactoriesTest extends TestCase
 
     public function test_create_stream_from_file()
     {
-        $stream = (new StreamFactory)->createStreamFromFile(__DIR__ . '/../LICENSE');
+        $stream = (new HttpFactory)->createStreamFromFile(__DIR__ . '/../LICENSE');
         $this->assertInstanceOf(FileStream::class, $stream);
         $this->assertGreaterThan(0, $stream->getSize());
         $this->assertTrue($stream->isSeekable());
@@ -60,7 +60,7 @@ class FactoriesTest extends TestCase
     public function test_create_stream_from_resource()
     {
         $resource = fopen('php://memory', 'r');
-        $stream   = (new StreamFactory)->createStreamFromResource($resource);
+        $stream   = (new HttpFactory)->createStreamFromResource($resource);
 
         $this->assertInstanceOf(StreamInterface::class, $stream);
         $this->assertTrue($stream->isSeekable());

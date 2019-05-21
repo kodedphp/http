@@ -14,13 +14,13 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\{HttpInputValidator, Response};
 use Koded\Stdlib\Immutable;
+use function Koded\Stdlib\json_serialize;
 
 /**
- * @method array|null getParsedBody
+ * @method Response|null getParsedBody
  */
 trait ValidatableTrait
 {
-
     public function validate(HttpInputValidator $validator): ?Response
     {
         $body = new Immutable($this->getParsedBody() ?? []);
@@ -33,6 +33,7 @@ trait ValidatableTrait
             return null;
         }
 
-        return new ServerResponse(json_encode($errors), StatusCode::BAD_REQUEST);
+        $errors['code'] = (int)($errors['code'] ?? StatusCode::BAD_REQUEST);
+        return new ServerResponse(json_serialize($errors), $errors['code']);
     }
 }

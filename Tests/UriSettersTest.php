@@ -98,6 +98,15 @@ class UriSettersTest extends TestCase
     /**
      * @test
      */
+    public function it_should_return_null_for_null_port_and_scheme()
+    {
+        $uri = (new Uri('/'))->withPort(null);
+        $this->assertNull($uri->getPort());
+    }
+
+    /**
+     * @test
+     */
     public function it_should_set_the_nonstandard_port()
     {
         $uri = $this->uri->withPort(9000);

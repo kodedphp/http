@@ -101,15 +101,15 @@ abstract class AcceptHeader
         $type   = array_shift($bits);
 
         if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header), StatusCode::NOT_ACCEPTABLE);
         }
 
         $this->separator = $matches[2] ?? '/';
         [$type, $subtype] = explode($this->separator, $type, 2) + [1 => '*'];
 
-        if ($type === '*' && $subtype !== '*') {
+        if ('*' === $type && '*' !== $subtype) {
             // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header));
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header), StatusCode::NOT_ACCEPTABLE);
         }
 
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
@@ -119,7 +119,7 @@ abstract class AcceptHeader
          * some obscure media type like "vnd.api-v1+json".
          */
         $this->subtype  = explode('+', $subtype)[1] ?? $subtype;
-        $this->catchAll = $this->type === '*' && $this->subtype === '*';
+        $this->catchAll = '*' === $this->type && '*' === $this->subtype;
 
         parse_str(join('&', $bits), $this->params);
         /* NOTE: It is a waste of time to negotiate on the basis
@@ -209,15 +209,15 @@ abstract class AcceptHeader
         }
 
         // Explicit type mismatch (w/o asterisk); bail out
-        if (false === $typeMatch && $this->type !== '*') {
+        if (false === $typeMatch && '*' !== $this->type) {
             return false;
         }
 
-        if ($accept->subtype === '*') {
+        if ('*' === $accept->subtype) {
             $accept->subtype = $this->subtype;
         }
 
-        if ($accept->subtype !== $this->subtype && $this->subtype !== '*') {
+        if ($accept->subtype !== $this->subtype && '*' !== $this->subtype) {
             return false;
         }
 
@@ -230,7 +230,7 @@ abstract class AcceptHeader
     private function rank(AcceptHeader $accept): AcceptHeader
     {
         // +100 if types are exact match w/o asterisk
-        if ($this->type === $accept->type && $accept->type !== '*') {
+        if ($this->type === $accept->type && '*' !== $accept->type) {
             $accept->weight += 100;
         }
 

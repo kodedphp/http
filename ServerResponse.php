@@ -66,13 +66,11 @@ class ServerResponse implements Response, JsonSerializable
 
     public function send(): string
     {
-        $this->stream->rewind();
+        $this->prepareResponse();
 
         if (headers_sent()) {
-            return $this->stream->getContents();
+            return (string)$this->stream;
         }
-
-        $this->prepareResponse();
 
         // Headers
         foreach ($this->getHeaders() as $name => $values) {
@@ -84,7 +82,7 @@ class ServerResponse implements Response, JsonSerializable
             true, $this->statusCode
         );
 
-        return stream_get_contents($this->stream->detach());
+        return (string)$this->stream;
     }
 
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse

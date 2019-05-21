@@ -27,14 +27,6 @@ class ClientRequestTest extends TestCase
         $this->assertInstanceOf(Uri::class, $this->SUT->getUri());
     }
 
-    public function test_should_throw_exception_on_unsupported_method()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('HTTP method "YABBADABBADOO" is not supported');
-        $this->expectExceptionCode(405);
-        new ClientRequest('YABBADABBADOO', '');
-    }
-
     public function test_should_change_the_method()
     {
         $request = $this->SUT->withMethod('get');
