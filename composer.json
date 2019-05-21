@@ -23,7 +23,7 @@
     "php": "^7.3",
     "psr/http-message": "~1",
     "psr/http-factory": "~1",
-    "koded/stdlib": "dev-4.0-dev",
+    "koded/stdlib": "~4",
     "ext-json": "*",
     "ext-curl": "*"
   },
@@ -52,7 +52,6 @@
       "Koded\\Http\\": "Tests/"
     }
   },
-  "minimum-stability": "dev",
   "extra": {
     "branch-alias": {
       "dev-master": "1.1-dev"
