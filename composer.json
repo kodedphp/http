@@ -8,7 +8,10 @@
     "response",
     "http",
     "http-client",
-    "stream"
+    "stream",
+    "negotiation",
+    "psr-7",
+    "psr-17"
   ],
   "authors": [
     {
@@ -30,7 +33,7 @@
     },
     "files": [
       "functions.php",
-      "Factory.php"
+      "HttpFactory.php"
     ],
     "exclude-from-classmap": [
       "/Tests/"

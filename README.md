@@ -10,10 +10,10 @@ Koded - HTTP Library
 [![Software license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 
-Koded HTTP library implements PSR-7 (HTTP message).
+Koded HTTP library implements [PSR-7][1] (HTTP message).
 
-To provide you with more useful methods, the request and response instances
-are extended with [additional interfaces](#interfaces) that you may use in your projects.
+To more useful everyday methods, the request and response instances
+are extended with [additional interfaces](#interfaces) that might be used in your projects.
 
 
 ServerRequest
@@ -55,25 +55,31 @@ This object represents the outgoing server-side response.
 UploadedFile
 ------------
 
-This value object represents a file uploaded through an HTTP request.
+This value object represents a file uploaded through the HTTP request.
 
 
-Factories
----------
+HTTP Factory
+------------
+
+Implementation of [PSR-17][2] (HTTP Message Factories).
 
 ```php
-$clientRequest = (new RequestFactory)->createRequest('GET', '/');
-$serverRequest = (new ServerRequestFactory)->createServerRequest('GET', '/');
+<?php
 
-$response = (new ResponseFactory)->createResponse(201);
+use Koded\Http\HttpFactory;
 
-$stream = (new StreamFactory)->createStream('Hello there');
-$stream = (new StreamFactory)->createStreamFromFile('file.name', '+w');
-$stream = (new StreamFactory)->createStreamFromResource($resource);
+$clientRequest = (new HttpFactory)->createRequest('GET', '/');
+$serverRequest = (new HttpFactory)->createServerRequest('GET', '/');
 
-$url = (new UriFactory)->createUri('/');
+$response = (new HttpFactory)->createResponse(201);
 
-$uploadFile = (new UploadedFileFactory)->createUploadedFile($stream);
+$stream = (new HttpFactory)->createStream('Hello there');
+$stream = (new HttpFactory)->createStreamFromFile('file.name', '+w');
+$stream = (new HttpFactory)->createStreamFromResource($resource);
+
+$uri = (new HttpFactory)->createUri('/');
+
+$uploadedFile = (new HttpFactory)->createUploadedFile($stream);
 ```
 
 HTTP clients
@@ -124,15 +130,57 @@ methods to manipulate the request/response objects state.
 ### Response
 - `getContentType(): string`
 
+ExtendedMessageInterface
+------------------------
+
+Both `Request` and `Response` extends this interface, thus providing the extra methods methods:
+- `withHeaders(array $headers): static`
+- `replaceHeaders(array $headers): static`
+- `getFlattenedHeaders(): array`
+- `getCanonicalizedHeaders(array $names = []): string`
 
 HttpInputValidator
 ------------------
-// TODO
 
-Other interfaces in this package are mostly for internal use.
+The idea here is to have a basic mechanism for validating the incoming request data.
+Validation is done in an instance of `HttpInputValidator` object by calling the 
+`Request::validate(HttpInputValidator $validator)` method.
+
+`HttpInputValidator::validate()` should return `array`, in case of
+- empty array, the validation went fine
+- a hash (`['key' => 'value', ...]`), with information what went wrong if incoming data is not valid
+
+The error handling is done in the application. A naive example:
+
+```php
+class UsernameValidator implements HttpInputValidator {
+
+    public function validate(Data $input): array {
+        if ( ! empty($input->get('username'))) {
+            return [];
+        }
+
+       return ['message' => 'Username is required']; 
+    }
+}
+
+// Somewhere in your app, use the `Request` object to run validation
+
+if ($response = $request->validate(new UsernameValidator)) {
+    // {"message":"Username is required","code":400}
+    return $response;
+}
+```
+
+The error response will always have a status code set and `code` value in the error message.  
+If the status code is not provided, the default is `400 Bad Request`.
 
 
 License
 -------
 
 The code is distributed under the terms of [The 3-Clause BSD license](LICENSE).
+
+
+[1]: https://www.php-fig.org/psr/psr-7/
+[2]: https://www.php-fig.org/psr/psr-17/
