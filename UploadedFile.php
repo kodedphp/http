@@ -78,6 +78,7 @@ class UploadedFile implements UploadedFileInterface
         $this->assertUploadError();
         $this->assertTargetPath($targetPath);
 
+        // @codeCoverageIgnoreStart
         try {
             $this->moved = ('cli' === php_sapi_name())
                 ? rename($this->file, $targetPath)
@@ -87,6 +88,7 @@ class UploadedFile implements UploadedFileInterface
         } catch (Throwable $e) {
             throw new RuntimeException($e->getMessage());
         }
+        // @codeCoverageIgnoreEnd
     }
 
 
@@ -173,11 +175,6 @@ class UploadedFileException extends KodedException
     public static function fileNotSupported()
     {
         return new InvalidArgumentException('The uploaded file is not supported');
-    }
-
-    public static function fileNotAvailable()
-    {
-        return new RuntimeException('The file is not available');
     }
 
     public static function filenameCannotBeEmpty()
