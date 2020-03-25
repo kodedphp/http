@@ -24,7 +24,7 @@ use RuntimeException;
  */
 function create_stream($resource, string $mode = 'r+'): StreamInterface
 {
-    if (is_string($resource) || null === $resource) {
+    if (null === $resource || is_string($resource)) {
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
         fseek($stream, 0);
@@ -106,7 +106,7 @@ function stream_to_string(StreamInterface $stream): string
  */
 function normalize_files_array(array $files): array
 {
-    $sane = function($files, $file = [], $path = []) use (&$sane) {
+    $sane = function(array $files, array $file = [], array $path = []) use (&$sane) {
         foreach ($files as $k => $v) {
             $list   = $path;
             $list[] = $k;
@@ -115,10 +115,8 @@ function normalize_files_array(array $files): array
                 $file = $sane($v, $file, $list);
             } else {
                 $next = array_splice($list, 1, 1);
-                $list    = array_merge($list, $next);
-
                 $copy = &$file;
-                foreach ($list as $k) {
+                foreach (array_merge($list, $next) as $k) {
                     $copy = &$copy[$k];
                 }
                 $copy = $v;
@@ -144,7 +142,7 @@ function build_files_array(array $files): array
     foreach ($files as $index => $file) {
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;
-        } elseif (is_array($file) && isset($file['tmp_name'])) {
+        } elseif (isset($file['tmp_name']) && is_array($file)) {
             $files[$index] = new UploadedFile($file);
         } elseif (is_array($file)) {
             $files[$index] = build_files_array($file);
