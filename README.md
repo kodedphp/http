@@ -3,17 +3,17 @@ Koded - HTTP Library
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/koded/http.svg)](https://packagist.org/packages/koded/http)
 [![Build Status](https://travis-ci.org/kodedphp/http.svg?branch=master)](https://travis-ci.org/kodedphp/http)
-[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/77246045a5c440ddb0efb195b48362ef)](https://www.codacy.com/app/kodeart/http)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/77246045a5c440ddb0efb195b48362ef)](https://www.codacy.com/app/kodeart/http)
+[![Code Coverage](https://scrutinizer-ci.com/g/kodedphp/http/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/kodedphp/http/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/koded/http.svg)](https://packagist.org/packages/koded/http)
-[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%207.1-8892BF.svg)](https://php.net/)
+[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%207.2-8892BF.svg)](https://php.net/)
 [![Software license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 
-Koded HTTP library implements [PSR-7][1] (HTTP message).
+Koded HTTP library implements [PSR-7][1] (HTTP message), [PSR-17][2] (HTTP Factories) and [PSR-18][3] (HTTP Client).
 
-To more useful everyday methods, the request and response instances
-are extended with [additional interfaces](#interfaces) that might be used in your projects.
+To have more useful everyday methods for your projects, the request and response instances
+are extended with [additional interfaces](#additional-interfaces).
 
 
 ServerRequest
@@ -23,7 +23,7 @@ ServerRequest
 class ServerRequest extends ClientRequest implements Request {}
 ```
 
-This object represents the incoming server-side HTTP request.
+This object represents the **incoming server-side** HTTP request.
 
 ![](diagrams/server-request.png)
 
@@ -35,7 +35,7 @@ ClientRequest
 class ClientRequest implements RequestInterface, JsonSerializable {}
 ```
 
-This object is a representation of an outgoing client-side HTTP request.
+This object is a representation of an **outgoing client-side** HTTP request.
 
 ![](diagrams/client-request.png)
 
@@ -47,7 +47,7 @@ ServerResponse
 class ServerResponse implements Response, JsonSerializable {}
 ```
 
-This object represents the outgoing server-side response.
+This object represents the **outgoing server-side** response.
 
 ![](diagrams/server-response.png)
 
@@ -61,32 +61,34 @@ This value object represents a file uploaded through the HTTP request.
 HTTP Factory
 ------------
 
-Implementation of [PSR-17][2] (HTTP Message Factories).
+Implementation of [PSR-17][2] (HTTP Factories).
 
 ```php
 <?php
 
 use Koded\Http\HttpFactory;
 
-$clientRequest = (new HttpFactory)->createRequest('GET', '/');
-$serverRequest = (new HttpFactory)->createServerRequest('GET', '/');
+$httpFactory = new HttpFactory;
 
-$response = (new HttpFactory)->createResponse(201);
+$clientRequest = $httpFactory->createRequest('GET', '/');
+$serverRequest = $httpFactory->createServerRequest('GET', '/');
 
-$stream = (new HttpFactory)->createStream('Hello there');
-$stream = (new HttpFactory)->createStreamFromFile('file.name', '+w');
-$stream = (new HttpFactory)->createStreamFromResource($resource);
+$response = $httpFactory->createResponse(201);
 
-$uri = (new HttpFactory)->createUri('/');
+$stream = $httpFactory->createStream('Hello there');
+$stream = $httpFactory->createStreamFromFile('file.name', '+w');
+$stream = $httpFactory->createStreamFromResource($resource);
 
-$uploadedFile = (new HttpFactory)->createUploadedFile($stream);
+$uri = $httpFactory->createUri('/');
+
+$uploadedFile = $httpFactory->createUploadedFile($stream);
 ```
 
 HTTP clients
 ============
 
 There are 2 implementations for `ClientRequest` interface
-- PHP
+- PHP stream
 - curl
 
 To create instances of HTTP clients, use the `Koded\Http\Client\ClientFactory` class
@@ -108,6 +110,20 @@ $http->head('/', $headers);
 
 `$headers` are optional.
 
+HTTP Client (PSR-18)
+--------------------
+
+Implementation of [PSR-18][3] (HTTP Client).
+
+```php
+<?php
+
+use Koded\Http\Client\ClientFactory;
+use Koded\Http\ClientRequest;
+
+$request = new ClientRequest('POST', 'https://', ['foo' => 'bar']);
+$response = (new ClientFactory)->sendRequest($request);
+```
 
 Additional interfaces
 =====================
@@ -117,7 +133,7 @@ Additional interfaces
 - `Koded\Http\Response`
 
 These two may be useful in your project as they provide additional 
-methods to manipulate the request/response objects state.
+methods for request/response objects state.
 
 ### Request
 - `getPath(): string`
@@ -133,7 +149,7 @@ methods to manipulate the request/response objects state.
 ExtendedMessageInterface
 ------------------------
 
-Both `Request` and `Response` extends this interface, thus providing the extra methods methods:
+Both `Request` and `Response` extends this interface, thus providing the extra methods:
 - `withHeaders(array $headers): static`
 - `replaceHeaders(array $headers): static`
 - `getFlattenedHeaders(): array`
@@ -153,27 +169,27 @@ Validation is done in an instance of `HttpInputValidator` object by calling the
 The error handling is done in the application. A naive example:
 
 ```php
-class UsernameValidator implements HttpInputValidator {
+class FormValidator implements HttpInputValidator {
 
     public function validate(Data $input): array {
-        if ( ! empty($input->get('username'))) {
-            return [];
+        if (empty($input->get('username'))) {
+            return ['message' => 'Username is required'];
         }
 
-       return ['message' => 'Username is required']; 
+       return []; 
     }
 }
 
 // Somewhere in your app, use the `Request` object to run validation
 
-if ($response = $request->validate(new UsernameValidator)) {
+if ($response = $request->validate(new FormValidator)) {
     // {"message":"Username is required","code":400}
     return $response;
 }
 ```
 
-The error response will always have a status code set and `code` value in the error message.  
-If the status code is not provided, the default is `400 Bad Request`.
+The error response will always have a status code set (`code` value) in the error message.  
+If the status code is not provided in the validation, the default is `400 Bad Request`.
 
 
 License
@@ -184,3 +200,4 @@ The code is distributed under the terms of [The 3-Clause BSD license](LICENSE).
 
 [1]: https://www.php-fig.org/psr/psr-7/
 [2]: https://www.php-fig.org/psr/psr-17/
+[3]: https://www.php-fig.org/psr/psr-18/
