@@ -161,7 +161,8 @@ trait HeaderTrait
         }
 
         $this->headersMap[strtolower($name)] = $name;
-        $this->headers[$name]                = str_replace(["\r", "\n"], '', (array)$value);
+
+        $this->headers[$name] = str_replace(["\r", "\n"], '', array_map('trim', (array)$value));
     }
 
     /**
