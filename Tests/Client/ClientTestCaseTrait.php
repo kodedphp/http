@@ -4,6 +4,7 @@ namespace Koded\Http\Client;
 
 use Koded\Http\{Interfaces\HttpRequestClient, StatusCode, Uri};
 use ReflectionClass;
+use ReflectionException;
 use function Koded\Http\create_stream;
 
 /**
@@ -59,7 +60,7 @@ trait ClientTestCaseTrait
 
     /**
      * @return array
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     private function getOptions(): array
     {

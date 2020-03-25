@@ -6,20 +6,16 @@ use Exception;
 use Koded\Http\Interfaces\HttpRequestClient;
 use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
 
 class PhpClientTest extends TestCase
 {
-
     use ClientTestCaseTrait;
 
     public function test_php_factory()
     {
         $options = $this->getOptions();
 
-        $this->assertNotEmpty($options['header']);
-        $this->assertArraySubset(['Host:example.com'], $options['header']);
-
+        $this->assertArrayNotHasKey('header', $options, 'Headers are not set up until read()');
         $this->assertArrayHasKey('protocol_version', $options);
         $this->assertArrayHasKey('user_agent', $options);
         $this->assertArrayHasKey('method', $options);
@@ -35,10 +31,9 @@ class PhpClientTest extends TestCase
         $this->assertSame(1, $options['follow_location']);
         $this->assertTrue($options['ignore_errors']);
         $this->assertFalse($options['ssl']['allow_self_signed']);
-        $this->assertFalse($options['ssl']['verify_peer']);
+        $this->assertTrue($options['ssl']['verify_peer']);
         $this->assertSame('', (string)$this->SUT->getBody(), 'The body is empty');
-        $this->assertSame(3.0, $options['timeout']);
-
+        $this->assertSame(2.0, $options['timeout']);
     }
 
     public function test_methods()
@@ -49,7 +44,7 @@ class PhpClientTest extends TestCase
             ->followLocation(false)
             ->maxRedirects(2)
             ->userAgent('foo')
-            ->verifySslPeer(true)
+            ->verifySslPeer(false)
             ->verifySslHost(true);
 
         $options = $this->getOptions();
@@ -60,7 +55,7 @@ class PhpClientTest extends TestCase
         $this->assertSame(0, $options['follow_location']);
         $this->assertSame(true, $options['ignore_errors']);
         $this->assertSame(true, $options['ssl']['allow_self_signed']);
-        $this->assertSame(true, $options['ssl']['verify_peer']);
+        $this->assertSame(false, $options['ssl']['verify_peer']);
     }
 
     /**
@@ -68,7 +63,7 @@ class PhpClientTest extends TestCase
      */
     public function test_internal_server_exception()
     {
-        $SUT = new class('get', 'http://example.org') extends PhpClient
+        $SUT = new class('get', 'http://example.com') extends PhpClient
         {
             protected function createResource($context): bool
             {
@@ -86,7 +81,7 @@ class PhpClientTest extends TestCase
      */
     public function test_when_creating_stream_fails()
     {
-        $SUT = new class('get', 'http://example.org') extends PhpClient
+        $SUT = new class('get', 'http://example.com') extends PhpClient
         {
             protected function createResource($context): bool
             {
@@ -99,24 +94,10 @@ class PhpClientTest extends TestCase
         $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
     }
 
-    /**
-     * @group internet
-     */
-    public function test_body_prepare()
-    {
-        $SUT = new PhpClient('post', 'http://example.org', ['foo' => 'bar']);
-
-        $proto   = new ReflectionClass($SUT);
-        $options = $proto->getProperty('options');
-        $options->setAccessible(true);
-
-        $this->assertSame('foo=bar', $options->getValue($SUT)['content']);
-    }
-
     protected function setUp()
     {
         $this->SUT = (new ClientFactory(ClientFactory::PHP))
             ->get('http://example.com')
-            ->timeout(3);
+            ->timeout(2);
     }
 }

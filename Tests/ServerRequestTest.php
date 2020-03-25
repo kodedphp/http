@@ -107,7 +107,7 @@ class ServerRequestTest extends TestCase
     public function test_parsed_body_throws_exception_on_unsupported_values()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported data provided, Expects NULL, array or iterable');
+        $this->expectExceptionMessage('Unsupported data provided (string), Expects NULL, array or iterable');
         $this->SUT->withParsedBody('junk');
     }
 
@@ -173,13 +173,13 @@ class ServerRequestTest extends TestCase
         $this->assertSame('', $request->getBaseUri());
     }
 
-    public function test_should_replace_object_attributes()
+    public function test_should_add_object_attributes()
     {
         $request = new ServerRequest(['foo' => 'bar']);
         $this->assertSame(['foo' => 'bar'], $request->getAttributes());
 
         $new = $request->withAttributes(['qux' => 'zim']);
-        $this->assertSame(['qux' => 'zim'], $new->getAttributes());
+        $this->assertSame(['foo' => 'bar', 'qux' => 'zim'], $new->getAttributes());
     }
 
     public function test_should_replace_cookies()

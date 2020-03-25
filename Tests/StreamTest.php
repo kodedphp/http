@@ -12,6 +12,7 @@ class StreamTest extends TestCase
     public function test_constructor_with_invalid_argument()
     {
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionCode(StatusCode::UNPROCESSABLE_ENTITY);
         $this->expectExceptionMessage('The provided resource is not a valid stream resource');
         new Stream('');
     }
@@ -50,8 +51,7 @@ class StreamTest extends TestCase
 
     public function test_stream_should_return_empty_string_when_throws_exception_while_typecasted()
     {
-        $resource = fopen('php://stderr', '');
-        $stream   = new Stream($resource);
+        $stream = new Stream(fopen('php://stderr', ''));
         $this->assertSame('', (string)$stream);
     }
 
@@ -67,21 +67,19 @@ class StreamTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not readable');
 
-        $resource = fopen('php://stderr', '');
-        $stream   = new Stream($resource);
+        $stream = new Stream(fopen('php://stderr', ''));
         $stream->read(0);
     }
 
     public function test_stream_should_return_null_if_stream_is_already_detached()
     {
-        $resource = fopen('php://temp', 'r');
-        $stream   = new Stream($resource);
+        $stream = new Stream(fopen('php://temp', 'r'));
 
         $result = $stream->detach();
-        $this->assertNotNull($result);
+        $this->assertNotNull($result, 'First detach() returns the underlying stream');
 
         $result = $stream->detach();
-        $this->assertNull($result);
+        $this->assertNull($result, 'Next detach() calls returns NULL for the underlying stream');
     }
 
     public function test_stream_should_return_the_stream_size()
@@ -114,7 +112,8 @@ class StreamTest extends TestCase
         $this->assertSame(1, $stream->tell());
 
         $stream->eof();
-        $this->assertFalse($stream->eof(), '');
+        $this->assertFalse($stream->eof(), 'eof() do not move the stream pointer');
+        $this->assertSame(1, $stream->tell(), 'Still on position 1');
     }
 
     public function test_stream_should_throw_exception_when_cannot_tell()
@@ -179,9 +178,7 @@ class StreamTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The stream is not writable');
 
-        $resource = fopen('php://stderr', '');
-        $stream   = new Stream($resource);
-
+        $stream = new Stream(fopen('php://stderr', ''));
         $stream->write('lorem ipsum');
     }
 
@@ -205,7 +202,6 @@ class StreamTest extends TestCase
         $this->assertSame('w+b', $metadata['mode']);
         $this->assertSame(0, $metadata['unread_bytes']);
         $this->assertSame(true, $metadata['seekable']);
-        $this->assertSame('w+b', $metadata['mode']);
         $this->assertSame('php://temp', $metadata['uri']);
 
         $this->assertSame('php://temp', $stream->getMetadata('uri'));
