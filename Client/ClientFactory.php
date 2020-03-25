@@ -18,7 +18,6 @@ use Koded\Http\Interfaces\{HttpRequestClient, Request};
 
 class ClientFactory
 {
-
     const CURL = 0;
     const PHP  = 1;
 
@@ -57,6 +56,11 @@ class ClientFactory
     public function head($uri, array $headers = []): HttpRequestClient
     {
         return $this->create(Request::HEAD, $uri, null, $headers)->maxRedirects(0);
+    }
+
+    public function psr18(): HttpRequestClient
+    {
+        return $this->create(Request::HEAD, '');
     }
 
     protected function create(string $method, $uri, $body = null, array $headers = []): HttpRequestClient

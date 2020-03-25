@@ -15,62 +15,63 @@ namespace Koded\Http\Client;
 use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
 use Koded\Http\Interfaces\{HttpRequestClient, Response};
 use Throwable;
+use function Koded\Http\create_stream;
 
-
+/**
+ * @link http://php.net/manual/en/context.http.php
+ */
 class PhpClient extends ClientRequest implements HttpRequestClient
 {
-    /**
-     * @var array Stream context options
-     * @link http://php.net/manual/en/context.http.php
-     */
-    private $options = [];
+    use EncodingTrait, Psr18ClientTrait;
+
+    /** @var array Stream context options */
+    private $options = [
+        'protocol_version' => 1.1,
+        'user_agent'       => self::USER_AGENT,
+        'method'           => 'GET',
+        'max_redirects'    => 20,
+        'follow_location'  => 1,
+        'ignore_errors'    => true,
+        'request_fulluri'  => true,
+        'ssl'              => [
+            'verify_peer'       => true,
+            'allow_self_signed' => false,
+        ]
+    ];
 
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
-
-        $this->options = [
-            'protocol_version' => (float)$this->getProtocolVersion(),
-            'user_agent'       => HttpRequestClient::USER_AGENT,
-            'method'           => $this->getMethod(),
-            'timeout'          => (ini_get('default_socket_timeout') ?: 10.0) * 1.0,
-            'max_redirects'    => 20,
-            'follow_location'  => 1,
-            'ignore_errors'    => true,
-            'request_fulluri'  => true,
-            'header'           => $this->getFlattenedHeaders(),
-            'ssl'              => [
-                'verify_peer'       => false,
-                'allow_self_signed' => false,
-            ]
-        ];
-
-        $this->prepareRequestBody();
+        $this->options['timeout'] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
     }
-
 
     public function read(): Response
     {
-        if ($response = $this->assertSafeMethods()) {
-            return $response;
+        if ($resource = $this->assertSafeMethod()) {
+            return $resource;
         }
 
+        $this->prepareRequestBody();
+        $this->prepareOptions();
+
         try {
-            if (false === $response = $this->createResource(stream_context_create(['http' => $this->options]))) {
+            if (false === $resource = $this->createResource(stream_context_create(['http' => $this->options]))) {
                 return new ServerResponse(error_get_last()['message'], StatusCode::FAILED_DEPENDENCY);
             }
 
-            $this->extractFromResponseHeaders($response, $statusCode);
+            $this->extractFromResponseHeaders($resource, $headers, $statusCode);
 
-            return new ServerResponse(stream_get_contents($response), $statusCode, $this->getHeaders());
+            return new ServerResponse(
+                stream_get_contents($resource),
+                $statusCode,
+                $headers
+            );
         } catch (Throwable $e) {
             return new ServerResponse($e->getMessage(), StatusCode::INTERNAL_SERVER_ERROR);
         } finally {
-            if (is_resource($response)) {
-                fclose($response);
+            if (is_resource($resource)) {
+                fclose($resource);
             }
-
-            unset($response);
         }
     }
 
@@ -135,44 +136,52 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
     protected function prepareRequestBody(): void
     {
-        $this->stream->seek(0);
-
-        if ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
-            $this->options['content'] = http_build_query($content);
+        if (!$this->stream->getSize()) {
+            return;
         }
+
+        $this->stream->rewind();
+
+        if (0 === $this->encoding) {
+            $this->options['content'] = $this->stream->getContents();
+        } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
+            $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
+            $this->options['content'] = http_build_query($content, null, '&', $this->encoding);
+        }
+
+        $this->stream = create_stream($this->options['content']);
+    }
+
+    protected function prepareOptions(): void
+    {
+        $this->options['method'] = $this->getMethod();
+        $this->options['header'] = $this->getFlattenedHeaders();
+        unset($this->options['header'][0]); // Host header is always present and first
     }
 
     /**
-     * Extracts the Content-Type and status code from the response
-     * and sets the ServerResponse headers accordingly.
+     * Extracts the headers and status code from the response.
      *
-     * @param resource $response The resource from fopen()
-     * @param int      $statusCode
+     * @param resource $response   The resource from fopen()
+     * @param array    $headers    Parsed response headers
+     * @param int      $statusCode Response status code
      */
-    protected function extractFromResponseHeaders($response, &$statusCode): void
+    protected function extractFromResponseHeaders($response, &$headers, &$statusCode): void
     {
-        $headers    = stream_get_meta_data($response)['wrapper_data'];
-        $statusCode = 200;
-
-        $extracted = array_filter($headers, function($header) {
-            return false !== stripos($header, 'Content-Type')
-                || false !== stripos($header, 'HTTP/');
+        $_headers   = stream_get_meta_data($response)['wrapper_data'];
+        $statusCode = array_filter($_headers, function(string $header) {
+            return false !== stripos($header, 'HTTP/');
         });
 
-        foreach ($extracted as $header) {
+        $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
+        $statusCode = (int)(explode(' ', $statusCode)[1] ?? StatusCode::OK);
+
+        foreach ($_headers as $header) {
             try {
                 [$k, $v] = explode(':', $header, 2);
-                $this->headersMap[strtolower($k)] = $k;
-                $this->headers[$k]                = trim($v);
+                $headers[$k] = $v;
             } catch (Throwable $e) {
-                if (false !== stripos($header, 'HTTP/')) {
-                    /*
-                     * (Response) Headers can contain more than one status header;
-                     * ex: before redirection, some more and finally the last after redirection
-                     *
-                     */
-                    $statusCode = explode(' ', $header)[1] ?? 200;
-                }
+                continue;
             }
         }
     }
