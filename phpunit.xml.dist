@@ -18,6 +18,7 @@
             <exclude>
                 <directory>vendor</directory>
                 <directory>Tests</directory>
+                <directory>diagrams</directory>
             </exclude>
         </whitelist>
     </filter>
