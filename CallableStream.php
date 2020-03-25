@@ -31,13 +31,6 @@ class CallableStream implements StreamInterface
     /** @var bool If callable is Generator instance */
     private $isGenerator = false;
 
-    /**
-     * CallableStream constructor.
-     *
-     * @param callable $callable
-     *
-     * @throws \ReflectionException
-     */
     public function __construct(callable $callable)
     {
         $this->callable    = $callable;
@@ -101,15 +94,15 @@ class CallableStream implements StreamInterface
 
     public function read($length): string
     {
-        $contents = '';
+        $content = '';
 
         if (null === $this->callable) {
-            return $contents;
+            return $content;
         }
 
         try {
             foreach ($this->reader($length) as $chunk) {
-                $contents       .= $chunk;
+                $content        .= $chunk;
                 $this->position += mb_strlen($chunk);
             }
         } catch (Exception $e) {
@@ -118,7 +111,7 @@ class CallableStream implements StreamInterface
             $this->callable = null;
         }
 
-        return $contents;
+        return $content;
     }
 
     public function getContents(): string
