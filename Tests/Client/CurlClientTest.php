@@ -2,14 +2,12 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\ServerResponse;
-use Koded\Http\StatusCode;
+use Exception;
+use Koded\Http\{Interfaces\HttpRequestClient, ServerResponse, StatusCode};
 use PHPUnit\Framework\TestCase;
 
 class CurlClientTest extends TestCase
 {
-
     use ClientTestCaseTrait;
 
     public function test_php_factory()
@@ -30,8 +28,8 @@ class CurlClientTest extends TestCase
         $this->assertSame(20, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(true, $options[CURLOPT_RETURNTRANSFER]);
         $this->assertSame(true, $options[CURLOPT_FOLLOWLOCATION]);
-        $this->assertSame(false, $options[CURLOPT_SSL_VERIFYPEER]);
-        $this->assertSame(false, $options[CURLOPT_SSL_VERIFYHOST]);
+        $this->assertSame(1, $options[CURLOPT_SSL_VERIFYPEER]);
+        $this->assertSame(2, $options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertSame(HttpRequestClient::USER_AGENT, $options[CURLOPT_USERAGENT]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
@@ -48,8 +46,8 @@ class CurlClientTest extends TestCase
             ->followLocation(false)
             ->maxRedirects(2)
             ->userAgent('foo')
-            ->verifySslHost(true)
-            ->verifySslPeer(true);
+            ->verifySslHost(false)
+            ->verifySslPeer(false);
 
         $options = $this->getOptions();
 
@@ -58,8 +56,8 @@ class CurlClientTest extends TestCase
         $this->assertSame(2, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(false, $options[CURLOPT_FOLLOWLOCATION]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
-        $this->assertTrue($options[CURLOPT_SSL_VERIFYHOST]);
-        $this->assertTrue($options[CURLOPT_SSL_VERIFYPEER]);
+        $this->assertSame(0, $options[CURLOPT_SSL_VERIFYHOST]);
+        $this->assertSame(0, $options[CURLOPT_SSL_VERIFYPEER]);
     }
 
     public function test_protocol_version()
@@ -77,12 +75,17 @@ class CurlClientTest extends TestCase
      */
     public function test_bad_request_response()
     {
-        $client   = new \ReflectionClass($this->SUT);
-        $resource = $client->getProperty('resource');
-        $resource->setAccessible(true);
-        $resource->setValue($this->SUT, false);
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource()
+            {
+                return false;
+            }
+        };
 
-        $response = $this->SUT->read();
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
         $this->assertSame(StatusCode::PRECONDITION_FAILED, $response->getStatusCode());
         $this->assertSame('The HTTP client is not created therefore cannot read anything',
             (string)$response->getBody());
@@ -93,17 +96,37 @@ class CurlClientTest extends TestCase
      */
     public function test_internal_server_exception()
     {
-        $client   = new \ReflectionClass($this->SUT);
-        $resource = $client->getProperty('resource');
-        $resource->setAccessible(true);
-        $resource->setValue($this->SUT, new \stdClass); // this throws exception from curl_exec()
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource()
+            {
+                return new \stdClass();
+            }
+        };
 
-        $response = $this->SUT->read();
+        $response = $SUT->read();
 
         $this->assertInstanceOf(ServerResponse::class, $response);
         $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
         $this->assertSame('curl_setopt_array() expects parameter 1 to be resource, object given',
             (string)$response->getBody());
+    }
+
+    public function test_internal_server_error_by_throwing_exception()
+    {
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource()
+            {
+                throw new Exception('Exception message');
+            }
+        };
+
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertSame('Exception message', (string)$response->getBody());
     }
 
     /**
@@ -113,7 +136,7 @@ class CurlClientTest extends TestCase
     {
         $SUT = new class('get', 'http://example.com') extends CurlClient
         {
-            protected function hasError(): bool
+            protected function hasError($resource): bool
             {
                 return true;
             }
@@ -125,6 +148,9 @@ class CurlClientTest extends TestCase
         $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
     }
 
+    /**
+     * @group internet
+     */
     protected function setUp()
     {
         if (false === extension_loaded('curl')) {

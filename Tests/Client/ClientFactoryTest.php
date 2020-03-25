@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
  */
 class ClientFactoryTest extends TestCase
 {
-
     const URI = 'https://example.com';
 
     public function test_php_factory()
@@ -67,5 +66,12 @@ class ClientFactoryTest extends TestCase
     {
         $client = (new ClientFactory)->delete(self::URI, []);
         $this->assertSame(Request::DELETE, $client->getMethod());
+    }
+
+    public function test_psr18_client_create()
+    {
+        $client = (new ClientFactory)->psr18();
+        $this->assertSame('HEAD', $client->getMethod());
+        $this->assertEmpty((string)$client->getUri());
     }
 }

@@ -16,22 +16,20 @@ use InvalidArgumentException;
 use JsonSerializable;
 use Koded\Http\Interfaces\Request;
 use Psr\Http\Message\{RequestInterface, UriInterface};
+use function Koded\Stdlib\json_serialize;
 
 
 class ClientRequest implements RequestInterface, JsonSerializable
 {
-
     use HeaderTrait, MessageTrait, JsonSerializeTrait;
 
     const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
 
-    protected $method        = Request::GET;
-    protected $isSafeMethod  = true;
-    protected $requestTarget = '';
-
     /** @var UriInterface */
     protected $uri;
+    protected $method        = Request::GET;
+    protected $requestTarget = '';
 
     /**
      * ClientRequest constructor.
@@ -46,14 +44,12 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
-        $this->uri = $uri instanceof UriInterface ? $uri : new Uri($uri);
+        $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
+        $this->stream = create_stream($this->prepareBody($body));
 
         $this->setHost();
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
-
-        $this->isSafeMethod = $this->isSafeMethod();
-        $this->stream       = create_stream($this->prepareBody($body));
     }
 
     public function getMethod(): string
@@ -162,18 +158,18 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
-        $instance->method = $method;
+        $instance->method = strtoupper($method);
 
         return $instance;
     }
 
     /**
-     * Checks if body is non-empty if HTTP method is one of the "safe" methods.
+     * Checks if body is non-empty if HTTP method is one of the *safe* methods.
      * The consuming code may disallow this and return the response object.
      *
      * @return ServerResponse|null
      */
-    protected function assertSafeMethods(): ?ServerResponse
+    protected function assertSafeMethod(): ?ServerResponse
     {
         if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
             return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, StatusCode::BAD_REQUEST);
@@ -193,6 +189,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
             return $body;
         }
 
-        return json_encode($body, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+        return json_serialize($body);
     }
 }

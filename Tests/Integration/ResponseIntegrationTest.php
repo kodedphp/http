@@ -8,7 +8,7 @@ class ResponseIntegrationTest extends \Http\Psr7Test\ResponseIntegrationTest
 {
 
     protected $skippedTests = [
-        'testStatusCodeInvalidArgument'       => 'Does not make sense for strict type implementation',
+        'testStatusCodeInvalidArgument'        => 'Does not make sense for strict type implementation',
         'testWithHeaderInvalidArguments'       => 'Does not make sense for strict type implementation',
         'testWithAddedHeaderInvalidArguments'  => 'Does not make sense for strict type implementation',
         'testWithAddedHeaderArrayValueAndKeys' => 'Skip this weird test',

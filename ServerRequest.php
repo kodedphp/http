@@ -87,16 +87,16 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
 
-        // Supports only array or iterable object. Also normalize to array
-        if (is_iterable($data)) {
-            $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
+        // If nothing is available for the body
+        if (null === $data) {
+            $instance->parsedBody = null;
 
             return $instance;
         }
 
-        // If nothing is available for the body
-        if (null === $data) {
-            $instance->parsedBody = null;
+        // Supports array or iterable object
+        if (is_iterable($data)) {
+            $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
 
             return $instance;
         }
@@ -107,7 +107,9 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
 
-        throw new InvalidArgumentException('Unsupported data provided, Expects NULL, array or iterable');
+        throw new InvalidArgumentException(
+            sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', gettype($data))
+        );
     }
 
     public function getAttributes(): array
@@ -138,15 +140,18 @@ class ServerRequest extends ClientRequest implements Request
 
     public function withAttributes(array $attributes): Request
     {
-        $instance             = clone $this;
-        $instance->attributes = $attributes;
+        $instance = clone $this;
+
+        foreach ($attributes as $name => $value) {
+            $instance->attributes[$name] = $value;
+        }
 
         return $instance;
     }
 
     public function isXHR(): bool
     {
-        return strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHTTPREQUEST' or false;
+        return 'XMLHTTPREQUEST' === strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
     }
 
     protected function buildUri(): Uri
@@ -197,7 +202,7 @@ class ServerRequest extends ClientRequest implements Request
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
 
-        if (false === $this->isSafeMethod) {
+        if (false === $this->isSafeMethod()) {
             $this->parseInput();
         }
 
@@ -209,20 +214,16 @@ class ServerRequest extends ClientRequest implements Request
     /**
      * Per recommendation:
      *
-     * @see ServerRequestInterface::getParsedBody()
-     * @see ServerRequestInterface::withParsedBody()
-     *
      * @return bool If the request Content-Type is either
      * application/x-www-form-urlencoded or multipart/form-data
      * and the request method is POST,
      * then it MUST return the contents of $_POST
+     * @see ServerRequestInterface::withParsedBody()
+     *
+     * @see ServerRequestInterface::getParsedBody()
      */
     protected function useOnlyPost(): bool
     {
-        if ($this->isSafeMethod) {
-            return false;
-        }
-
         if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
             return false;
         }

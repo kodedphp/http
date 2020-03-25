@@ -15,77 +15,74 @@ namespace Koded\Http\Client;
 use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
 use Koded\Http\Interfaces\{HttpRequestClient, Response};
 use Throwable;
+use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
 
 /**
- *
- *
  * @link http://php.net/manual/en/context.curl.php
  */
 class CurlClient extends ClientRequest implements HttpRequestClient
 {
-
-    /** @var resource|false */
-    private $resource;
+    use EncodingTrait, Psr18ClientTrait;
 
     /** @var array curl options */
     private $options = [
         CURLOPT_MAXREDIRS      => 20,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_USERAGENT      => HttpRequestClient::USER_AGENT,
+        CURLOPT_SSL_VERIFYPEER => 1,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_USERAGENT      => self::USER_AGENT,
         CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
         CURLOPT_FAILONERROR    => 0,
     ];
+
+    /** @var array Parsed response headers */
+    private $responseHeaders = [];
 
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
         $this->options[CURLOPT_TIMEOUT] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
-
-        $this->resource = curl_init((string)$this->getUri());
     }
 
     public function read(): Response
     {
-        if (false === $this->resource) {
-            return new ServerResponse(
-                'The HTTP client is not created therefore cannot read anything',
-                StatusCode::PRECONDITION_FAILED);
+        if ($resource = $this->assertSafeMethod()) {
+            return $resource;
         }
 
         $this->prepareRequestBody();
-
-        if ($response = $this->assertSafeMethods()) {
-            return $response;
-        }
-
-        $this->prepareRequestHeaders();
+        $this->prepareOptions();
 
         try {
-            curl_setopt_array($this->resource, $this->options);
-            $response = curl_exec($this->resource);
+            if (false === $resource = $this->createResource()) {
+                return new ServerResponse(
+                    'The HTTP client is not created therefore cannot read anything',
+                    StatusCode::PRECONDITION_FAILED);
+            }
 
-            if (true === $this->hasError()) {
-                return (new ServerResponse($this->getCurlError(), StatusCode::FAILED_DEPENDENCY))
+            curl_setopt_array($resource, $this->options);
+            $response = curl_exec($resource);
+
+            if (true === $this->hasError($resource)) {
+                return (new ServerResponse($this->getCurlError($resource), StatusCode::FAILED_DEPENDENCY))
                     ->withHeader('Content-Type', 'application/json');
             }
 
-            return (new ServerResponse($response, curl_getinfo($this->resource, CURLINFO_RESPONSE_CODE)))
-                ->withHeader('Content-Type', curl_getinfo($this->resource, CURLINFO_CONTENT_TYPE));
+            return new ServerResponse(
+                $response,
+                curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
+                $this->responseHeaders
+            );
         } catch (Throwable $e) {
-
             return new ServerResponse($e->getMessage(), StatusCode::INTERNAL_SERVER_ERROR);
         } finally {
             unset($response);
 
-            if (is_resource($this->resource)) {
-                curl_close($this->resource);
+            if (is_resource($resource)) {
+                curl_close($resource);
             }
-
-            $this->resource = null;
         }
     }
 
@@ -127,14 +124,14 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     public function verifySslHost(bool $value): HttpRequestClient
     {
-        $this->options[CURLOPT_SSL_VERIFYHOST] = $value;
+        $this->options[CURLOPT_SSL_VERIFYHOST] = $value ? 2 : 0;
 
         return $this;
     }
 
     public function verifySslPeer(bool $value): HttpRequestClient
     {
-        $this->options[CURLOPT_SSL_VERIFYPEER] = $value;
+        $this->options[CURLOPT_SSL_VERIFYPEER] = $value ? 1 : 0;
 
         return $this;
     }
@@ -151,35 +148,72 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         return $instance;
     }
 
-    protected function hasError(): bool
+    /**
+     * @return false|resource
+     */
+    protected function createResource()
     {
-        return curl_errno($this->resource) > 0;
+        return curl_init((string)$this->getUri());
     }
 
-    protected function prepareRequestHeaders(): void
+    protected function hasError($resource): bool
     {
-        $this->options[CURLOPT_HTTPHEADER] = $this->getFlattenedHeaders();
+        return curl_errno($resource) > 0;
+    }
+
+    protected function prepareOptions(): void
+    {
+        $this->options[CURLOPT_HEADERFUNCTION] = [$this, 'extractFromResponseHeaders'];
+        $this->options[CURLOPT_CUSTOMREQUEST]  = $this->getMethod();
+        $this->options[CURLOPT_HTTPHEADER]     = $this->getFlattenedHeaders();
         unset($this->options[CURLOPT_HTTPHEADER][0]); // Host header is always present and first
     }
 
     protected function prepareRequestBody(): void
     {
-        $this->stream->seek(0);
-
-        if ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
-            $this->options[CURLOPT_POSTFIELDS] = http_build_query($content);
+        if (!$this->stream->getSize()) {
+            return;
         }
+
+        $this->stream->rewind();
+
+        if (0 === $this->encoding) {
+            $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
+        } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
+            $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
+            $this->options[CURLOPT_POSTFIELDS] = http_build_query($content, null, '&', $this->encoding);
+        }
+
+        $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }
 
-    protected function getCurlError(): string
+    protected function getCurlError($resource): string
     {
-        $error = json_serialize([
-            'uri'     => curl_getinfo($this->resource, CURLINFO_EFFECTIVE_URL),
-            'message' => curl_strerror(curl_errno($this->resource)),
-            'explain' => curl_error($this->resource),
+        return json_serialize([
+            'uri'     => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
+            'message' => curl_strerror(curl_errno($resource)),
+            'explain' => curl_error($resource),
             'code'    => StatusCode::FAILED_DEPENDENCY,
         ]);
+    }
 
-        return $error;
+    /**
+     * Extracts the headers from curl response.
+     *
+     * @param resource $_      curl instance
+     * @param string   $header Current header line
+     *
+     * @return int Header length
+     */
+    protected function extractFromResponseHeaders($_, string $header): int
+    {
+        try {
+            [$k, $v] = explode(':', $header, 2);
+            $this->responseHeaders[$k] = $v;
+        } catch (Throwable $e) {
+            /** NOOP **/
+        } finally {
+            return mb_strlen($header);
+        }
     }
 }

@@ -13,16 +13,14 @@
 namespace Koded\Http;
 
 /**
- *
- *
  * Content negotiation module.
  *
- * Supported access headers:
+ * Supported HTTP/1.1 Accept headers:
  *
- *  Access
- *  Access-Language
- *  Access-Charset
- *  Access-Encoding
+ *  Accept
+ *  Accept-Language
+ *  Accept-Charset
+ *  Accept-Encoding
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
  */
@@ -59,7 +57,8 @@ class AcceptHeaderNegotiator
              * The consuming clients should handle this according to
              * their internal logic. This is much better then throwing
              * exceptions which must be handled in every place where
-             * match() is called. The client may issue a 406 status code.
+             * match() is called. For example, the client may issue a
+             * 406 status code and be done with it.
              */
             $types[] = new class('*;q=0') extends AcceptHeader {};
         }
@@ -101,7 +100,8 @@ abstract class AcceptHeader
         $type   = array_shift($bits);
 
         if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header), StatusCode::NOT_ACCEPTABLE);
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
+                StatusCode::NOT_ACCEPTABLE);
         }
 
         $this->separator = $matches[2] ?? '/';
@@ -109,7 +109,8 @@ abstract class AcceptHeader
 
         if ('*' === $type && '*' !== $subtype) {
             // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header), StatusCode::NOT_ACCEPTABLE);
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
+                StatusCode::NOT_ACCEPTABLE);
         }
 
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
@@ -117,16 +118,16 @@ abstract class AcceptHeader
 
         /* Uses a simple heuristic to check if subtype is part of
          * some obscure media type like "vnd.api-v1+json".
+         *
+         * NOTE: It is a waste of time to negotiate on the basis
+         * of obscure parameters while using a meaningless media
+         * type like "vnd.whatever". But the web world is a big mess
+         * and this module can handle the Dunning-Kruger effect.
          */
         $this->subtype  = explode('+', $subtype)[1] ?? $subtype;
         $this->catchAll = '*' === $this->type && '*' === $this->subtype;
 
         parse_str(join('&', $bits), $this->params);
-        /* NOTE: It is a waste of time to negotiate on the basis
-         * of obscure parameters while using a meaningless media
-         * type like "vnd.whatever". But the IT world is a big
-         * mess for now and this module supports ignorant devs.
-         */
         $this->quality = (float)($this->params['q'] ?? 1);
         unset($this->params['q']);
     }
@@ -138,16 +139,10 @@ abstract class AcceptHeader
     }
 
 
-    public function quality(): float
-    {
-        return $this->quality;
-    }
-
-
     public function value(): string
     {
         // The header is explicitly rejected
-        if (0.0 === $this->quality()) {
+        if (0.0 === $this->quality) {
             return '';
         }
 
@@ -160,6 +155,12 @@ abstract class AcceptHeader
     }
 
 
+    public function quality(): float
+    {
+        return $this->quality;
+    }
+
+
     public function weight(): float
     {
         return $this->weight;
@@ -168,15 +169,16 @@ abstract class AcceptHeader
     /**
      * @internal
      *
-     * This method finds the best match from the accept header,
-     * including all the stupidity that may be passed by the
-     * ignorant developers who do not follow RFC standards.
-     *
      * @param AcceptHeader   $accept  The accept header part
      * @param AcceptHeader[] $matches Matched types
      *
      * @return bool TRUE if the accept header part is a match
      * against the supported (this) header part
+     *
+     * This method finds the best match for the Accept header,
+     * including all the nonsense that may be passed by the
+     * developers who do not follow RFC standards.
+     *
      */
     public function matches(AcceptHeader $accept, array &$matches = null): bool
     {
@@ -193,18 +195,21 @@ abstract class AcceptHeader
             $accept->type    = $this->type;
             $accept->subtype = $this->subtype;
             $matches[]       = $accept;
+
             return true;
         }
 
         // Explicitly denied
         if (0.0 === $this->quality) {
             $matches[] = clone $this;
+
             return true;
         }
 
         // Explicitly denied
         if (0.0 === $accept->quality) {
             $matches[] = $accept;
+
             return true;
         }
 
