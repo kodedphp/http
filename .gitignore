@@ -4,5 +4,3 @@ vendor
 .idea
 .tmp
 composer.lock
-*.yml
-!.travis.yml
