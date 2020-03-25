@@ -240,14 +240,14 @@ class StatusCode
 
                    self::HTTP_NETWORK_AUTHENTICATION_REQUIRED => 'The client needs to authenticate to gain network access',
 
-                   self::SERVICE_NOT_FOUND => '',
+                   self::SERVICE_NOT_FOUND => 'The requested service is not found on the server. The service is determined by the part of the endpoint, which may indicate that the provided service name is invalid',
 
                ][$code] ?? '';
     }
 
     /**
      * @param string $code
-     * @param bool  $withCode [optional]
+     * @param bool   $withCode [optional]
      *
      * @return string|null The status text
      */
