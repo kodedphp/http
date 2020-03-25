@@ -13,12 +13,12 @@
 namespace Koded\Http\Interfaces;
 
 use Koded\Stdlib\Interfaces\Data;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
 
 
 interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMessageInterface
 {
-
     /* RFC 7231, 5789 methods */
     const GET     = 'GET';
     const POST    = 'POST';
@@ -118,7 +118,6 @@ interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMe
 
 interface Response extends ResponseInterface, ExtendedMessageInterface
 {
-
     /**
      * Returns the mime type value for the response object.
      *
@@ -128,10 +127,10 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
 }
 
 
-interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface
+interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface, ClientInterface
 {
-
     const USER_AGENT = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
+    const X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
 
     /**
      * Fetch the internet resource using the HTTP client.
@@ -207,6 +206,23 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface
      * @return HttpRequestClient
      */
     public function verifySslPeer(bool $value): HttpRequestClient;
+
+    /**
+     * Sets the encoding type per RFC-1138 or RFC-3986 for the request body.
+     *
+     * If "0" is set, then the content of the request body (stream)
+     * is sent as-is and the media type should be set manually
+     * for the client Content-Type header.
+     *
+     * @param int $type    Use PHP constants:
+     *                     - PHP_QUERY_RFC3986 (%)
+     *                     - PHP_QUERY_RFC1738 (+)
+     *                     - or "0" to send the body stream content as-is
+     *
+     * @return HttpRequestClient
+     * @link https://php.net/manual/en/function.http-build-query.php
+     */
+    public function withEncoding(int $type): HttpRequestClient;
 }
 
 
@@ -260,7 +276,6 @@ interface ExtendedMessageInterface
 
 interface HttpInputValidator
 {
-
     /**
      * Validates the provided data with custom rules specific to
      * some application logic and implementation.
@@ -276,7 +291,6 @@ interface HttpInputValidator
 
 interface ValidatableRequest
 {
-
     /**
      * Validates the request body using a concrete validation instance.
      *
