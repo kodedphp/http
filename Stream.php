@@ -37,7 +37,7 @@ class Stream implements StreamInterface
 
     /** @var resource The underlying stream resource */
     protected $stream;
-    protected $mode     = 0;
+    protected $mode     = 'w+b';
     protected $seekable = false;
 
     public function __construct($stream)
@@ -45,13 +45,13 @@ class Stream implements StreamInterface
         if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             throw new RuntimeException(
                 'The provided resource is not a valid stream resource, ' . gettype($stream) . ' given.',
-                StatusCode::INTERNAL_SERVER_ERROR
+                StatusCode::UNPROCESSABLE_ENTITY
             );
         }
 
         $metadata       = stream_get_meta_data($stream);
-        $this->mode     = $metadata['mode'] ?? $this->mode;
-        $this->seekable = $metadata['seekable'];
+        $this->mode     = $metadata['mode'] ?? 'w+b';
+        $this->seekable = $metadata['seekable'] ?? false;
         $this->stream   = $stream;
     }
 
@@ -87,7 +87,7 @@ class Stream implements StreamInterface
 
         $resource       = $this->stream;
         $this->stream   = null;
-        $this->mode     = 0;
+        $this->mode     = 'w+b';
         $this->seekable = false;
 
         return $resource;
