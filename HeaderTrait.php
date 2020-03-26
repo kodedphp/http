@@ -12,10 +12,12 @@
 
 namespace Koded\Http;
 
+use InvalidArgumentException;
+use Throwable;
+
 
 trait HeaderTrait
 {
-
     /**
      * @var array Message headers.
      */
@@ -52,9 +54,11 @@ trait HeaderTrait
     public function withHeader($name, $value): self
     {
         $instance = clone $this;
+        $name     = $instance->normalizeHeaderName($name);
 
         $instance->headersMap[strtolower($name)] = $name;
-        $instance->headers[$name]                = (array)$value;
+
+        $instance->headers[$name] = $this->normalizeHeaderValue($name, $value);
 
         return $instance;
     }
@@ -73,22 +77,24 @@ trait HeaderTrait
     public function withoutHeader($name): self
     {
         $instance = clone $this;
-        $key      = strtolower($name);
-        unset($instance->headersMap[$key], $instance->headers[$this->headersMap[$key]]);
+        $name     = strtolower($name);
+        unset($instance->headers[$this->headersMap[$name]], $instance->headersMap[$name]);
 
         return $instance;
     }
 
     public function withAddedHeader($name, $value): self
     {
-        $value    = (array)$value;
         $instance = clone $this;
+        $name     = $instance->normalizeHeaderName($name);
+        $value    = $instance->normalizeHeaderValue($name, $value);
 
         if (isset($instance->headersMap[$header = strtolower($name)])) {
-            $instance->headers[$name] = array_unique(array_merge((array)$this->headers[$name], $value));
+            $header                     = $instance->headersMap[$header];
+            $instance->headers[$header] = array_unique(array_merge((array)$instance->headers[$header], $value));
         } else {
-            $instance->headersMap[strtolower($name)] = $name;
-            $instance->headers[$name]                = $value;
+            $instance->headersMap[$header] = $name;
+            $instance->headers[$name]      = $value;
         }
 
         return $instance;
@@ -149,14 +155,14 @@ trait HeaderTrait
 
     /**
      * @param string $name
-     * @param string $value
+     * @param mixed  $value
      * @param bool   $skipKey
      *
      * @return void
      */
     protected function normalizeHeader(string $name, $value, bool $skipKey): void
     {
-        $name = trim($name);
+        $name = str_replace(["\r", "\n", "\t"], '', trim($name));
 
         if (false === $skipKey) {
             $name = ucwords(str_replace('_', '-', strtolower($name)), '-');
@@ -164,7 +170,7 @@ trait HeaderTrait
 
         $this->headersMap[strtolower($name)] = $name;
 
-        $this->headers[$name] = array_map('trim', (array)$value);
+        $this->headers[$name] = $this->normalizeHeaderValue($name, $value);
     }
 
     /**
@@ -179,5 +185,60 @@ trait HeaderTrait
         }
 
         return $this;
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return string Normalized header name
+     */
+    protected function normalizeHeaderName($name): string
+    {
+        try {
+            $name = str_replace(["\r", "\n", "\t"], '', trim($name));
+        } catch (Throwable $e) {
+            throw new InvalidArgumentException(
+                sprintf('Header name must be a string, %s given', gettype($name)), StatusCode::BAD_REQUEST
+            );
+        }
+
+        if ('' === $name) {
+            throw new InvalidArgumentException('Empty header name', StatusCode::BAD_REQUEST);
+        }
+
+        return $name;
+    }
+
+    /**
+     * @param string          $name
+     * @param string|string[] $value
+     *
+     * @return array
+     */
+    protected function normalizeHeaderValue(string $name, $value): array
+    {
+        $type = gettype($value);
+        switch ($type) {
+            case 'array':
+            case 'integer':
+            case 'double':
+            case 'string':
+                $value = (array)$value;
+                break;
+            default:
+                throw new InvalidArgumentException(
+                    sprintf('Invalid header value, expects string or array, "%s" given', $type), StatusCode::BAD_REQUEST
+                );
+        }
+
+        if (empty($value = array_map(function($v) {
+            return trim(preg_replace('/\s+/', ' ', $v));
+        }, $value))) {
+            throw new InvalidArgumentException(
+                sprintf('The value for header "%s" cannot be empty', $name), StatusCode::BAD_REQUEST
+            );
+        }
+
+        return $value;
     }
 }

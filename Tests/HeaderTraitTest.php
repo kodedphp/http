@@ -174,14 +174,16 @@ class HeaderTraitTest extends TestCase
     {
         $this->SUT = $this->SUT->withHeaders([
             "HTTP/1.1 401 Authorization Required\r\n" => "\r\n",
-            "cache-control\r\n" => " no-cache, no-store, must-revalidate, pre-check=0, post-check=0\r\n",
-            "x-xss-protection\r\n" => "0 \r\n"
+            "cache-control\n" => " no-cache, no-store, must-revalidate, pre-check=0, post-check=0\r\n",
+            "x-xss-protection\r\n" => "0 \r\n",
+            " Nasty-\tHeader-\r\nName" => "weird\nvalue\r",
         ]);
 
         $this->assertSame([
             'Http/1.1 401 authorization required' => [''],
             'Cache-Control' => ['no-cache, no-store, must-revalidate, pre-check=0, post-check=0'],
-            'X-Xss-Protection' => ['0']
+            'X-Xss-Protection' => ['0'],
+            "Nasty-Header-Name" => ["weird value"],
         ], $this->SUT->getHeaders());
     }
 
