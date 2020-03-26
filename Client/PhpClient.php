@@ -168,21 +168,23 @@ class PhpClient extends ClientRequest implements HttpRequestClient
      */
     protected function extractFromResponseHeaders($response, &$headers, &$statusCode): void
     {
-        $_headers   = stream_get_meta_data($response)['wrapper_data'];
-        $statusCode = array_filter($_headers, function(string $header) {
-            return false !== stripos($header, 'HTTP/');
-        });
+        try {
+            $_headers   = stream_get_meta_data($response)['wrapper_data'];
+            $statusCode = array_filter($_headers, function(string $header) {
+                return false !== stripos($header, 'HTTP/', 0);
+            });
+            $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
+            $statusCode = (int)(explode(' ', $statusCode)[1] ?? StatusCode::OK);
 
-        $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
-        $statusCode = (int)(explode(' ', $statusCode)[1] ?? StatusCode::OK);
-
-        foreach ($_headers as $header) {
-            try {
-                [$k, $v] = explode(':', $header, 2);
+            foreach ($_headers as $header) {
+                [$k, $v] = explode(':', $header, 2) + [1 => null];
+                if (null === $v) {
+                    continue;
+                }
                 $headers[$k] = $v;
-            } catch (Throwable $e) {
-                continue;
             }
+        } finally {
+            unset($_headers, $header, $k, $v);
         }
     }
 }

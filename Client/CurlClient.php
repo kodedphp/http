@@ -208,8 +208,10 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     protected function extractFromResponseHeaders($_, string $header): int
     {
         try {
-            [$k, $v] = explode(':', $header, 2);
-            $this->responseHeaders[$k] = $v;
+            [$k, $v] = explode(':', $header, 2) + [1 => null];
+            if (null !== $v) {
+                $this->responseHeaders[$k] = $v;
+            }
         } catch (Throwable $e) {
             /** NOOP **/
         } finally {
