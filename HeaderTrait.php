@@ -156,13 +156,15 @@ trait HeaderTrait
      */
     protected function normalizeHeader(string $name, $value, bool $skipKey): void
     {
+        $name = trim($name);
+
         if (false === $skipKey) {
             $name = ucwords(str_replace('_', '-', strtolower($name)), '-');
         }
 
         $this->headersMap[strtolower($name)] = $name;
 
-        $this->headers[$name] = str_replace(["\r", "\n"], '', array_map('trim', (array)$value));
+        $this->headers[$name] = array_map('trim', (array)$value);
     }
 
     /**
