@@ -21,7 +21,6 @@ use RuntimeException;
 
 class CallableStream implements StreamInterface
 {
-
     /** @var callable */
     private $callable;
 
@@ -116,7 +115,7 @@ class CallableStream implements StreamInterface
 
     public function getContents(): string
     {
-        return $this->read(1048576); // 1MB
+        return $this->read(65536); // 64KB
     }
 
     public function getMetadata($key = null)
@@ -153,12 +152,11 @@ class CallableStream implements StreamInterface
             if (false === @fwrite($resource, ($this->callable)())) {
                 throw new RuntimeException('Cannot write to stream');
             }
-            fseek($resource, 0);
 
+            fseek($resource, 0);
             while (false === feof($resource)) {
                 yield fread($resource, $length);
             }
-
             fclose($resource);
         }
     }
