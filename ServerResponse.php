@@ -14,7 +14,7 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use JsonSerializable;
-use Koded\Http\Interfaces\{Request, Response};
+use Koded\Http\Interfaces\{HttpStatus, Request, Response};
 
 /**
  * Class ServerResponse
@@ -27,7 +27,7 @@ class ServerResponse implements Response, JsonSerializable
     private const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
     private const E_INVALID_STATUS_CODE  = 'Invalid status code %s, expected range between [100-599]';
 
-    protected $statusCode   = StatusCode::OK;
+    protected $statusCode   = HttpStatus::OK;
     protected $reasonPhrase = 'OK';
 
     /**
@@ -37,7 +37,7 @@ class ServerResponse implements Response, JsonSerializable
      * @param int   $statusCode [optional]
      * @param array $headers    [optional]
      */
-    public function __construct($content = '', int $statusCode = StatusCode::OK, array $headers = [])
+    public function __construct($content = '', int $statusCode = HttpStatus::OK, array $headers = [])
     {
         $this->setStatus($this, $statusCode);
         $this->setHeaders($headers);
@@ -89,7 +89,7 @@ class ServerResponse implements Response, JsonSerializable
     {
         if ($statusCode < 100 || $statusCode > 599) {
             throw new InvalidArgumentException(
-                sprintf(self::E_INVALID_STATUS_CODE, $statusCode), StatusCode::UNPROCESSABLE_ENTITY
+                sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
 

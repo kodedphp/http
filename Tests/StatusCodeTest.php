@@ -2,6 +2,7 @@
 
 namespace Koded\Http;
 
+use Koded\Http\Interfaces\HttpStatus;
 use PHPUnit\Framework\TestCase;
 
 class StatusCodeTest extends TestCase
@@ -16,8 +17,8 @@ class StatusCodeTest extends TestCase
 
     public function test_description()
     {
-        $this->assertSame('', StatusCode::description(StatusCode::CREATED));
+        $this->assertSame('', StatusCode::description(HttpStatus::CREATED));
         $this->assertSame('The origin server requires the request to be conditional',
-            StatusCode::description(StatusCode::PRECONDITION_REQUIRED));
+            StatusCode::description(HttpStatus::PRECONDITION_REQUIRED));
     }
 }

@@ -12,8 +12,8 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
-use Koded\Http\Interfaces\{HttpRequestClient, Response};
+use Koded\Http\{ClientRequest, ServerResponse};
+use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
 use Throwable;
 use function Koded\Http\create_stream;
 
@@ -56,7 +56,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
 
         try {
             if (false === $resource = $this->createResource(stream_context_create(['http' => $this->options]))) {
-                return new ServerResponse(error_get_last()['message'], StatusCode::FAILED_DEPENDENCY);
+                return new ServerResponse(error_get_last()['message'], HttpStatus::FAILED_DEPENDENCY);
             }
 
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
@@ -67,7 +67,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                 $headers
             );
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), StatusCode::INTERNAL_SERVER_ERROR);
+            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             if (is_resource($resource)) {
                 fclose($resource);
@@ -174,7 +174,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                 return false !== stripos($header, 'HTTP/', 0);
             });
             $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
-            $statusCode = (int)(explode(' ', $statusCode)[1] ?? StatusCode::OK);
+            $statusCode = (int)(explode(' ', $statusCode)[1] ?? HttpStatus::OK);
 
             foreach ($_headers as $header) {
                 [$k, $v] = explode(':', $header, 2) + [1 => null];

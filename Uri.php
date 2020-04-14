@@ -13,6 +13,7 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Message\UriInterface;
 use Throwable;
 
@@ -199,7 +200,7 @@ class Uri implements UriInterface
     private function parse(string $uri)
     {
         if (false === $parts = parse_url($uri)) {
-            throw new InvalidArgumentException('Please provide a valid URI', StatusCode::BAD_REQUEST);
+            throw new InvalidArgumentException('Please provide a valid URI', HttpStatus::BAD_REQUEST);
         }
 
         foreach ($parts as $k => $v) {
