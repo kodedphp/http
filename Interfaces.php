@@ -305,7 +305,7 @@ interface ValidatableRequest
 
 interface HttpStatus
 {
-    const CODE                = [
+    const CODE = [
         // Informational 1xx
         100 => 'Continue',
         101 => 'Switching Protocols',
@@ -340,9 +340,9 @@ interface HttpStatus
 
         // Client Error 4xx
         400 => 'Bad Request',
-        401 => 'Unauthorized',     // Really means "Unauthenticated"
+        401 => 'Unauthorized', // Really means "Unauthenticated"
         402 => 'Payment Required',
-        403 => 'Forbidden',        // Really means "Unauthorized"
+        403 => 'Forbidden', // Really means "Unauthorized"
         404 => 'Not Found',
         405 => 'Method Not Allowed',
         406 => 'Not Acceptable',
