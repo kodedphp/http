@@ -27,6 +27,7 @@ namespace Koded\Http;
 
 use Generator;
 use InvalidArgumentException;
+use Koded\Http\Interfaces\HttpStatus;
 
 class AcceptHeaderNegotiator
 {
@@ -101,7 +102,7 @@ abstract class AcceptHeader
 
         if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
             throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
-                StatusCode::NOT_ACCEPTABLE);
+                HttpStatus::NOT_ACCEPTABLE);
         }
 
         $this->separator = $matches[2] ?? '/';
@@ -110,7 +111,7 @@ abstract class AcceptHeader
         if ('*' === $type && '*' !== $subtype) {
             // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
             throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
-                StatusCode::NOT_ACCEPTABLE);
+                HttpStatus::NOT_ACCEPTABLE);
         }
 
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2

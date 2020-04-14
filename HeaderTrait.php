@@ -13,6 +13,7 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Interfaces\HttpStatus;
 use Throwable;
 
 
@@ -198,12 +199,12 @@ trait HeaderTrait
             $name = str_replace(["\r", "\n", "\t"], '', trim($name));
         } catch (Throwable $e) {
             throw new InvalidArgumentException(
-                sprintf('Header name must be a string, %s given', gettype($name)), StatusCode::BAD_REQUEST
+                sprintf('Header name must be a string, %s given', gettype($name)), HttpStatus::BAD_REQUEST
             );
         }
 
         if ('' === $name) {
-            throw new InvalidArgumentException('Empty header name', StatusCode::BAD_REQUEST);
+            throw new InvalidArgumentException('Empty header name', HttpStatus::BAD_REQUEST);
         }
 
         return $name;
@@ -227,7 +228,7 @@ trait HeaderTrait
                 break;
             default:
                 throw new InvalidArgumentException(
-                    sprintf('Invalid header value, expects string or array, "%s" given', $type), StatusCode::BAD_REQUEST
+                    sprintf('Invalid header value, expects string or array, "%s" given', $type), HttpStatus::BAD_REQUEST
                 );
         }
 
@@ -235,7 +236,7 @@ trait HeaderTrait
             return trim(preg_replace('/\s+/', ' ', $v));
         }, $value))) {
             throw new InvalidArgumentException(
-                sprintf('The value for header "%s" cannot be empty', $name), StatusCode::BAD_REQUEST
+                sprintf('The value for header "%s" cannot be empty', $name), HttpStatus::BAD_REQUEST
             );
         }
 

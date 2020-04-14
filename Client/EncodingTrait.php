@@ -13,8 +13,7 @@
 namespace Koded\Http\Client;
 
 use Exception;
-use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\StatusCode;
+use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus};
 use Psr\Http\Client\ClientExceptionInterface;
 
 
@@ -32,7 +31,7 @@ trait EncodingTrait
 
         throw new class(
             'Invalid encoding type. Expects 0, PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986',
-            StatusCode::BAD_REQUEST
+            HttpStatus::BAD_REQUEST
         ) extends Exception implements ClientExceptionInterface {};
     }
 }

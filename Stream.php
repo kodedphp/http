@@ -12,6 +12,7 @@
 
 namespace Koded\Http;
 
+use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 use Throwable;
@@ -45,7 +46,7 @@ class Stream implements StreamInterface
         if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             throw new RuntimeException(
                 'The provided resource is not a valid stream resource, ' . gettype($stream) . ' given.',
-                StatusCode::UNPROCESSABLE_ENTITY
+                HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
 

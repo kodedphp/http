@@ -14,7 +14,7 @@ namespace Koded\Http;
 
 use InvalidArgumentException;
 use JsonSerializable;
-use Koded\Http\Interfaces\Request;
+use Koded\Http\Interfaces\{HttpStatus, Request};
 use Psr\Http\Message\{RequestInterface, UriInterface};
 use function Koded\Stdlib\json_serialize;
 
@@ -107,7 +107,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     public function withRequestTarget($requestTarget): ClientRequest
     {
         if (preg_match('/\s+/', $requestTarget)) {
-            throw new InvalidArgumentException(self::E_INVALID_REQUEST_TARGET, StatusCode::BAD_REQUEST);
+            throw new InvalidArgumentException(self::E_INVALID_REQUEST_TARGET, HttpStatus::BAD_REQUEST);
         }
 
         $instance                = clone $this;
@@ -172,7 +172,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     protected function assertSafeMethod(): ?ServerResponse
     {
         if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, StatusCode::BAD_REQUEST);
+            return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, HttpStatus::BAD_REQUEST);
         }
 
         return null;

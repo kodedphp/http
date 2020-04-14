@@ -12,8 +12,8 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
-use Koded\Http\Interfaces\{HttpRequestClient, Response};
+use Koded\Http\{ClientRequest, ServerResponse};
+use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
 use Throwable;
 use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
@@ -59,14 +59,14 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             if (false === $resource = $this->createResource()) {
                 return new ServerResponse(
                     'The HTTP client is not created therefore cannot read anything',
-                    StatusCode::PRECONDITION_FAILED);
+                    HttpStatus::PRECONDITION_FAILED);
             }
 
             curl_setopt_array($resource, $this->options);
             $response = curl_exec($resource);
 
             if (true === $this->hasError($resource)) {
-                return (new ServerResponse($this->getCurlError($resource), StatusCode::FAILED_DEPENDENCY))
+                return (new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY))
                     ->withHeader('Content-Type', 'application/json');
             }
 
@@ -76,7 +76,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                 $this->responseHeaders
             );
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), StatusCode::INTERNAL_SERVER_ERROR);
+            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             unset($response);
 
@@ -193,7 +193,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'uri'     => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
             'message' => curl_strerror(curl_errno($resource)),
             'explain' => curl_error($resource),
-            'code'    => StatusCode::FAILED_DEPENDENCY,
+            'code'    => HttpStatus::FAILED_DEPENDENCY,
         ]);
     }
 
