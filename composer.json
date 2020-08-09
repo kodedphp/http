@@ -53,5 +53,7 @@
     "psr-4": {
       "Koded\\Http\\": "Tests/"
     }
-  }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
