@@ -39,11 +39,9 @@ trait HeaderTrait
         if (false === isset($this->headersMap[$name = strtolower($name)])) {
             return [];
         }
-
         if ($value = $this->headers[$this->headersMap[$name]]) {
             return (array)$value;
         }
-
         return [];
     }
 
@@ -60,18 +58,15 @@ trait HeaderTrait
         $instance->headersMap[strtolower($name)] = $name;
 
         $instance->headers[$name] = $this->normalizeHeaderValue($name, $value);
-
         return $instance;
     }
 
     public function withHeaders(array $headers): self
     {
         $instance = clone $this;
-
         foreach ($headers as $name => $value) {
             $instance->normalizeHeader($name, $value, false);
         }
-
         return $instance;
     }
 
@@ -80,7 +75,6 @@ trait HeaderTrait
         $instance = clone $this;
         $name     = strtolower($name);
         unset($instance->headers[$this->headersMap[$name]], $instance->headersMap[$name]);
-
         return $instance;
     }
 
@@ -89,7 +83,6 @@ trait HeaderTrait
         $instance = clone $this;
         $name     = $instance->normalizeHeaderName($name);
         $value    = $instance->normalizeHeaderValue($name, $value);
-
         if (isset($instance->headersMap[$header = strtolower($name)])) {
             $header                     = $instance->headersMap[$header];
             $instance->headers[$header] = array_unique(array_merge((array)$instance->headers[$header], $value));
@@ -97,7 +90,6 @@ trait HeaderTrait
             $instance->headersMap[$header] = $name;
             $instance->headers[$name]      = $value;
         }
-
         return $instance;
     }
 
@@ -110,11 +102,9 @@ trait HeaderTrait
     {
         $instance          = clone $this;
         $instance->headers = $instance->headersMap = [];
-
         foreach ($headers as $name => $value) {
             $instance->normalizeHeader($name, $value, false);
         }
-
         return $instance;
     }
 
@@ -130,7 +120,6 @@ trait HeaderTrait
         foreach ($this->headers as $name => $value) {
             $flattenHeaders[] = $name . ':' . join(',', (array)$value);
         }
-
         return $flattenHeaders;
     }
 
@@ -139,18 +128,14 @@ trait HeaderTrait
         if (empty($names)) {
             $names = array_keys($this->headers);
         }
-
         if (!$headers = array_reduce($names, function($list, $name) {
             $name   = str_replace('_', '-', $name);
             $list[] = strtolower($name) . ':' . join(',', $this->getHeader($name));
-
             return $list;
         })) {
             return '';
         }
-
         sort($headers);
-
         return join("\n", $headers);
     }
 
@@ -164,11 +149,9 @@ trait HeaderTrait
     protected function normalizeHeader(string $name, $value, bool $skipKey): void
     {
         $name = str_replace(["\r", "\n", "\t"], '', trim($name));
-
         if (false === $skipKey) {
             $name = ucwords(str_replace('_', '-', strtolower($name)), '-');
         }
-
         $this->headersMap[strtolower($name)] = $name;
 
         $this->headers[$name] = $this->normalizeHeaderValue($name, $value);
@@ -184,7 +167,6 @@ trait HeaderTrait
         foreach (array_filter($headers, 'is_string', ARRAY_FILTER_USE_KEY) as $name => $value) {
             $this->normalizeHeader($name, $value, false);
         }
-
         return $this;
     }
 
@@ -202,11 +184,9 @@ trait HeaderTrait
                 sprintf('Header name must be a string, %s given', gettype($name)), HttpStatus::BAD_REQUEST
             );
         }
-
         if ('' === $name) {
             throw new InvalidArgumentException('Empty header name', HttpStatus::BAD_REQUEST);
         }
-
         return $name;
     }
 
@@ -224,6 +204,9 @@ trait HeaderTrait
             case 'integer':
             case 'double':
             case 'string':
+                // PHP8
+            case 'int':
+            case 'float':
                 $value = (array)$value;
                 break;
             default:
@@ -239,7 +222,6 @@ trait HeaderTrait
                 sprintf('The value for header "%s" cannot be empty', $name), HttpStatus::BAD_REQUEST
             );
         }
-
         return $value;
     }
 }
