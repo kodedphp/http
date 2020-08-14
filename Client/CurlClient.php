@@ -51,7 +51,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         if ($resource = $this->assertSafeMethod()) {
             return $resource;
         }
-
         $this->prepareRequestBody();
         $this->prepareOptions();
 
@@ -61,15 +60,12 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                     'The HTTP client is not created therefore cannot read anything',
                     HttpStatus::PRECONDITION_FAILED);
             }
-
             curl_setopt_array($resource, $this->options);
             $response = curl_exec($resource);
-
             if (true === $this->hasError($resource)) {
                 return (new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY))
                     ->withHeader('Content-Type', 'application/json');
             }
-
             return new ServerResponse(
                 $response,
                 curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
@@ -79,7 +75,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             unset($response);
-
             if (is_resource($resource)) {
                 curl_close($resource);
             }
@@ -89,28 +84,24 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     public function userAgent(string $value): HttpRequestClient
     {
         $this->options[CURLOPT_USERAGENT] = $value;
-
         return $this;
     }
 
     public function followLocation(bool $value): HttpRequestClient
     {
         $this->options[CURLOPT_FOLLOWLOCATION] = $value;
-
         return $this;
     }
 
     public function maxRedirects(int $value): HttpRequestClient
     {
         $this->options[CURLOPT_MAXREDIRS] = $value;
-
         return $this;
     }
 
     public function timeout(float $value): HttpRequestClient
     {
         $this->options[CURLOPT_TIMEOUT] = $value;
-
         return $this;
     }
 
@@ -118,33 +109,28 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     {
         // false = do not fail on error
         $this->options[CURLOPT_FAILONERROR] = (int)!$value;
-
         return $this;
     }
 
     public function verifySslHost(bool $value): HttpRequestClient
     {
         $this->options[CURLOPT_SSL_VERIFYHOST] = $value ? 2 : 0;
-
         return $this;
     }
 
     public function verifySslPeer(bool $value): HttpRequestClient
     {
         $this->options[CURLOPT_SSL_VERIFYPEER] = $value ? 1 : 0;
-
         return $this;
     }
 
     public function withProtocolVersion($version): HttpRequestClient
     {
         $instance = parent::withProtocolVersion($version);
-
         $instance->options[CURLOPT_HTTP_VERSION] = [
                                                        '1.1' => CURL_HTTP_VERSION_1_1,
                                                        '1.0' => CURL_HTTP_VERSION_1_0
                                                    ][$version];
-
         return $instance;
     }
 
@@ -174,16 +160,13 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         if (!$this->stream->getSize()) {
             return;
         }
-
         $this->stream->rewind();
-
         if (0 === $this->encoding) {
             $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
         } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
             $this->options[CURLOPT_POSTFIELDS] = http_build_query($content, null, '&', $this->encoding);
         }
-
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }
 

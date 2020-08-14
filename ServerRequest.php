@@ -60,7 +60,6 @@ class ServerRequest extends ClientRequest implements Request
     {
         $instance              = clone $this;
         $instance->queryParams = array_merge($instance->queryParams, $query);
-
         return $instance;
     }
 
@@ -69,44 +68,33 @@ class ServerRequest extends ClientRequest implements Request
         if ($this->useOnlyPost()) {
             return $_POST;
         }
-
         if (false === empty($_POST)) {
             return $_POST;
         }
-
         return $this->parsedBody;
     }
 
     public function withParsedBody($data): ServerRequest
     {
         $instance = clone $this;
-
         if ($this->useOnlyPost()) {
             $instance->parsedBody = $_POST;
-
             return $instance;
         }
-
         // If nothing is available for the body
         if (null === $data) {
             $instance->parsedBody = null;
-
             return $instance;
         }
-
         // Supports array or iterable object
         if (is_iterable($data)) {
             $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
-
             return $instance;
         }
-
         if (is_object($data)) {
             $instance->parsedBody = $data;
-
             return $instance;
         }
-
         throw new InvalidArgumentException(
             sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', gettype($data))
         );
@@ -126,7 +114,6 @@ class ServerRequest extends ClientRequest implements Request
     {
         $instance                    = clone $this;
         $instance->attributes[$name] = $value;
-
         return $instance;
     }
 
@@ -134,18 +121,15 @@ class ServerRequest extends ClientRequest implements Request
     {
         $instance = clone $this;
         unset($instance->attributes[$name]);
-
         return $instance;
     }
 
     public function withAttributes(array $attributes): Request
     {
         $instance = clone $this;
-
         foreach ($attributes as $name => $value) {
             $instance->attributes[$name] = $value;
         }
-
         return $instance;
     }
 
@@ -159,7 +143,6 @@ class ServerRequest extends ClientRequest implements Request
         if (strpos($_SERVER['REQUEST_URI'] ?? '', '://')) {
             return new Uri($_SERVER['REQUEST_URI']);
         }
-
         if ($host = $_SERVER['SERVER_NAME'] ?? $_SERVER['SERVER_ADDR'] ?? '') {
             return new Uri('http' . ($_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? false ? 's' : '')
                 . '://' . $host
@@ -167,7 +150,6 @@ class ServerRequest extends ClientRequest implements Request
                 . ($_SERVER['REQUEST_URI'] ?? '')
             );
         }
-
         return new Uri($_SERVER['REQUEST_URI'] ?? '');
     }
 
@@ -175,9 +157,8 @@ class ServerRequest extends ClientRequest implements Request
     {
         foreach ($server as $k => $v) {
             // Calisthenics :)
-            0 === strpos($k, 'HTTP_', 0) and $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
+            0 === strpos($k, 'HTTP_', 0) && $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
-
         unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
         unset($this->headersMap['x-forwarded-for'], $this->headersMap['x-forwarded-proto']);
 
@@ -186,12 +167,10 @@ class ServerRequest extends ClientRequest implements Request
             $this->headers['ETag']    = str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
             $this->headersMap['etag'] = 'ETag';
         }
-
         if (isset($server['CONTENT_TYPE'])) {
             $this->headers['Content-Type']    = strtolower($server['CONTENT_TYPE']);
             $this->headersMap['content-type'] = 'Content-Type';
         }
-
         $this->setHost();
     }
 
@@ -205,7 +184,6 @@ class ServerRequest extends ClientRequest implements Request
         if (false === $this->isSafeMethod()) {
             $this->parseInput();
         }
-
         if ($_FILES) {
             $this->uploadedFiles = $this->parseUploadedFiles($_FILES);
         }
@@ -227,7 +205,6 @@ class ServerRequest extends ClientRequest implements Request
         if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
             return false;
         }
-
         return $this->method === self::POST && (
                 false !== strpos('application/x-www-form-urlencoded', $contentType) ||
                 false !== strpos('multipart/form-data', $contentType));
@@ -242,10 +219,8 @@ class ServerRequest extends ClientRequest implements Request
         if (empty($input = $this->getRawInput())) {
             return;
         }
-
         // Try JSON deserialization
         $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
-
         if (null === $this->parsedBody) {
             parse_str($input, $this->parsedBody);
         }

@@ -50,10 +50,8 @@ class HttpFactory implements RequestFactoryInterface,
         if ($serverParams) {
             $_SERVER = array_replace($_SERVER, $serverParams);
         }
-
         $_SERVER['REQUEST_METHOD'] = $method;
         $_SERVER['REQUEST_URI']    = (string)$uri;
-
         return new ServerRequest;
     }
 

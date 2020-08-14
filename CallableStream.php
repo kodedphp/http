@@ -94,7 +94,6 @@ class CallableStream implements StreamInterface
     public function read($length): string
     {
         $content = '';
-
         if (null === $this->callable) {
             return $content;
         }
@@ -109,7 +108,6 @@ class CallableStream implements StreamInterface
         } finally {
             $this->callable = null;
         }
-
         return $content;
     }
 
@@ -152,7 +150,6 @@ class CallableStream implements StreamInterface
             if (false === @fwrite($resource, ($this->callable)())) {
                 throw new RuntimeException('Cannot write to stream');
             }
-
             fseek($resource, 0);
             while (false === feof($resource)) {
                 yield fread($resource, $length);

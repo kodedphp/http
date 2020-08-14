@@ -17,7 +17,6 @@ use Psr\Http\Message\UploadedFileInterface;
 
 trait FilesTrait
 {
-
     /** @var UploadedFileInterface[] */
     protected $uploadedFiles = [];
 
@@ -30,7 +29,6 @@ trait FilesTrait
     {
         $instance                = clone $this;
         $instance->uploadedFiles = $this->parseUploadedFiles($uploadedFiles);
-
         return $instance;
     }
 

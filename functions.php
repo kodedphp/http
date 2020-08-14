@@ -28,28 +28,22 @@ function create_stream($resource, string $mode = 'r+'): StreamInterface
         $stream = fopen('php://temp', $mode);
         fwrite($stream, $resource);
         fseek($stream, 0);
-
         return new Stream($stream);
     }
 
     if ($resource instanceof StreamInterface) {
         return $resource;
     }
-
     if (is_callable($resource)) {
         return new CallableStream($resource);
     }
-
     $type = gettype($resource);
-
     if ('resource' === $type) {
         return new Stream($resource);
     }
-
     if ('object' === $type && method_exists($resource, '__toString')) {
         return create_stream((string)$resource);
     }
-
     throw new InvalidArgumentException('Failed to create a stream. '
         . 'Expected a file name, StreamInterface instance, or a resource. '
         . "Given {$type} type.");
@@ -72,9 +66,7 @@ function stream_copy(StreamInterface $source, StreamInterface $destination, int 
     while (false === $source->eof()) {
         $bytes += $destination->write($source->read($length));
     }
-
     $destination->close();
-
     return $bytes;
 }
 
@@ -88,11 +80,9 @@ function stream_to_string(StreamInterface $stream): string
 {
     $content = '';
     $stream->rewind();
-
     while (false === $stream->eof()) {
         $content .= $stream->read(1048576); // 1MB
     }
-
     return $content;
 }
 
@@ -110,7 +100,6 @@ function normalize_files_array(array $files): array
         foreach ($files as $k => $v) {
             $list   = $path;
             $list[] = $k;
-
             if (is_array($v)) {
                 $file = $sane($v, $file, $list);
             } else {
@@ -122,7 +111,6 @@ function normalize_files_array(array $files): array
                 $copy = $v;
             }
         }
-
         return $file;
     };
 
@@ -151,6 +139,5 @@ function build_files_array(array $files): array
             throw new InvalidArgumentException('Failed to process the uploaded files. Invalid file structure provided');
         }
     }
-
     return $files;
 }

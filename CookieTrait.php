@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 trait CookieTrait
 {
-
     protected $cookieParams = [];
 
     public function getCookieParams(): array
@@ -26,7 +25,6 @@ trait CookieTrait
     {
         $instance               = clone $this;
         $instance->cookieParams = $cookies;
-
         return $instance;
     }
 }

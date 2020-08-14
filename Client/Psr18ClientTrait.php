@@ -42,7 +42,6 @@ trait Psr18ClientTrait
         if ($response->getStatusCode() >= HttpStatus::BAD_REQUEST) {
             throw new Psr18Exception($response->getBody()->getContents(), $response->getStatusCode(), $this);
         }
-
         return $response;
     }
 }

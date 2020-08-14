@@ -67,11 +67,9 @@ class Uri implements UriInterface
     public function getAuthority(): string
     {
         $userInfo = $this->getUserInfo();
-
         if (0 === strlen($userInfo)) {
             return '';
         }
-
         return $userInfo . '@' . $this->getHostWithPort();
     }
 
@@ -80,7 +78,6 @@ class Uri implements UriInterface
         if (0 === strlen($this->user)) {
             return '';
         }
-
         return trim($this->user . ':' . $this->pass, ':');
     }
 
@@ -94,7 +91,6 @@ class Uri implements UriInterface
         if (!$this->scheme && !$this->port) {
             return null;
         }
-
         return $this->port;
     }
 
@@ -121,7 +117,6 @@ class Uri implements UriInterface
 
         $instance         = clone $this;
         $instance->scheme = (string)$scheme;
-
         return $instance;
     }
 
@@ -136,7 +131,6 @@ class Uri implements UriInterface
         if ('/' !== ($instance->path[0] ?? '')) {
             $instance->path = '/' . $instance->path;
         }
-
         return $instance;
     }
 
@@ -144,26 +138,21 @@ class Uri implements UriInterface
     {
         $instance       = clone $this;
         $instance->host = (string)$host;
-
         return $instance;
     }
 
     public function withPort($port): UriInterface
     {
         $instance = clone $this;
-
         if (null === $port) {
             $instance->port = null;
 
             return $instance;
         }
-
         if (false === is_int($port) || $port < 1) {
             throw new InvalidArgumentException('Invalid port');
         }
-
         $instance->port = $port;
-
         return $instance;
     }
 
@@ -171,7 +160,6 @@ class Uri implements UriInterface
     {
         $instance       = clone $this;
         $instance->path = $this->fixPath((string)$path);
-
         return $instance;
     }
 
@@ -182,10 +170,8 @@ class Uri implements UriInterface
         } catch (Throwable $e) {
             throw new InvalidArgumentException('The provided query string is invalid');
         }
-
         $instance        = clone $this;
         $instance->query = (string)$query;
-
         return $instance;
     }
 
@@ -193,7 +179,6 @@ class Uri implements UriInterface
     {
         $instance           = clone $this;
         $instance->fragment = str_replace(['#', '%23'], '', $fragment);
-
         return $instance;
     }
 
@@ -202,13 +187,10 @@ class Uri implements UriInterface
         if (false === $parts = parse_url($uri)) {
             throw new InvalidArgumentException('Please provide a valid URI', HttpStatus::BAD_REQUEST);
         }
-
         foreach ($parts as $k => $v) {
             $this->$k = $v;
         }
-
         $this->path = $this->fixPath($parts['path'] ?? '');
-
         if ($this->isStandardPort()) {
             $this->port = null;
         }
@@ -219,16 +201,13 @@ class Uri implements UriInterface
         if (empty($path)) {
             return $path;
         }
-
         // Percent encode the path
         $path = explode('/', $path);
         foreach ($path as $k => $part) {
             $path[$k] = false !== strpos($part, '%') ? $part : rawurlencode($part);
         }
-
         // TODO remove the entry script from the path?
         $path = str_replace('/index.php', '', join('/', $path));
-
         return $path;
     }
 
@@ -237,7 +216,6 @@ class Uri implements UriInterface
         if ('/' === ($path[0] ?? '') && 0 === strlen($this->user)) {
             return preg_replace('/\/+/', '/', $path);
         }
-
         return $path;
     }
 
@@ -246,7 +224,6 @@ class Uri implements UriInterface
         if ($this->port) {
             return $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
         }
-
         return $this->host;
     }
 

@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 trait JsonSerializeTrait
 {
-
     /**
      * Serialize the request object as JSON representation.
      *

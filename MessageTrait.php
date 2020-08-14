@@ -35,10 +35,8 @@ trait MessageTrait
         if (false === in_array($version, ['1.0', '1.1'], true)) {
             throw new InvalidArgumentException('Unsupported HTTP protocol version ' . $version);
         }
-
         $instance                  = clone $this;
         $instance->protocolVersion = $version;
-
         return $instance;
     }
 
@@ -51,7 +49,6 @@ trait MessageTrait
     {
         $instance         = clone $this;
         $instance->stream = $body;
-
         return $instance;
     }
 

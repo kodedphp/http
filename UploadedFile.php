@@ -57,27 +57,22 @@ class UploadedFile implements UploadedFileInterface
         } elseif (0 === strlen($this->file)) {
             throw UploadedFileException::filenameCannotBeEmpty();
         }
-
         // Never trust the provided mime type
         $this->type = $this->getClientMediaType();
     }
-
 
     public function getStream(): StreamInterface
     {
         if ($this->moved) {
             throw UploadedFileException::streamNotAvailable();
         }
-
         return new FileStream($this->file, 'w+b');
     }
-
 
     public function moveTo($targetPath)
     {
         $this->assertUploadError();
         $this->assertTargetPath($targetPath);
-
         // @codeCoverageIgnoreStart
         try {
             $this->moved = ('cli' === php_sapi_name())
@@ -91,24 +86,20 @@ class UploadedFile implements UploadedFileInterface
         // @codeCoverageIgnoreEnd
     }
 
-
     public function getSize(): ?int
     {
         return $this->size;
     }
-
 
     public function getError(): int
     {
         return $this->error;
     }
 
-
     public function getClientFilename(): ?string
     {
         return $this->name;
     }
-
 
     public function getClientMediaType(): ?string
     {
@@ -119,7 +110,6 @@ class UploadedFile implements UploadedFileInterface
         }
     }
 
-
     private function assertUploadError(): void
     {
         if ($this->error !== \UPLOAD_ERR_OK) {
@@ -127,17 +117,14 @@ class UploadedFile implements UploadedFileInterface
         }
     }
 
-
     private function assertTargetPath($targetPath): void
     {
         if ($this->moved) {
             throw UploadedFileException::fileAlreadyMoved();
         }
-
         if (false === is_string($targetPath) || 0 === strlen($targetPath)) {
             throw UploadedFileException::targetPathIsInvalid();
         }
-
         if (false === is_dir($dirname = dirname($targetPath))) {
             @mkdir($dirname, 0777, true);
         }

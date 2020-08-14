@@ -91,7 +91,6 @@ class StatusCode implements HttpStatus
         try {
             $withCode += [false];
             $status = constant("self::$code");
-
             return ($withCode[0] ? $status . ' ' : '') . self::CODE[$status];
         } catch (Exception $e) {
             return null;

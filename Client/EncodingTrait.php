@@ -28,7 +28,6 @@ trait EncodingTrait
 
             return $this;
         }
-
         throw new class(
             'Invalid encoding type. Expects 0, PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986',
             HttpStatus::BAD_REQUEST

@@ -49,7 +49,6 @@ class Stream implements StreamInterface
                 HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
-
         $metadata       = stream_get_meta_data($stream);
         $this->mode     = $metadata['mode'] ?? 'w+b';
         $this->seekable = $metadata['seekable'] ?? false;
@@ -65,7 +64,6 @@ class Stream implements StreamInterface
     {
         try {
             $this->seek(0);
-
             return $this->getContents();
         } catch (Throwable $e) {
             return '';
@@ -85,12 +83,10 @@ class Stream implements StreamInterface
         if (empty($this->stream)) {
             return null;
         }
-
         $resource       = $this->stream;
         $this->stream   = null;
         $this->mode     = 'w+b';
         $this->seekable = false;
-
         return $resource;
     }
 
@@ -99,7 +95,6 @@ class Stream implements StreamInterface
         if (empty($this->stream)) {
             return null;
         }
-
         return fstat($this->stream)['size'] ?? null;
     }
 
@@ -108,7 +103,6 @@ class Stream implements StreamInterface
         if (false === $position = ftell($this->stream)) {
             throw new RuntimeException('Failed to find the position of the file pointer');
         }
-
         return $position;
     }
 
@@ -129,7 +123,6 @@ class Stream implements StreamInterface
         if (false === $this->seekable) {
             throw new RuntimeException('The stream is not seekable');
         }
-
         $this->seek(0);
     }
 
@@ -138,11 +131,9 @@ class Stream implements StreamInterface
         if (false === $this->isWritable()) {
             throw new RuntimeException('The stream is not writable');
         }
-
         if (false === $bytes = fwrite($this->stream, $string)) {
             throw new RuntimeException('Failed to write data to the stream');
         }
-
         return $bytes;
     }
 
@@ -151,15 +142,12 @@ class Stream implements StreamInterface
         if (false === $this->isReadable()) {
             throw new RuntimeException('The stream is not readable');
         }
-
         if (empty($length)) {
             return '';
         }
-
         if (false === $data = fread($this->stream, $length)) {
             throw new RuntimeException('Failed to read the data from stream');
         }
-
         return $data;
     }
 
@@ -168,18 +156,15 @@ class Stream implements StreamInterface
         if (false === $content = stream_get_contents($this->stream)) {
             throw new RuntimeException('Unable to read the stream content');
         }
-
         return $content;
     }
 
     public function getMetadata($key = null)
     {
         $metadata = stream_get_meta_data($this->stream);
-
         if (null === $key) {
             return $metadata;
         }
-
         return $metadata[$key] ?? null;
     }
 

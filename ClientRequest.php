@@ -46,7 +46,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
         $this->stream = create_stream($this->prepareBody($body));
-
         $this->setHost();
         $this->setMethod($method, $this);
         $this->setHeaders($headers);
@@ -70,7 +69,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
     public function withUri(UriInterface $uri, $preserveHost = false): ClientRequest
     {
         $instance = clone $this;
-
         if (true === $preserveHost) {
             $uri      = $uri->withHost($this->uri->getHost());
             $instance = $instance->withUri($uri);
@@ -81,7 +79,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
             return $instance->withHeader('Host', $host);
         }
-
         return $instance->withHeader('Host', [$uri->getHost()]);
     }
 
@@ -90,17 +87,13 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if ($this->requestTarget) {
             return $this->requestTarget;
         }
-
         $path = $this->uri->getPath();
-
         if (!$path && !$this->requestTarget) {
             return '/';
         }
-
         if ($query = $this->uri->getQuery()) {
             $path .= '?' . $query;
         }
-
         return $path;
     }
 
@@ -109,10 +102,8 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if (preg_match('/\s+/', $requestTarget)) {
             throw new InvalidArgumentException(self::E_INVALID_REQUEST_TARGET, HttpStatus::BAD_REQUEST);
         }
-
         $instance                = clone $this;
         $instance->requestTarget = $requestTarget;
-
         return $instance;
     }
 
@@ -126,10 +117,8 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if (false === empty($host = $this->getUri()->getHost())) {
             $port = $this->getUri()->getPort();
             $port && $port = ":{$port}";
-
             return $this->getUri()->getScheme() . "://{$host}{$port}";
         }
-
         return '';
     }
 
@@ -159,7 +148,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
     protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
         $instance->method = strtoupper($method);
-
         return $instance;
     }
 
@@ -174,7 +162,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
             return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, HttpStatus::BAD_REQUEST);
         }
-
         return null;
     }
 
@@ -188,7 +175,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
         if (false === is_iterable($body)) {
             return $body;
         }
-
         return json_serialize($body);
     }
 }

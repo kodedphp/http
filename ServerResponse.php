@@ -67,21 +67,17 @@ class ServerResponse implements Response, JsonSerializable
     public function send(): string
     {
         $this->prepareResponse();
-
         if (headers_sent()) {
             return (string)$this->stream;
         }
-
         // Headers
         foreach ($this->getHeaders() as $name => $values) {
             header($name . ':' . join(',', (array)$values), false, $this->statusCode);
         }
-
         // Status header
         header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
             true, $this->statusCode
         );
-
         return (string)$this->stream;
     }
 
@@ -95,7 +91,6 @@ class ServerResponse implements Response, JsonSerializable
 
         $instance->statusCode   = (int)$statusCode;
         $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : StatusCode::CODE[$statusCode];
-
         return $instance;
     }
 
@@ -105,18 +100,14 @@ class ServerResponse implements Response, JsonSerializable
             $this->stream = create_stream(null);
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
             unset($this->headersMap['content-type'], $this->headers['Content-Type']);
-
             return;
         }
-
         if ($size = $this->stream->getSize()) {
             $this->normalizeHeader('Content-Length', $size, true);
         }
-
         if (Request::HEAD === strtoupper($_SERVER['REQUEST_METHOD'] ?? '')) {
             $this->stream = create_stream(null);
         }
-
         if ($this->hasHeader('Transfer-Encoding') || !$size) {
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
         }

@@ -24,15 +24,12 @@ trait ValidatableTrait
     public function validate(HttpInputValidator $validator): ?Response
     {
         $body = new Immutable($this->getParsedBody() ?? []);
-
         if (0 === $body->count()) {
             return null;
         }
-
         if (empty($errors = $validator->validate($body))) {
             return null;
         }
-
         $errors['code'] = (int)($errors['code'] ?? StatusCode::BAD_REQUEST);
         return new ServerResponse(json_serialize($errors), $errors['code']);
     }

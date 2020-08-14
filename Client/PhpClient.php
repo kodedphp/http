@@ -50,7 +50,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         if ($resource = $this->assertSafeMethod()) {
             return $resource;
         }
-
         $this->prepareRequestBody();
         $this->prepareOptions();
 
@@ -58,9 +57,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             if (false === $resource = $this->createResource(stream_context_create(['http' => $this->options]))) {
                 return new ServerResponse(error_get_last()['message'], HttpStatus::FAILED_DEPENDENCY);
             }
-
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
-
             return new ServerResponse(
                 stream_get_contents($resource),
                 $statusCode,
@@ -78,49 +75,42 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     public function userAgent(string $value): HttpRequestClient
     {
         $this->options['user_agent'] = $value;
-
         return $this;
     }
 
     public function followLocation(bool $value): HttpRequestClient
     {
         $this->options['follow_location'] = (int)$value;
-
         return $this;
     }
 
     public function maxRedirects(int $value): HttpRequestClient
     {
         $this->options['max_redirects'] = $value;
-
         return $this;
     }
 
     public function timeout(float $value): HttpRequestClient
     {
         $this->options['timeout'] = $value * 1.0;
-
         return $this;
     }
 
     public function ignoreErrors(bool $value): HttpRequestClient
     {
         $this->options['ignore_errors'] = $value;
-
         return $this;
     }
 
     public function verifySslHost(bool $value): HttpRequestClient
     {
         $this->options['ssl']['allow_self_signed'] = $value;
-
         return $this;
     }
 
     public function verifySslPeer(bool $value): HttpRequestClient
     {
         $this->options['ssl']['verify_peer'] = $value;
-
         return $this;
     }
 
@@ -139,16 +129,13 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         if (!$this->stream->getSize()) {
             return;
         }
-
         $this->stream->rewind();
-
         if (0 === $this->encoding) {
             $this->options['content'] = $this->stream->getContents();
         } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
             $this->options['content'] = http_build_query($content, null, '&', $this->encoding);
         }
-
         $this->stream = create_stream($this->options['content']);
     }
 
@@ -175,7 +162,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             });
             $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
             $statusCode = (int)(explode(' ', $statusCode)[1] ?? HttpStatus::OK);
-
             foreach ($_headers as $header) {
                 [$k, $v] = explode(':', $header, 2) + [1 => null];
                 if (null === $v) {

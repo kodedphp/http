@@ -68,10 +68,8 @@ class ClientFactory
         switch ($this->clientType) {
             case self::CURL:
                 return new CurlClient($method, $uri, $body, $headers);
-
             case self::PHP:
                 return new PhpClient($method, $uri, $body, $headers);
-
             default:
                 throw new InvalidArgumentException("{$this->clientType} is not a valid HTTP client");
         }
