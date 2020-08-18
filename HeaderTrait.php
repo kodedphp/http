@@ -233,7 +233,7 @@ trait HeaderTrait
         }
 
         if (empty($value = array_map(function($v) {
-            return trim(preg_replace('/\s+/', ' ', $v));
+            return trim(preg_replace('/\s+/', ' ', (string)$v));
         }, $value))) {
             throw new InvalidArgumentException(
                 sprintf('The value for header "%s" cannot be empty', $name), HttpStatus::BAD_REQUEST
