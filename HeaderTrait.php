@@ -74,7 +74,9 @@ trait HeaderTrait
     {
         $instance = clone $this;
         $name     = strtolower($name);
-        unset($instance->headers[$this->headersMap[$name]], $instance->headersMap[$name]);
+        if (isset($instance->headersMap[$name])) {
+            unset($instance->headers[$this->headersMap[$name]], $instance->headersMap[$name]);
+        }
         return $instance;
     }
 

@@ -78,6 +78,18 @@ class HeaderTraitTest extends TestCase
         $this->assertFalse($response->hasHeader('Foo'));
     }
 
+    /**
+     * @depends test_add_header_value
+     *
+     * @param MockHttpHeader $sut
+     */
+    public function test_delete_header_if_not_exist(MockHttpHeader $sut)
+    {
+        $this->assertFalse($sut->hasHeader('foobar'));
+        $response = $sut->withoutHeader('foobar');
+        $this->assertFalse($sut->hasHeader('foobar'), 'Should not throw exception if header is not set');
+    }
+
     public function test_replace_headers()
     {
         $SUT = $this->SUT->withHeader('FOO_BAR', 'baz');
