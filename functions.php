@@ -17,12 +17,12 @@ use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
 use RuntimeException;
 
 /**
- * @param null|callable|StreamInterface|object|resource $resource A gypsy wannabe argument
- * @param string                                        $mode
+ * @param null|callable|StreamInterface|object|resource $resource The string that is to be written
+ * @param string                                        $mode Type of access to the stream
  *
  * @return StreamInterface
  */
-function create_stream($resource, string $mode = 'r+'): StreamInterface
+function create_stream($resource, string $mode = 'r+b'): StreamInterface
 {
     if (null === $resource || is_string($resource)) {
         $stream = fopen('php://temp', $mode);
