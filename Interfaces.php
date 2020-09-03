@@ -124,6 +124,8 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
      * @return string The response mime type
      */
     public function getContentType(): string;
+
+    public function send(): string;
 }
 
 
