@@ -147,8 +147,10 @@ class CallableStream implements StreamInterface
         if ($this->isGenerator) {
             yield from ($this->callable)();
         } elseif ($resource = fopen('php://temp', 'r+')) {
-            if (false === @fwrite($resource, ($this->callable)())) {
-                throw new RuntimeException('Cannot write to stream');
+            try {
+                fwrite($resource, ($this->callable)());
+            } catch (\Throwable $e) {
+                throw new RuntimeException('Cannot write to stream', 0, $e);
             }
             fseek($resource, 0);
             while (false === feof($resource)) {
