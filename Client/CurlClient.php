@@ -26,7 +26,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     use EncodingTrait, Psr18ClientTrait;
 
     /** @var array curl options */
-    private $options = [
+    private array $options = [
         CURLOPT_MAXREDIRS      => 20,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
@@ -38,7 +38,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     ];
 
     /** @var array Parsed response headers */
-    private $responseHeaders = [];
+    private array $responseHeaders = [];
 
     public function __construct(string $method, $uri, $body = null, array $headers = [])
     {
@@ -53,18 +53,21 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         }
         $this->prepareRequestBody();
         $this->prepareOptions();
-
         try {
             if (false === $resource = $this->createResource()) {
                 return new ServerResponse(
                     'The HTTP client is not created therefore cannot read anything',
                     HttpStatus::PRECONDITION_FAILED);
             }
+            if (false === is_resource($resource)) {
+                return new ServerResponse('Handle must be of type CurlHandle',
+                    HttpStatus::FAILED_DEPENDENCY);
+            }
             curl_setopt_array($resource, $this->options);
             $response = curl_exec($resource);
             if (true === $this->hasError($resource)) {
-                return (new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY))
-                    ->withHeader('Content-Type', 'application/json');
+                return new ServerResponse($this->getCurlError($resource),
+                    HttpStatus::FAILED_DEPENDENCY);
             }
             return new ServerResponse(
                 $response,
@@ -72,7 +75,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                 $this->responseHeaders
             );
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            error_log('|>>> ' . \get_debug_type($e) . ': ' . $e->getMessage());
+            return (new ServerResponse($e->getMessage(), $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR))
+                ->withHeader('Content-Type', 'application/json');
         } finally {
             unset($response);
             if (is_resource($resource)) {
@@ -127,15 +132,14 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     public function withProtocolVersion($version): HttpRequestClient
     {
         $instance = parent::withProtocolVersion($version);
-        $instance->options[CURLOPT_HTTP_VERSION] = [
-                                                       '1.1' => CURL_HTTP_VERSION_1_1,
-                                                       '1.0' => CURL_HTTP_VERSION_1_0
-                                                   ][$version];
+        $instance->options[CURLOPT_HTTP_VERSION] =
+            ['1.1' => CURL_HTTP_VERSION_1_1,
+             '1.0' => CURL_HTTP_VERSION_1_0][$version];
         return $instance;
     }
 
     /**
-     * @return false|resource
+     * @return resource|false
      */
     protected function createResource()
     {
