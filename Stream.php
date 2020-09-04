@@ -38,8 +38,8 @@ class Stream implements StreamInterface
 
     /** @var resource The underlying stream resource */
     protected $stream;
-    protected $mode     = 'w+b';
-    protected $seekable = false;
+    protected string $mode   = 'w+b';
+    protected bool $seekable = false;
 
     public function __construct($stream)
     {
@@ -84,8 +84,8 @@ class Stream implements StreamInterface
             return null;
         }
         $resource       = $this->stream;
-        $this->stream   = null;
         $this->mode     = 'w+b';
+        $this->stream   = null;
         $this->seekable = false;
         return $resource;
     }
