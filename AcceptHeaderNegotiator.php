@@ -31,8 +31,7 @@ use Koded\Http\Interfaces\HttpStatus;
 
 class AcceptHeaderNegotiator
 {
-    /** @var AcceptHeader[] */
-    private $supports;
+    private string $supports = '';
 
     public function __construct(string $supportHeader)
     {
@@ -50,7 +49,6 @@ class AcceptHeaderNegotiator
         usort($types, function(AcceptHeader $a, AcceptHeader $b) {
             return $b->weight() <=> $a->weight();
         });
-
         if (empty($types)) {
             /* Set "q=0", meaning the header is explicitly rejected.
              * The consuming clients should handle this according to
@@ -80,14 +78,14 @@ class AcceptHeaderNegotiator
 
 abstract class AcceptHeader
 {
-    private $header;
-    private $separator;
-    private $type;
-    private $subtype;
-    private $quality  = 1.0;
-    private $weight   = 0.0;
-    private $catchAll = false;
-    private $params   = [];
+    private string      $header    = '';
+    private string      $separator = '/';
+    private string|null $type      = '';
+    private string      $subtype   = '*';
+    private float       $quality   = 1.0;
+    private float       $weight    = 0.0;
+    private bool        $catchAll  = false;
+    private array       $params    = [];
 
     public function __construct(string $header)
     {
@@ -154,8 +152,6 @@ abstract class AcceptHeader
     }
 
     /**
-     * @internal
-     *
      * @param AcceptHeader   $accept  The accept header part
      * @param AcceptHeader[] $matches Matched types
      *
@@ -166,13 +162,14 @@ abstract class AcceptHeader
      * including all the nonsense that may be passed by the
      * developers who do not follow RFC standards.
      *
+     * @internal
+     *
      */
     public function matches(AcceptHeader $accept, array &$matches = null): bool
     {
-        $matches = (array)$matches;
-        $accept  = clone $accept;
+        $matches   = (array)$matches;
+        $accept    = clone $accept;
         $typeMatch = $this->type === $accept->type;
-
         if (1.0 === $accept->quality) {
             $accept->quality = (float)$this->quality;
         }
