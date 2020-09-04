@@ -21,17 +21,11 @@ class ServerRequest extends ClientRequest implements Request
 {
     use CookieTrait, FilesTrait, ValidatableTrait;
 
-    /** @var string */
-    protected $serverSoftware = '';
+    protected string $serverSoftware = '';
+    protected array  $attributes     = [];
+    protected array  $queryParams    = [];
 
-    /** @var array */
-    protected $attributes = [];
-
-    /** @var array */
-    protected $queryParams = [];
-
-    /** @var null|array */
-    protected $parsedBody;
+    protected object|array|null $parsedBody = null;
 
     /**
      * ServerRequest constructor.
@@ -161,7 +155,6 @@ class ServerRequest extends ClientRequest implements Request
         }
         unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
         unset($this->headersMap['x-forwarded-for'], $this->headersMap['x-forwarded-proto']);
-
         if (isset($server['HTTP_IF_NONE_MATCH'])) {
             // ETag workaround for various broken Apache2 versions
             $this->headers['ETag']    = str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
@@ -180,7 +173,6 @@ class ServerRequest extends ClientRequest implements Request
         $this->serverSoftware  = $server['SERVER_SOFTWARE'] ?? '';
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
-
         if (false === $this->isSafeMethod()) {
             $this->parseInput();
         }
