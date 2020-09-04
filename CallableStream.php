@@ -25,10 +25,10 @@ class CallableStream implements StreamInterface
     private $callable;
 
     /** @var int Current position of the pointer in the buffer */
-    private $position = 0;
+    private int $position = 0;
 
     /** @var bool If callable is Generator instance */
-    private $isGenerator = false;
+    private bool $isGenerator;
 
     public function __construct(callable $callable)
     {
