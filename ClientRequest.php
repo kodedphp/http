@@ -26,10 +26,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
     const E_INVALID_REQUEST_TARGET = 'The request target is invalid, it contains whitespaces';
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
 
-    /** @var UriInterface */
-    protected $uri;
-    protected $method        = Request::GET;
-    protected $requestTarget = '';
+    protected UriInterface $uri;
+    protected string $method        = Request::GET;
+    protected string $requestTarget = '';
 
     /**
      * ClientRequest constructor.
@@ -37,12 +36,16 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * If body is provided, the content internally is encoded in JSON
      * and stored in body Stream object.
      *
-     * @param string                                                                   $method
-     * @param UriInterface|string                                                      $uri
-     * @param \Psr\Http\Message\StreamInterface|iterable|resource|callable|string|null $body    [optional]
-     * @param array                                                                    $headers [optional]
+     * @param string              $method
+     * @param UriInterface|string $uri
+     * @param mixed               $body    [optional] \Psr\Http\Message\StreamInterface|iterable|resource|callable|string|null
+     * @param array               $headers [optional]
      */
-    public function __construct(string $method, $uri, $body = null, array $headers = [])
+    public function __construct(
+        string $method,
+        UriInterface|string $uri,
+        mixed $body = null,
+        array $headers = [])
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
         $this->stream = create_stream($this->prepareBody($body));
@@ -75,7 +78,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
         } else {
             $instance->uri = $uri;
         }
-
         if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
             return $instance->withHeader('Host', $host);
         }
@@ -100,7 +102,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
     public function withRequestTarget($requestTarget): ClientRequest
     {
         if (preg_match('/\s+/', $requestTarget)) {
-            throw new InvalidArgumentException(self::E_INVALID_REQUEST_TARGET, HttpStatus::BAD_REQUEST);
+            throw new InvalidArgumentException(
+                self::E_INVALID_REQUEST_TARGET,
+                HttpStatus::BAD_REQUEST);
         }
         $instance                = clone $this;
         $instance->requestTarget = $requestTarget;
