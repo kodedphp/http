@@ -30,7 +30,6 @@ function create_stream($resource, string $mode = 'r+b'): StreamInterface
         fseek($stream, 0);
         return new Stream($stream);
     }
-
     if ($resource instanceof StreamInterface) {
         return $resource;
     }
