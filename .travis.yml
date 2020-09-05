@@ -6,10 +6,10 @@ notifications:
   email: false
 
 php:
-  - 7.3
-  - 7.4
-  - 8.0
-  - nightly
+  - '7.3'
+  - '7.4'
+  - '8.0'
+  - 'nightly'
 
 cache:
   directories:
@@ -18,7 +18,9 @@ cache:
 jobs:
   fast_finish: true
   allow_failures:
-    - php: nightly
+    - php: '7.3'
+    - php: '7.4'
+    - php: 'nightly'
 
 install:
   - composer update -o --prefer-source --no-interaction
