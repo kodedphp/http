@@ -12,11 +12,8 @@
 
 namespace Koded\Http\Client;
 
-use Exception;
 use Koded\Http\Interfaces\{HttpStatus, Response};
-use Psr\Http\Client\{NetworkExceptionInterface, RequestExceptionInterface};
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
-
 
 trait Psr18ClientTrait
 {
@@ -40,25 +37,8 @@ trait Psr18ClientTrait
             ->read();
 
         if ($response->getStatusCode() >= HttpStatus::BAD_REQUEST) {
-            throw new Psr18Exception($response->getBody()->getContents(), $response->getStatusCode(), $this);
+            throw new Psr18Exception($response->getBody()->getContents(), $response->getStatusCode(), $request);
         }
         return $response;
-    }
-}
-
-
-class Psr18Exception extends Exception implements RequestExceptionInterface, NetworkExceptionInterface
-{
-    private $request;
-
-    public function __construct(string $message, int $code, RequestInterface $request)
-    {
-        parent::__construct($message, $code);
-        $this->request = $request;
-    }
-
-    public function getRequest(): RequestInterface
-    {
-        return $this->request;
     }
 }
