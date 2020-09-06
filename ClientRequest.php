@@ -18,7 +18,6 @@ use Koded\Http\Interfaces\{HttpStatus, Request};
 use Psr\Http\Message\{RequestInterface, UriInterface};
 use function Koded\Stdlib\json_serialize;
 
-
 class ClientRequest implements RequestInterface, JsonSerializable
 {
     use HeaderTrait, MessageTrait, JsonSerializeTrait;
@@ -43,8 +42,8 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     public function __construct(
         string $method,
-        UriInterface|string $uri,
-        mixed $body = null,
+        /*UriInterface|string*/ $uri,
+        /*iterable|string*/ $body = null,
         array $headers = [])
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
@@ -176,9 +175,9 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     protected function prepareBody($body)
     {
-        if (false === is_iterable($body)) {
-            return $body;
+        if (is_iterable($body)) {
+            return json_serialize($body);
         }
-        return json_serialize($body);
+        return $body;
     }
 }
