@@ -64,21 +64,36 @@ class ServerResponse implements Response, JsonSerializable
         return $this->getHeaderLine('Content-Type') ?: 'text/html';
     }
 
+    public function sendHeaders(): void
+    {
+        if (false === headers_sent()) {
+            $this->prepareResponse();
+            foreach ($this->getHeaders() as $name => $values) {
+                header($name . ':' . join(',', (array)$values), false, $this->statusCode);
+            }
+            // Status header
+            header(sprintf('HTTP/%s %d %s',
+                $this->getProtocolVersion(),
+                $this->getStatusCode(),
+                $this->getReasonPhrase()),
+                true,
+                $this->statusCode);
+        }
+    }
+
+    public function sendBody(): string
+    {
+        try {
+            return (string)$this->stream;
+        } finally {
+            $this->stream->close();
+        }
+    }
+
     public function send(): string
     {
-        $this->prepareResponse();
-        if (headers_sent()) {
-            return (string)$this->stream;
-        }
-        // Headers
-        foreach ($this->getHeaders() as $name => $values) {
-            header($name . ':' . join(',', (array)$values), false, $this->statusCode);
-        }
-        // Status header
-        header(sprintf('HTTP/%s %d %s', $this->getProtocolVersion(), $this->getStatusCode(), $this->getReasonPhrase()),
-            true, $this->statusCode
-        );
-        return (string)$this->stream;
+        $this->sendHeaders();
+        return $this->sendBody();
     }
 
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
@@ -88,7 +103,6 @@ class ServerResponse implements Response, JsonSerializable
                 sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
-
         $instance->statusCode   = (int)$statusCode;
         $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : StatusCode::CODE[$statusCode];
         return $instance;

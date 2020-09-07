@@ -125,6 +125,10 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
      */
     public function getContentType(): string;
 
+    public function sendHeaders(): void;
+
+    public function sendBody(): string;
+
     public function send(): string;
 }
 
