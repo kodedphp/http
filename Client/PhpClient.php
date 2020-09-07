@@ -25,7 +25,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     use EncodingTrait, Psr18ClientTrait;
 
     /** @var array Stream context options */
-    private $options = [
+    private array $options = [
         'protocol_version' => 1.1,
         'user_agent'       => self::USER_AGENT,
         'method'           => 'GET',
@@ -39,7 +39,11 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         ]
     ];
 
-    public function __construct(string $method, $uri, $body = null, array $headers = [])
+    public function __construct(
+        string $method,
+        /*UriInterface|string*/ $uri,
+        /*iterable|string*/ $body = null,
+        array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
         $this->options['timeout'] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
@@ -52,19 +56,21 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         }
         $this->prepareRequestBody();
         $this->prepareOptions();
-
         try {
-            if (false === $resource = $this->createResource(stream_context_create(['http' => $this->options]))) {
-                return new ServerResponse(error_get_last()['message'], HttpStatus::FAILED_DEPENDENCY);
+            $resource = $this->createResource(stream_context_create(['http' => $this->options]));
+            if ($this->hasError($resource)) {
+                return new ServerResponse(
+                    error_get_last()['message'] ?? 'The HTTP client is not created therefore cannot read anything',
+                    HttpStatus::FAILED_DEPENDENCY);
             }
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
+            return new ServerResponse(stream_get_contents($resource), $statusCode, $headers);
+        } catch (\Exception | \ValueError $e) { // TODO remove \Exception for PHP 8
             return new ServerResponse(
-                stream_get_contents($resource),
-                $statusCode,
-                $headers
-            );
+                'The HTTP client is not created therefore cannot read anything',
+                HttpStatus::FAILED_DEPENDENCY);
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            return new ServerResponse($e->getMessage(), $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
             if (is_resource($resource)) {
                 fclose($resource);
@@ -117,11 +123,11 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     /**
      * @param resource $context from stream_context_create()
      *
-     * @return bool|resource
+     * @return resource|bool
      */
     protected function createResource($context)
     {
-        return @fopen((string)$this->getUri(), 'r', false, $context);
+        return fopen((string)$this->getUri(), 'rb', false, $context);
     }
 
     protected function prepareRequestBody(): void
@@ -137,6 +143,11 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             $this->options['content'] = http_build_query($content, null, '&', $this->encoding);
         }
         $this->stream = create_stream($this->options['content']);
+    }
+
+    protected function hasError($resource): bool
+    {
+        return false === is_resource($resource);
     }
 
     protected function prepareOptions(): void
@@ -156,9 +167,14 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     protected function extractFromResponseHeaders($response, &$headers, &$statusCode): void
     {
         try {
-            $_headers   = stream_get_meta_data($response)['wrapper_data'];
+            $_headers   = stream_get_meta_data($response)['wrapper_data'] ?? [];
+            /*
+             * HTTP status may not always be the first header in the response headers,
+             * for example, if the stream follows one or multiple redirects, the last
+             * status line is what is expected here.
+             */
             $statusCode = array_filter($_headers, function(string $header) {
-                return false !== stripos($header, 'HTTP/', 0);
+                return false !== strpos($header, 'HTTP/', 0);
             });
             $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
             $statusCode = (int)(explode(' ', $statusCode)[1] ?? HttpStatus::OK);
