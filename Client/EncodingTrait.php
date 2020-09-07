@@ -16,16 +16,14 @@ use Exception;
 use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus};
 use Psr\Http\Client\ClientExceptionInterface;
 
-
 trait EncodingTrait
 {
-    private $encoding = PHP_QUERY_RFC3986;
+    private int $encoding = PHP_QUERY_RFC3986;
 
     public function withEncoding(int $type): HttpRequestClient
     {
         if (in_array($type, [0, PHP_QUERY_RFC1738, PHP_QUERY_RFC3986], true)) {
             $this->encoding = $type;
-
             return $this;
         }
         throw new class(
