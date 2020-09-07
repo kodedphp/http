@@ -10,12 +10,8 @@ class Psr18Exception extends Exception implements RequestExceptionInterface, Net
 {
     private RequestInterface $request;
 
-    public function __construct(
-        string $message,
-        int $code,
-        RequestInterface $request,
-        \Throwable $previous = null
-    ) {
+    public function __construct(string $message, int $code, RequestInterface $request, \Throwable $previous = null)
+    {
         parent::__construct($message, $code, $previous);
         $this->request = $request;
     }
