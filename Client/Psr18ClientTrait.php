@@ -12,7 +12,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\Interfaces\{HttpStatus, Response};
+use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 
 trait Psr18ClientTrait
@@ -21,14 +21,12 @@ trait Psr18ClientTrait
      * Sends a PSR-7 request and returns a PSR-7 response.
      *
      * @param RequestInterface $request
-     *
      * @return ResponseInterface
-     *
      * @throws \Psr\Http\Client\ClientExceptionInterface If an error happens while processing the request.
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        /** @var Response $response */
+        /** @var ResponseInterface $response */
         $response = $this
             ->withMethod($request->getMethod())
             ->withUri($request->getUri())
@@ -37,7 +35,10 @@ trait Psr18ClientTrait
             ->read();
 
         if ($response->getStatusCode() >= HttpStatus::BAD_REQUEST) {
-            throw new Psr18Exception($response->getBody()->getContents(), $response->getStatusCode(), $request);
+            throw new Psr18Exception(
+                $response->getBody()->getContents(),
+                $response->getStatusCode(),
+                $request);
         }
         return $response;
     }
