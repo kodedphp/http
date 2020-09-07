@@ -2,8 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Exception;
-use Koded\Http\{Interfaces\HttpRequestClient, ServerResponse, StatusCode};
+use Koded\Http\Interfaces\HttpRequestClient;
 use PHPUnit\Framework\TestCase;
 
 class CurlClientTest extends TestCase
@@ -34,11 +33,10 @@ class CurlClientTest extends TestCase
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
         $this->assertSame(3.0, $options[CURLOPT_TIMEOUT]);
-
         $this->assertSame('', (string)$this->SUT->getBody(), 'The body is empty');
     }
 
-    public function test_methods()
+    public function test_setting_the_client_with_methods()
     {
         $this->SUT
             ->ignoreErrors(true)
@@ -68,84 +66,6 @@ class CurlClientTest extends TestCase
         $this->SUT = $this->SUT->withProtocolVersion('1.0');
         $options   = $this->getOptions();
         $this->assertSame(CURL_HTTP_VERSION_1_0, $options[CURLOPT_HTTP_VERSION]);
-    }
-
-    /**
-     * @group internet
-     */
-    public function test_bad_request_response()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function createResource()
-            {
-                return false;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(StatusCode::PRECONDITION_FAILED, $response->getStatusCode());
-        $this->assertSame('The HTTP client is not created therefore cannot read anything',
-            (string)$response->getBody());
-    }
-
-    /**
-     * @group internet
-     */
-    public function test_internal_server_exception()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function createResource()
-            {
-                return new \stdClass();
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
-        $this->assertSame('curl_setopt_array() expects parameter 1 to be resource, object given',
-            (string)$response->getBody());
-    }
-
-    public function test_internal_server_error_by_throwing_exception()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function createResource()
-            {
-                throw new Exception('Exception message');
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
-        $this->assertSame('Exception message', (string)$response->getBody());
-    }
-
-    /**
-     * @group internet
-     */
-    public function test_when_curl_returns_error()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function hasError($resource): bool
-            {
-                return true;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
     }
 
     /**

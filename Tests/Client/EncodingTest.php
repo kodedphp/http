@@ -66,16 +66,17 @@ class EncodingTest extends TestCase
      */
     public function test_rfc1738_encoding($client)
     {
+        $name = get_class($client);
         $client->withEncoding(PHP_QUERY_RFC1738);
         $client->read();
 
         $this->assertSame(HttpRequestClient::X_WWW_FORM_URLENCODED, $client->getHeaderLine('Content-Type'),
-            'Content-Type is set to "application/x-www-form-urlencoded"; Client ' . get_class($client));
+            'Content-Type is set to "application/x-www-form-urlencoded"; Client ' . $name);
 
         $expected = 'foo=bar+qux+zim&email=johndoe%40example.com&misc=100%25%260%25%7C%3F%23';
 
         $this->assertSame($expected, $client->getBody()->getContents(),
-            'Client body is re-written and encoded as per RFC-1738');
+            'Client body is re-written and encoded as per RFC-1738; Client: ' . $name);
     }
 
     /**
@@ -88,16 +89,17 @@ class EncodingTest extends TestCase
      */
     public function test_rfc3986_encoding($client)
     {
+        $name = get_class($client);
         $client->withEncoding(PHP_QUERY_RFC3986);
         $client->read();
 
         $this->assertSame(HttpRequestClient::X_WWW_FORM_URLENCODED, $client->getHeaderLine('Content-Type'),
-            'Content-Type is set to "application/x-www-form-urlencoded"; Client ' . get_class($client));
+            'Content-Type is set to "application/x-www-form-urlencoded"; Client ' . $name);
 
         $expected = 'foo=bar%20qux%20zim&email=johndoe%40example.com&misc=100%25%260%25%7C%3F%23';
 
         $this->assertSame($expected, $client->getBody()->getContents(),
-            'Client body is re-written and encoded as per RFC-3986');
+            'Client body is re-written and encoded as per RFC-3986; Client ' . $name);
     }
 
     /**
@@ -110,16 +112,17 @@ class EncodingTest extends TestCase
      */
     public function test_with_no_encoding($client)
     {
+        $name = get_class($client);
         $client->withEncoding(0);
         $client->read();
 
         $this->assertSame('', $client->getHeaderLine('Content-Type'),
-            'Content-Type is NOT set; Client ' . get_class($client));
+            'Content-Type is NOT set; Client ' . $name);
 
         $expected = '{"foo":"bar qux zim","email":"johndoe@example.com","misc":"100%&0%|?#"}';
 
         $this->assertSame($expected, $client->getBody()->getContents(),
-            'Client body is encoded as JSON by default');
+            'Client body is encoded as JSON by default; Client ' . $name);
     }
 
     public function clients()

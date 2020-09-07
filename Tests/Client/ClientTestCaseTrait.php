@@ -2,7 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{Interfaces\HttpRequestClient, StatusCode, Uri};
+use Koded\Http\{Interfaces\HttpRequestClient, ServerResponse, StatusCode, Uri};
 use ReflectionClass;
 use ReflectionException;
 use function Koded\Http\create_stream;
@@ -19,7 +19,7 @@ use function Koded\Http\create_stream;
 trait ClientTestCaseTrait
 {
     /** @var HttpRequestClient */
-    private $SUT;
+    private ?HttpRequestClient $SUT;
 
     public function test_read_on_success()
     {
@@ -51,11 +51,39 @@ trait ClientTestCaseTrait
             (string)$badResponse->getBody());
     }
 
-    public function test_content_type_extraction()
+    public function test_when_curl_returns_error()
     {
-        $response = $this->SUT->read();
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function hasError($resource): bool
+            {
+                return true;
+            }
+        };
 
-        $this->assertSame('text/html; charset=UTF-8', $response->getHeaderLine('content-type'));
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(),
+            (string)$response->getBody());
+    }
+
+    public function test_when_creating_resource_fails()
+    {
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource()
+            {
+                return false;
+            }
+        };
+
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode());
+        $this->assertSame('The HTTP client is not created therefore cannot read anything',
+            (string)$response->getBody());
     }
 
     /**
@@ -69,5 +97,10 @@ trait ClientTestCaseTrait
         $options->setAccessible(true);
 
         return $options->getValue($this->SUT);
+    }
+
+    protected function tearDown()
+    {
+        $this->SUT = null;
     }
 }
