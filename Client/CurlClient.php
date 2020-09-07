@@ -15,6 +15,7 @@ namespace Koded\Http\Client;
 use Koded\Http\{ClientRequest, ServerResponse};
 use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
 use Throwable;
+use TypeError;
 use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
 
@@ -40,7 +41,11 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     /** @var array Parsed response headers */
     private array $responseHeaders = [];
 
-    public function __construct(string $method, $uri, $body = null, array $headers = [])
+    public function __construct(
+        string $method,
+        /*UriInterface|string*/ $uri,
+        /*iterable|string*/ $body = null,
+        array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
         $this->options[CURLOPT_TIMEOUT] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
@@ -54,35 +59,28 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->prepareRequestBody();
         $this->prepareOptions();
         try {
-            if (false === $resource = $this->createResource()) {
-                return new ServerResponse(
-                    'The HTTP client is not created therefore cannot read anything',
-                    HttpStatus::PRECONDITION_FAILED);
-            }
-            if (false === is_resource($resource)) {
-                return new ServerResponse('Handle must be of type CurlHandle',
-                    HttpStatus::FAILED_DEPENDENCY);
-            }
+            $resource = $this->createResource();
             curl_setopt_array($resource, $this->options);
             $response = curl_exec($resource);
-            if (true === $this->hasError($resource)) {
-                return new ServerResponse($this->getCurlError($resource),
-                    HttpStatus::FAILED_DEPENDENCY);
+            if ($this->hasError($resource)) {
+                return new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY);
             }
             return new ServerResponse(
                 $response,
                 curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
                 $this->responseHeaders
             );
+        } catch (TypeError $e) {
+            return new ServerResponse(
+                'The HTTP client is not created therefore cannot read anything',
+                HttpStatus::FAILED_DEPENDENCY);
         } catch (Throwable $e) {
-            error_log('|>>> ' . \get_debug_type($e) . ': ' . $e->getMessage());
-            return (new ServerResponse($e->getMessage(), $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR))
-                ->withHeader('Content-Type', 'application/json');
+            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
-            unset($response);
             if (is_resource($resource)) {
                 curl_close($resource);
             }
+            unset($response);
         }
     }
 
@@ -139,7 +137,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     }
 
     /**
-     * @return resource|false
+     * @return resource|bool
      */
     protected function createResource()
     {
