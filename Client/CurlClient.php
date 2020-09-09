@@ -172,13 +172,20 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }
 
+    /**
+     * @param resource $resource
+     *
+     * @return string JSON error message
+     * @link https://tools.ietf.org/html/rfc7807
+     */
     protected function getCurlError($resource): string
     {
         return json_serialize([
-            'uri'     => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
-            'message' => curl_strerror(curl_errno($resource)),
-            'explain' => curl_error($resource),
-            'code'    => HttpStatus::FAILED_DEPENDENCY,
+            'title'    => curl_error($resource),
+            'detail'   => curl_strerror(curl_errno($resource)),
+            'instance' => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
+            'type'     => 'https://httpstatuses.com/' . curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
+            'status'   => HttpStatus::FAILED_DEPENDENCY,
         ]);
     }
 

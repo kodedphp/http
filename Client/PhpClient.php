@@ -12,10 +12,11 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{ClientRequest, ServerResponse};
+use Koded\Http\{ClientRequest, ServerResponse, StatusCode};
 use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
 use Throwable;
 use function Koded\Http\create_stream;
+use function Koded\Stdlib\json_serialize;
 
 /**
  * @link http://php.net/manual/en/context.http.php
@@ -59,16 +60,12 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         try {
             $resource = $this->createResource(stream_context_create(['http' => $this->options]));
             if ($this->hasError($resource)) {
-                return new ServerResponse(
-                    error_get_last()['message'] ?? 'The HTTP client is not created therefore cannot read anything',
-                    HttpStatus::FAILED_DEPENDENCY);
+                return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY);
             }
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
             return new ServerResponse(stream_get_contents($resource), $statusCode, $headers);
         } catch (\Exception | \ValueError $e) { // TODO remove \Exception for PHP 8
-            return new ServerResponse(
-                'The HTTP client is not created therefore cannot read anything',
-                HttpStatus::FAILED_DEPENDENCY);
+            return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY);
         } catch (Throwable $e) {
             return new ServerResponse($e->getMessage(), $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
@@ -188,5 +185,20 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         } finally {
             unset($_headers, $header, $k, $v);
         }
+    }
+
+    /**
+     * @return string JSON error message
+     * @link https://tools.ietf.org/html/rfc7807
+     */
+    protected function getPhpError(): string
+    {
+        return json_serialize([
+            'title'    => StatusCode::CODE[HttpStatus::FAILED_DEPENDENCY],
+            'detail'   => error_get_last()['message'] ?? 'The HTTP client is not created therefore cannot read anything',
+            'instance' => (string)$this->getUri(),
+            'type'     => 'https://httpstatuses.com/' . HttpStatus::FAILED_DEPENDENCY,
+            'status'   => HttpStatus::FAILED_DEPENDENCY,
+        ]);
     }
 }
