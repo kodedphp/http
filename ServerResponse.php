@@ -66,8 +66,9 @@ class ServerResponse implements Response, JsonSerializable
 
     public function sendHeaders(): void
     {
+        $this->prepareResponse();
+
         if (false === headers_sent()) {
-            $this->prepareResponse();
             foreach ($this->getHeaders() as $name => $values) {
                 header($name . ':' . join(',', (array)$values), false, $this->statusCode);
             }
