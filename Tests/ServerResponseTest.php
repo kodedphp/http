@@ -93,8 +93,9 @@ class ServerResponseTest extends TestCase
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
         $this->assertFalse($response->hasHeader('Content-Type'));
-        $this->assertSame(0, $response->getBody()->getSize());
         $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
+        $this->assertSame(null, $response->getBody()->getSize(),
+            'After the body is sent, the stream object is destroyed');
     }
 
     public function test_send_with_head_http_method()
