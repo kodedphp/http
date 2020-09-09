@@ -63,7 +63,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             curl_setopt_array($resource, $this->options);
             $response = curl_exec($resource);
             if ($this->hasError($resource)) {
-                return new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY);
+                return new ServerResponse($this->getCurlError($resource), HttpStatus::FAILED_DEPENDENCY, [
+                    'Content-Type' => 'application/problem+json'
+                ]);
             }
             return new ServerResponse(
                 $response,
@@ -75,7 +77,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                 'The HTTP client is not created therefore cannot read anything',
                 HttpStatus::FAILED_DEPENDENCY);
         } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR, [
+                'Content-Type' => 'application/problem+json'
+            ]);
         } finally {
             if (is_resource($resource)) {
                 curl_close($resource);
@@ -184,7 +188,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'title'    => curl_error($resource),
             'detail'   => curl_strerror(curl_errno($resource)),
             'instance' => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
-            'type'     => 'https://httpstatuses.com/' . curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
+            'type'     => 'https://httpstatuses.com/' . curl_getinfo($resource, CURLINFO_RESPONSE_CODE) ?: HttpStatus::FAILED_DEPENDENCY,
             'status'   => HttpStatus::FAILED_DEPENDENCY,
         ]);
     }

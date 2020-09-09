@@ -60,12 +60,16 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         try {
             $resource = $this->createResource(stream_context_create(['http' => $this->options]));
             if ($this->hasError($resource)) {
-                return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY);
+                return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY, [
+                    'Content-Type' => 'application/problem+json'
+                ]);
             }
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
             return new ServerResponse(stream_get_contents($resource), $statusCode, $headers);
         } catch (\Exception | \ValueError $e) { // TODO remove \Exception for PHP 8
-            return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY);
+            return new ServerResponse($this->getPhpError(), HttpStatus::FAILED_DEPENDENCY, [
+                'Content-Type' => 'application/problem+json'
+            ]);
         } catch (Throwable $e) {
             return new ServerResponse($e->getMessage(), $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR);
         } finally {
