@@ -123,17 +123,17 @@ abstract class AcceptHeader
                 HttpStatus::NOT_ACCEPTABLE);
         }
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
-        $this->type = strtolower($type);
+        $this->type = trim(strtolower($type));
         /*
          * Uses a simple heuristic to check if subtype is part of
-         * some obscure media type like "vnd.api-v1+json".
+         * some convoluted media type like "vnd.api-v1+json".
          *
          * NOTE: It is a waste of time to negotiate on the basis
          * of obscure parameters while using a meaningless media
-         * type like "vnd.whatever". But the web world is a big mess
-         * and this module can handle the Dunning-Kruger effect.
+         * type like "vnd.whatever". The web world is a big mess
+         * and this module may handle the Dunning-Kruger effect.
          */
-        $this->subtype  = explode('+', $subtype)[1] ?? $subtype;
+        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
         $this->catchAll = '*' === $this->type && '*' === $this->subtype;
         parse_str(join('&', $bits), $this->params);
         $this->quality = (float)($this->params['q'] ?? 1);
