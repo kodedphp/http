@@ -148,6 +148,7 @@ class AcceptHeaderNegotiateTest extends TestCase
      */
     public function test_media_type_order_of_precedence($accept, $expected, $precedence)
     {
+        $this->markTestIncomplete('WIP...');
         $supports = 'text/*, text/plain, text/plain;format=flowed, */*;q=0.3';
         $header   = (new AcceptHeaderNegotiator($supports))->match($accept);
 

@@ -238,6 +238,9 @@ abstract class AcceptHeader
         }
         // Add "q"
         $accept->weight += $accept->quality;
+        if ($this->subtype === $accept->subtype) {
+            $accept->weight += $this->quality;
+        }
         return $accept;
     }
 }
