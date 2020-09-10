@@ -224,7 +224,7 @@ abstract class AcceptHeader
     private function rank(AcceptHeader $accept): AcceptHeader
     {
         // +100 if types are exact match w/o asterisk
-        if ($this->type === $accept->type && '*' !== $accept->type) {
+        if ($this->type === $accept->type && $this->subtype === $accept->subtype && '*' !== $accept->type) {
             $accept->weight += 100;
         }
         $accept->weight += $this->catchAll ? 0.0 : $accept->quality;
@@ -238,9 +238,6 @@ abstract class AcceptHeader
         }
         // Add "q"
         $accept->weight += $accept->quality;
-        if ($this->subtype === $accept->subtype) {
-            $accept->weight += $this->quality;
-        }
         return $accept;
     }
 }
