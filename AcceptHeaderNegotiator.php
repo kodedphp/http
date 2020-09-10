@@ -38,7 +38,7 @@ class AcceptHeaderNegotiator
         $this->supports = $supportHeader;
     }
 
-    public function match(string $accepts): AcceptHeader
+    public function match(string $accepts, bool $all = false): AcceptHeader
     {
         /** @var AcceptHeader $support */
         foreach ($this->parse($accepts) as $accept) {
@@ -59,7 +59,7 @@ class AcceptHeaderNegotiator
              */
             $types[] = new class('*;q=0') extends AcceptHeader {};
         }
-        return $types[0];
+        return $all ? $types : $types[0];
     }
 
     /**
