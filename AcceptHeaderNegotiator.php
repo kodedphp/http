@@ -67,23 +67,16 @@ class AcceptHeaderNegotiator
         /** @var AcceptHeader $support */
         foreach ($this->parse($accepts) as $accept) {
             foreach ($this->parse($this->supports) as $support) {
-                $support->matches($accept, $types);
+                $support->matches($accept, $matches);
             }
         }
-        usort($types, function(AcceptHeader $a, AcceptHeader $b) {
+        usort($matches, function(AcceptHeader $a, AcceptHeader $b) {
             return $b->weight() <=> $a->weight();
         });
-        if (empty($types)) {
-            /* Set "q=0", meaning the header is explicitly rejected.
-             * The consuming clients should handle this according to
-             * their internal logic. This is much better then throwing
-             * exceptions which must be handled in every place where
-             * match() is called. For example, the client may issue a
-             * 406 status code and be done with it.
-             */
-            $types[] = new class('*;q=0') extends AcceptHeader {};
+        if (empty($matches)) {
+            $matches[] = new class('*;q=0') extends AcceptHeader {};
         }
-        return $types;
+        return $matches;
     }
 
     /**
