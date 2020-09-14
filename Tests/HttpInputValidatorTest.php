@@ -14,7 +14,8 @@ class HttpInputValidatorTest extends TestCase
         $request = new ServerRequest;
         $response = $request->validate(new TestSuccessValidator);
 
-        $this->assertNull($response);
+        $this->assertSame(StatusCode::BAD_REQUEST, $response->getStatusCode());
+        $this->assertSame('{"validate":"Nothing to validate","code":400}', (string)$response->getBody());
     }
 
     public function test_success_validate_with_body()

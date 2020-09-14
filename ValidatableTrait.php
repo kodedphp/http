@@ -25,7 +25,8 @@ trait ValidatableTrait
     {
         $body = new Immutable($this->getParsedBody() ?? []);
         if (0 === $body->count()) {
-            return null;
+            $errors = ['validate' => 'Nothing to validate', 'code' => StatusCode::BAD_REQUEST];
+            return new ServerResponse(json_serialize($errors), StatusCode::BAD_REQUEST);
         }
         if (empty($errors = $validator->validate($body))) {
             return null;
