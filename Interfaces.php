@@ -301,11 +301,12 @@ interface ValidatableRequest
      * Validates the request body using a concrete validation instance.
      *
      * @param HttpInputValidator $validator
+     * @param Data|null          $input The input data
      *
      * @return Response|null Should return a NULL if validation has passed,
      * or a Response object with status code 400 and explanation what failed
      */
-    public function validate(HttpInputValidator $validator): ?Response;
+    public function validate(HttpInputValidator $validator, Data &$input = null): ?Response;
 }
 
 

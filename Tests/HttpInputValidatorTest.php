@@ -12,10 +12,13 @@ class HttpInputValidatorTest extends TestCase
     public function test_success_validate_with_empty_body()
     {
         $request = new ServerRequest;
-        $response = $request->validate(new TestSuccessValidator);
+        $response = $request->validate(new TestSuccessValidator, $input);
 
         $this->assertSame(StatusCode::BAD_REQUEST, $response->getStatusCode());
         $this->assertSame('{"validate":"Nothing to validate","code":400}', (string)$response->getBody());
+
+        $this->assertInstanceOf(Data::class, $input);
+        $this->assertCount(0, $input);
     }
 
     public function test_success_validate_with_body()
@@ -23,9 +26,10 @@ class HttpInputValidatorTest extends TestCase
         $_POST = ['key' => 'value'];
 
         $request = new ServerRequest;
-        $response = $request->validate(new TestSuccessValidator);
+        $response = $request->validate(new TestSuccessValidator, $input);
 
         $this->assertNull($response);
+        $this->assertEquals($_POST, $input->toArray());
     }
 
     public function test_failure_validate()
