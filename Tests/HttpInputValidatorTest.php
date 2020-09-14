@@ -3,7 +3,7 @@
 namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpInputValidator;
-use Koded\Stdlib\Interfaces\Data;
+use Koded\Stdlib\Data;
 use PHPUnit\Framework\TestCase;
 
 class HttpInputValidatorTest extends TestCase

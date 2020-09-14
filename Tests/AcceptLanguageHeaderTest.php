@@ -25,6 +25,7 @@ class AcceptLanguageHeaderTest extends TestCase
      */
     public function test_with_preferred_languages($accept, $expect, $quality)
     {
+        $this->markTestIncomplete('WIP...');
         $negotiator = (new AcceptHeaderNegotiator('de,fr,en'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);

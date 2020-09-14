@@ -12,7 +12,7 @@
 
 namespace Koded\Http\Interfaces;
 
-use Koded\Stdlib\Interfaces\Data;
+use Koded\Stdlib\Data;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
 
