@@ -13,11 +13,12 @@
 namespace Koded\Http;
 
 use InvalidArgumentException;
+use JsonSerializable;
 use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Message\UriInterface;
 use Throwable;
 
-class Uri implements UriInterface
+class Uri implements UriInterface, JsonSerializable
 {
     /** @var string */
     private $scheme = '';
@@ -230,5 +231,19 @@ class Uri implements UriInterface
     private function isStandardPort(): bool
     {
         return in_array($this->port, [80, 443, 21, 23, 70, 110, 119, 143, 389]);
+    }
+
+    public function jsonSerialize()
+    {
+        return array_filter([
+            'scheme' => $this->getScheme(),
+            'host' => $this->getHost(),
+            'port' => $this->getPort(),
+            'path' => $this->getPath(),
+            'user' => $this->user,
+            'pass' => $this->pass,
+            'fragment' => $this->fragment,
+            'query' => $this->query
+        ]);
     }
 }
