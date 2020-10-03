@@ -188,7 +188,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'title'    => curl_error($resource),
             'detail'   => curl_strerror(curl_errno($resource)),
             'instance' => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
-            'type'     => 'https://httpstatuses.com/' . curl_getinfo($resource, CURLINFO_RESPONSE_CODE) ?: HttpStatus::FAILED_DEPENDENCY,
+            'type'     => 'https://httpstatuses.com/' . HttpStatus::FAILED_DEPENDENCY,
             'status'   => HttpStatus::FAILED_DEPENDENCY,
         ]);
     }
