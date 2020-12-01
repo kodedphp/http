@@ -1,13 +1,13 @@
 language: php
 os: linux
-dist: xenial
+dist: bionic
 
 notifications:
   email: false
 
 php:
-  - '8.0'
-  - 'nightly'
+  - 8.0
+  - nightly
 
 cache:
   directories:
@@ -16,7 +16,7 @@ cache:
 jobs:
   fast_finish: true
   allow_failures:
-    - php: 'nightly'
+    - php: nightly
 
 install:
   - composer update -o --prefer-source --no-interaction
