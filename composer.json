@@ -28,25 +28,27 @@
     "koded/stdlib": "5.*",
     "ext-json": "*",
     "ext-curl": "*",
-    "ext-fileinfo":  "*"
+    "ext-fileinfo": "*"
   },
   "autoload": {
-    "psr-4": {
-      "Koded\\Http\\": ""
-    },
+    "classmap": [
+      ""
+    ],
     "files": [
-      "functions.php",
-      "HttpFactory.php"
+      "Interfaces.php",
+      "functions.php"
     ],
     "exclude-from-classmap": [
-      "/Tests/"
+      "/Tests/",
+      "build",
+      "diagrams"
     ]
   },
   "suggest": {
     "ext-iconv": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "~7",
+    "phpunit/phpunit": "~8",
     "php-http/psr7-integration-tests": "^1.0@dev"
   },
   "autoload-dev": {
