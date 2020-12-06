@@ -17,7 +17,7 @@
   "authors": [
     {
       "name": "Mihail Binev",
-      "homepage": "http://kodeart.com"
+      "homepage": "https://kodeart.com"
     }
   ],
   "require": {
@@ -31,15 +31,17 @@
     "ext-fileinfo":  "*"
   },
   "autoload": {
-    "psr-4": {
-      "Koded\\Http\\": ""
-    },
+    "classmap": [
+      ""
+    ],
     "files": [
-      "functions.php",
-      "HttpFactory.php"
+      "Interfaces.php",
+      "functions.php"
     ],
     "exclude-from-classmap": [
-      "/Tests/"
+      "/Tests/",
+      "build",
+      "diagrams"
     ]
   },
   "suggest": {
