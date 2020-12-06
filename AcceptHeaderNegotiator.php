@@ -104,6 +104,8 @@ abstract class AcceptHeader
     private bool        $catchAll  = false;
     private array       $params    = [];
 
+    private array $obscure = [];
+
     public function __construct(string $header)
     {
         $this->header = $header;
@@ -111,7 +113,7 @@ abstract class AcceptHeader
         $header = preg_replace('/[[:space:]]/', '', $header);
         $bits   = explode(';', $header);
         $type   = array_shift($bits);
-        if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
+        if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_\-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
             throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
                 HttpStatus::NOT_ACCEPTABLE);
         }
@@ -133,7 +135,9 @@ abstract class AcceptHeader
          * type like "vnd.whatever". The web world is a big mess
          * and this module may handle the Dunning-Kruger effect.
          */
-        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
+//        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
+        $this->obscure = explode('+', $subtype);
+        $this->subtype  = $subtype;
         $this->catchAll = '*' === $this->type && '*' === $this->subtype;
         parse_str(join('&', $bits), $this->params);
         $this->quality = (float)($this->params['q'] ?? 1);
@@ -149,6 +153,7 @@ abstract class AcceptHeader
     {
         // The header is explicitly rejected
         if (0.0 === $this->quality) {
+            $this->type = $this->subtype = '';
             return '';
         }
         // If language, encoding or charset
@@ -166,6 +171,11 @@ abstract class AcceptHeader
     public function weight(): float
     {
         return $this->weight;
+    }
+
+    public function is(string $type): bool
+    {
+        return ($type === $this->subtype) && $this->subtype !== '*';
     }
 
     /**
