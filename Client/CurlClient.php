@@ -81,9 +81,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                 'Content-Type' => 'application/problem+json'
             ]);
         } finally {
-            if (is_resource($resource)) {
-                curl_close($resource);
-            }
             unset($response);
         }
     }
