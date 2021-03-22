@@ -25,8 +25,6 @@ namespace Koded\Http;
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
  */
 
-use Generator;
-use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpStatus;
 
 class AcceptHeaderNegotiator
@@ -82,9 +80,9 @@ class AcceptHeaderNegotiator
     /**
      * @param string $header
      *
-     * @return Generator
+     * @return \Generator
      */
-    private function parse(string $header): Generator
+    private function parse(string $header): \Generator
     {
         foreach (explode(',', $header) as $header) {
             yield new class($header) extends AcceptHeader {};
@@ -95,16 +93,14 @@ class AcceptHeaderNegotiator
 
 abstract class AcceptHeader
 {
-    private string      $header    = '';
-    private string      $separator = '/';
-    private string|null $type      = '';
-    private string      $subtype   = '*';
-    private float       $quality   = 1.0;
-    private float       $weight    = 0.0;
-    private bool        $catchAll  = false;
-    private array       $params    = [];
-
-    private array $obscure = [];
+    private string $header    = '';
+    private string $separator = '/';
+    private string $type      = '';
+    private string $subtype   = '*';
+    private float  $quality   = 1.0;
+    private float  $weight    = 0.0;
+    private bool   $catchAll  = false;
+    private array  $params    = [];
 
     public function __construct(string $header)
     {
@@ -114,14 +110,14 @@ abstract class AcceptHeader
         $bits   = explode(';', $header);
         $type   = array_shift($bits);
         if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_\-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
+            throw new \InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
                 HttpStatus::NOT_ACCEPTABLE);
         }
         $this->separator = $matches[2] ?? '/';
         [$type, $subtype] = explode($this->separator, $type, 2) + [1 => '*'];
         if ('*' === $type && '*' !== $subtype) {
             // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
-            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
+            throw new \InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
                 HttpStatus::NOT_ACCEPTABLE);
         }
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
@@ -133,12 +129,10 @@ abstract class AcceptHeader
          * NOTE: It is a waste of time to negotiate on the basis
          * of obscure parameters while using a meaningless media
          * type like "vnd.whatever". The web world is a big mess
-         * and this module may handle the Dunning-Kruger effect.
+         * but this module can handle the Dunning-Kruger effect.
          */
-//        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
-        $this->obscure = explode('+', $subtype);
-        $this->subtype  = $subtype;
-        $this->catchAll = '*' === $this->type && '*' === $this->subtype;
+        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
+        $this->catchAll = ('*' === $this->type) && ('*' === $this->subtype);
         parse_str(join('&', $bits), $this->params);
         $this->quality = (float)($this->params['q'] ?? 1);
         unset($this->params['q']);
@@ -190,13 +184,12 @@ abstract class AcceptHeader
      * developers who do not follow RFC standards.
      *
      * @internal
-     *
      */
     public function matches(AcceptHeader $accept, array &$matches = null): bool
     {
         $matches   = (array)$matches;
         $accept    = clone $accept;
-        $typeMatch = $this->type === $accept->type;
+        $typeMatch = ($this->type === $accept->type);
         if (1.0 === $accept->quality) {
             $accept->quality = (float)$this->quality;
         }
@@ -217,13 +210,13 @@ abstract class AcceptHeader
             return true;
         }
         // Explicit type mismatch (w/o asterisk); bail out
-        if (false === $typeMatch && '*' !== $this->type) {
+        if ((false === $typeMatch) && ('*' !== $this->type)) {
             return false;
         }
         if ('*' === $accept->subtype) {
             $accept->subtype = $this->subtype;
         }
-        if ($accept->subtype !== $this->subtype && '*' !== $this->subtype) {
+        if (($accept->subtype !== $this->subtype) && ('*' !== $this->subtype)) {
             return false;
         }
         $matches[] = $this->rank($accept);
@@ -234,13 +227,15 @@ abstract class AcceptHeader
     private function rank(AcceptHeader $accept): AcceptHeader
     {
         // +100 if types are exact match w/o asterisk
-        if ($this->type === $accept->type && $this->subtype === $accept->subtype && '*' !== $accept->type) {
+        if (($this->type === $accept->type) &&
+            ($this->subtype === $accept->subtype) &&
+            ('*' !== $accept->subtype)) {
             $accept->weight += 100;
         }
         $accept->weight += $this->catchAll ? 0.0 : $accept->quality;
         // +1 for each parameter that matches, except "q"
         foreach ($this->params as $k => $v) {
-            if (isset($accept->params[$k]) && $accept->params[$k] === $v) {
+            if (isset($accept->params[$k]) && ($accept->params[$k] === $v)) {
                 $accept->weight += 1;
             } else {
                 $accept->weight -= 1;
