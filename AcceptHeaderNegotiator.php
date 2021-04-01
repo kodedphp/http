@@ -182,7 +182,7 @@ abstract class AcceptHeader
         if ($accept->catchAll) {
             $accept->type    = $this->type;
             $accept->subtype = $this->subtype;
-            $matches[]       = $accept;
+            $matches[]       = $this->catchAll ? $this->rank($accept) : $accept;
             return true;
         }
         // Explicitly denied
