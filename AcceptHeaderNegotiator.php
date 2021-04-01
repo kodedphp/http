@@ -38,26 +38,7 @@ class AcceptHeaderNegotiator
 
     public function match(string $accepts): AcceptHeader
     {
-        /** @var AcceptHeader $support */
-        foreach ($this->parse($accepts) as $accept) {
-            foreach ($this->parse($this->supports) as $support) {
-                $support->matches($accept, $types);
-            }
-        }
-        usort($types, function(AcceptHeader $a, AcceptHeader $b) {
-            return $b->weight() <=> $a->weight();
-        });
-        if (empty($types)) {
-            /* Set "q=0", meaning the header is explicitly rejected.
-             * The consuming clients should handle this according to
-             * their internal logic. This is much better then throwing
-             * exceptions which must be handled in every place where
-             * match() is called. For example, the client may issue a
-             * 406 status code and be done with it.
-             */
-            $types[] = new class('*;q=0') extends AcceptHeader {};
-        }
-        return $types[0];
+        return $this->matches($accepts)[0];
     }
 
     public function matches(string $accepts): array
@@ -68,10 +49,15 @@ class AcceptHeaderNegotiator
                 $support->matches($accept, $matches);
             }
         }
-        usort($matches, function(AcceptHeader $a, AcceptHeader $b) {
-            return $b->weight() <=> $a->weight();
-        });
+        usort($matches, fn(AcceptHeader $a, AcceptHeader $b) => $b->weight() <=> $a->weight());
         if (empty($matches)) {
+            /* Set "q=0", meaning the header is explicitly rejected.
+             * The consuming clients should handle this according to
+             * their internal logic. This is much better then throwing
+             * exceptions which must be handled in every place where
+             * match() is called. For example, the client may issue a
+             * 406 status code and be done with it.
+             */
             $matches[] = new class('*;q=0') extends AcceptHeader {};
         }
         return $matches;
@@ -169,7 +155,7 @@ abstract class AcceptHeader
 
     public function is(string $type): bool
     {
-        return ($type === $this->subtype) && $this->subtype !== '*';
+        return ($type === $this->subtype) && ($this->subtype !== '*');
     }
 
     /**
@@ -180,7 +166,7 @@ abstract class AcceptHeader
      * against the supported (this) header part
      *
      * This method finds the best match for the Accept header,
-     * including all the nonsense that may be passed by the
+     * including lots of nonsense that may be passed by the
      * developers who do not follow RFC standards.
      *
      * @internal
@@ -232,7 +218,7 @@ abstract class AcceptHeader
             ('*' !== $accept->subtype)) {
             $accept->weight += 100;
         }
-        $accept->weight += $this->catchAll ? 0.0 : $accept->quality;
+        $accept->weight += ($this->catchAll ? 0.0 : $accept->quality);
         // +1 for each parameter that matches, except "q"
         foreach ($this->params as $k => $v) {
             if (isset($accept->params[$k]) && ($accept->params[$k] === $v)) {
