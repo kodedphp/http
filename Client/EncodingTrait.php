@@ -12,15 +12,14 @@
 
 namespace Koded\Http\Client;
 
-use Exception;
-use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus};
+use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Client\ClientExceptionInterface;
 
 trait EncodingTrait
 {
     private int $encoding = PHP_QUERY_RFC3986;
 
-    public function withEncoding(int $type): HttpRequestClient
+    public function withEncoding(int $type): static
     {
         if (in_array($type, [0, PHP_QUERY_RFC1738, PHP_QUERY_RFC3986], true)) {
             $this->encoding = $type;
@@ -29,6 +28,6 @@ trait EncodingTrait
         throw new class(
             'Invalid encoding type. Expects 0, PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986',
             HttpStatus::BAD_REQUEST
-        ) extends Exception implements ClientExceptionInterface {};
+        ) extends \Exception implements ClientExceptionInterface {};
     }
 }

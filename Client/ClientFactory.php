@@ -11,7 +11,6 @@
 
 namespace Koded\Http\Client;
 
-use InvalidArgumentException;
 use Koded\Http\Interfaces\{HttpRequestClient, Request};
 
 class ClientFactory
@@ -19,7 +18,7 @@ class ClientFactory
     const CURL = 0;
     const PHP  = 1;
 
-    private $clientType = self::CURL;
+    private int $clientType = self::CURL;
 
     public function __construct(int $clientType = ClientFactory::CURL)
     {
@@ -63,13 +62,10 @@ class ClientFactory
 
     protected function new(string $method, $uri, $body = null, array $headers = []): HttpRequestClient
     {
-        switch ($this->clientType) {
-            case self::CURL:
-                return new CurlClient($method, $uri, $body, $headers);
-            case self::PHP:
-                return new PhpClient($method, $uri, $body, $headers);
-            default:
-                throw new InvalidArgumentException("{$this->clientType} is not a valid HTTP client");
-        }
+        return match ($this->clientType) {
+            self::CURL => new CurlClient($method, $uri, $body, $headers),
+            self::PHP => new PhpClient($method, $uri, $body, $headers),
+            default => throw new \InvalidArgumentException("{$this->clientType} is not a valid HTTP client"),
+        };
     }
 }

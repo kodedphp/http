@@ -2,11 +2,10 @@
 
 namespace Koded\Http\Client;
 
-use Exception;
 use Psr\Http\Client\{NetworkExceptionInterface, RequestExceptionInterface};
 use Psr\Http\Message\RequestInterface;
 
-class Psr18Exception extends Exception implements RequestExceptionInterface, NetworkExceptionInterface
+class Psr18Exception extends \Exception implements RequestExceptionInterface, NetworkExceptionInterface
 {
     private RequestInterface $request;
 
