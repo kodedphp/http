@@ -12,13 +12,11 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
-use JsonSerializable;
-use Koded\Http\Interfaces\{HttpStatus, Request};
+use Koded\Http\Interfaces\{HttpStatus, Request, Response};
 use Psr\Http\Message\{RequestInterface, UriInterface};
 use function Koded\Stdlib\json_serialize;
 
-class ClientRequest implements RequestInterface, JsonSerializable
+class ClientRequest implements RequestInterface, \JsonSerializable
 {
     use HeaderTrait, MessageTrait, JsonSerializeTrait;
 
@@ -42,8 +40,8 @@ class ClientRequest implements RequestInterface, JsonSerializable
      */
     public function __construct(
         string $method,
-        /*UriInterface|string*/ $uri,
-        /*iterable|string*/ $body = null,
+        string|UriInterface $uri,
+        string|iterable $body = null,
         array $headers = [])
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
@@ -68,19 +66,14 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return $this->uri;
     }
 
-    public function withUri(UriInterface $uri, $preserveHost = false): ClientRequest
+    public function withUri(UriInterface $uri, $preserveHost = false): static
     {
         $instance = clone $this;
+        $instance->uri = $uri;
         if (true === $preserveHost) {
-            $uri      = $uri->withHost($this->uri->getHost());
-            $instance = $instance->withUri($uri);
-        } else {
-            $instance->uri = $uri;
+            return $instance->withHeader('Host', $this->uri->getHost() ?: $uri->getHost());
         }
-        if (empty($instance->getHeader('host')) && $host = $uri->getHost()) {
-            return $instance->withHeader('Host', $host);
-        }
-        return $instance->withHeader('Host', [$uri->getHost()]);
+        return $instance->withHeader('Host', $uri->getHost());
     }
 
     public function getRequestTarget(): string
@@ -98,10 +91,10 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return $path;
     }
 
-    public function withRequestTarget($requestTarget): ClientRequest
+    public function withRequestTarget($requestTarget): static
     {
-        if (preg_match('/\s+/', $requestTarget)) {
-            throw new InvalidArgumentException(
+        if (\preg_match('/\s+/', $requestTarget)) {
+            throw new \InvalidArgumentException(
                 self::E_INVALID_REQUEST_TARGET,
                 HttpStatus::BAD_REQUEST);
         }
@@ -132,7 +125,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
 
     public function isSafeMethod(): bool
     {
-        return in_array($this->method, Request::SAFE_METHODS);
+        return \in_array($this->method, Request::SAFE_METHODS);
     }
 
     protected function setHost(): void
@@ -146,11 +139,11 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param string           $method The HTTP method
      * @param RequestInterface $instance
      *
-     * @return self
+     * @return static
      */
     protected function setMethod(string $method, RequestInterface $instance): RequestInterface
     {
-        $instance->method = strtoupper($method);
+        $instance->method = \strtoupper($method);
         return $instance;
     }
 
@@ -158,12 +151,12 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * Checks if body is non-empty if HTTP method is one of the *safe* methods.
      * The consuming code may disallow this and return the response object.
      *
-     * @return ServerResponse|null
+     * @return Response|null
      */
-    protected function assertSafeMethod(): ?ServerResponse
+    protected function assertSafeMethod(): ?Response
     {
         if ($this->isSafeMethod() && $this->getBody()->getSize() > 0) {
-            return new ServerResponse(self::E_SAFE_METHODS_WITH_BODY, HttpStatus::BAD_REQUEST);
+            return $this->getPhpError(HttpStatus::BAD_REQUEST, self::E_SAFE_METHODS_WITH_BODY);
         }
         return null;
     }
@@ -173,11 +166,30 @@ class ClientRequest implements RequestInterface, JsonSerializable
      *
      * @return mixed If $body is iterable returns JSON stringified body, or whatever it is
      */
-    protected function prepareBody($body)
+    protected function prepareBody(mixed $body): mixed
     {
-        if (is_iterable($body)) {
+        if (\is_iterable($body)) {
             return json_serialize($body);
         }
         return $body;
     }
+
+    /**
+     * @param int         $status
+     * @param string|null $message
+     *
+     * @return Response JSON error message
+     * @link https://tools.ietf.org/html/rfc7807
+     */
+    protected function getPhpError(int $status, ?string $message = null): Response
+    {
+        return new ServerResponse(json_serialize([
+            'title'    => StatusCode::CODE[$status],
+            'detail'   => $message ?? \error_get_last()['message'],
+            'instance' => (string)$this->getUri(),
+            'type'     => 'https://httpstatuses.com/' . (string)$status,
+            'status'   => $status,
+        ]), $status, ['Content-type' => 'application/problem+json']);
+    }
+
 }
