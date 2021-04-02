@@ -1,9 +1,13 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\ServerRequest;
+use Koded\Http\UploadedFile;
 use PHPUnit\Framework\TestCase;
+use function Koded\Http\build_files_array;
+use function Koded\Http\normalize_files_array;
 
 class FilesTraitTest extends TestCase
 {
@@ -111,7 +115,7 @@ class FilesTraitTest extends TestCase
         $request = $request->withUploadedFiles(include __DIR__ . '/fixtures/simple-file-array.php');
         $files   = $request->getUploadedFiles();
 
-        $this->assertInternalType('array', $files);
+        $this->assertIsArray($files);
         $this->assertInstanceOf(UploadedFile::class, $files['test']);
 
         unlink($file);

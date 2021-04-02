@@ -91,7 +91,7 @@ class Psr18Test extends TestCase
         ];
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'] = '';
     }

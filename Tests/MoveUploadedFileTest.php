@@ -1,26 +1,28 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\UploadedFile;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 class MoveUploadedFileTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
-    /** @var UploadedFile */
-    private $SUT;
-
-    private $file       = '/tmp/y4k9a7fm';
-    private $targetPath = '/tmp/test-moved-to/filename.txt';
+    private UploadedFile $SUT;
+    private string $file       = '/tmp/y4k9a7fm';
+    private string $targetPath = '/tmp/test-moved-to/filename.txt';
 
     public function test_stream_move_to()
     {
         $this->SUT->moveTo($this->targetPath);
 
-        $this->assertAttributeSame(true, 'moved', $this->SUT);
+        $movedValue = $this->getObjectProperty($this->SUT, 'moved');
+        $this->assertSame(true, $movedValue);
+
         $this->assertFileExists($this->targetPath);
-        $this->assertFileNotExists($this->file, 'Original file should be deleted after moving');
+        $this->assertFileDoesNotExist($this->file, 'Original file should be deleted after moving');
         $this->assertSame('hello', file_get_contents($this->targetPath));
 
         // After moving the file the stream is not available
@@ -62,7 +64,7 @@ class MoveUploadedFileTest extends TestCase
         ];
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         file_put_contents($this->file, 'hello');
 
@@ -74,7 +76,7 @@ class MoveUploadedFileTest extends TestCase
         $this->SUT = new UploadedFile($data['test']);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         @unlink($this->file);
         @rmdir(dirname($this->targetPath));

@@ -1,8 +1,9 @@
 <?php
 
-namespace Koded\Tests\Http;
+namespace Tests\Koded\Http;
 
 use Koded\Http\HeaderTrait;
+use Koded\Http\Interfaces\HttpStatus;
 use PHPUnit\Framework\TestCase;
 
 class MockHttpHeader
@@ -12,33 +13,39 @@ class MockHttpHeader
 
 class HeaderTraitTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
-    /**
-     * @var MockHttpHeader
-     */
-    private $SUT;
+    private MockHttpHeader $SUT;
 
     public function test_get_header_not_set()
     {
         $this->assertSame([], $this->SUT->getHeader('foo'));
     }
 
-    public function test_headers()
+    public function test_get_headers()
     {
         $this->assertSame([], $this->SUT->getHeaders());
     }
 
-    public function test_header_line()
+    public function test_get_header_line()
     {
         $this->assertSame('', $this->SUT->getHeaderLine('foo'));
 
-        $response = $this->SUT->withHeader('foo', 1);
+        $response = $this->SUT->withAddedHeader('foo', ['1']);
         $response = $response->withAddedHeader('foo', 'two');
 
         $this->assertSame('1,two', $response->getHeaderLine('foo'));
 
         $response = $this->SUT->withAddedHeader('bar', 'baz');
         $this->assertSame('baz', $response->getHeaderLine('bar'));
+    }
+
+    public function test_set_header_line_with_invalid_value()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
+        $this->expectExceptionMessage('expects a string or array of strings');
+        $this->SUT->withHeader('foo', [1]);
     }
 
     public function test_add_header_value()
@@ -48,7 +55,6 @@ class HeaderTraitTest extends TestCase
         // $name is case-insensitive
         $this->assertSame(['bar'], $response->getHeader('foo'));
         $this->assertSame(['bar'], $response->getHeader('Foo'));
-
         return $response;
     }
 
@@ -87,7 +93,8 @@ class HeaderTraitTest extends TestCase
     {
         $this->assertFalse($sut->hasHeader('foobar'));
         $response = $sut->withoutHeader('foobar');
-        $this->assertFalse($sut->hasHeader('foobar'), 'Should not throw exception if header is not set');
+        $this->assertFalse($sut->hasHeader('foobar'),
+            'Should not throw exception if header is not set');
     }
 
     public function test_replace_headers()
@@ -100,22 +107,24 @@ class HeaderTraitTest extends TestCase
             'HEADER_2'           => 'bar'
         ]);
 
-        $this->assertAttributeSame([
+        $properties = $this->getObjectProperties($SUT);
+
+        $this->assertSame([
             'Long-Header-Name-1' => ['foo'],
             'Header-2'           => ['bar'],
-        ], 'headers', $SUT);
+        ], $properties['headers']);
 
-        $this->assertAttributeSame([
+        $this->assertSame([
             'long-header-name-1' => 'Long-Header-Name-1',
             'header-2'           => 'Header-2',
-        ], 'headersMap', $SUT);
+        ], $properties['headersMap']);
     }
 
     public function test_flattened_header()
     {
         $this->SUT = $this->SUT->withHeaders([
             'content-type'   => 'application/json',
-            'content-length' => 1,
+            'content-length' => '1',
             'x-param'        => ['foo', 'bar'],
         ]);
 
@@ -138,7 +147,7 @@ class HeaderTraitTest extends TestCase
         $this->SUT = $this->SUT->withHeaders([
             'Content-type'   => 'application/json',
             'X-Param'        => ['foo', 'bar'],
-            'content-length' => 1,
+            'content-length' => '1',
             'Accept' => '*/*'
         ]);
 
@@ -160,7 +169,7 @@ class HeaderTraitTest extends TestCase
         $this->SUT = $this->SUT->withHeaders([
             'Content-type'   => 'application/json',
             'X-Param'        => ['foo', 'bar'],
-            'content-length' => 1,
+            'content-length' => '1',
             'Accept' => '*/*'
         ]);
 
@@ -199,7 +208,7 @@ class HeaderTraitTest extends TestCase
         ], $this->SUT->getHeaders());
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->SUT = new MockHttpHeader;
     }

@@ -1,7 +1,8 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
 class UriSerializationTest extends TestCase

@@ -1,13 +1,12 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
-use InvalidArgumentException;
+use Koded\Http\AcceptHeaderNegotiator;
 use PHPUnit\Framework\TestCase;
 
 class AcceptLanguageHeaderTest extends TestCase
 {
-
     /**
      * @dataProvider dataForAsteriskSupport
      */

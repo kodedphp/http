@@ -1,7 +1,9 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\FileStream;
+use Koded\Http\HttpFactory;
 use Koded\Http\Interfaces\Request;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -10,7 +12,6 @@ use Psr\Http\Message\StreamInterface;
 
 class FactoriesTest extends TestCase
 {
-
     public function test_request_factory()
     {
         $request = (new HttpFactory)->createRequest(Request::HEAD, '/');

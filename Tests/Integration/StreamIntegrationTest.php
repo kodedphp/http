@@ -1,8 +1,9 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use Psr\Http\Message\StreamInterface;
+use function Koded\Http\create_stream;
 
 class StreamIntegrationTest extends \Http\Psr7Test\StreamIntegrationTest
 {

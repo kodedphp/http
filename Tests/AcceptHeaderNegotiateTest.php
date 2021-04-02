@@ -223,8 +223,10 @@ class AcceptHeaderNegotiateTest extends TestCase
                 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
                 'text/html', 1.0, 1.0
             ],
-            ['application/json', 'application/json', 1.0, 1.0],
-            ['application/xml', 'application/xml', 1.0, 1.0],
+
+            // Misc.
+            ['application/json, application/xml', 'application/json', 1.0, 1.0],
+            ['application/xml, application/json', 'application/xml', 1.0, 1.0],
             ['*/*', '*', 0.0, 1.0],
         ];
     }

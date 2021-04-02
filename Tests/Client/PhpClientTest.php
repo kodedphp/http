@@ -1,17 +1,19 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
+use Koded\Http\Client\ClientFactory;
 use Koded\Http\Interfaces\HttpRequestClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Koded\Http\AssertionTestSupportTrait;
 
 class PhpClientTest extends TestCase
 {
-    use ClientTestCaseTrait;
+    use ClientTestCaseTrait, AssertionTestSupportTrait;
 
     public function test_php_factory()
     {
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertArrayNotHasKey('header', $options, 'Headers are not set up until read()');
         $this->assertArrayHasKey('protocol_version', $options);
@@ -45,7 +47,7 @@ class PhpClientTest extends TestCase
             ->verifySslPeer(false)
             ->verifySslHost(true);
 
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertSame('foo', $options['user_agent']);
         $this->assertSame(5.0, $options['timeout']);
@@ -56,7 +58,7 @@ class PhpClientTest extends TestCase
         $this->assertSame(false, $options['ssl']['verify_peer']);
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->SUT = (new ClientFactory(ClientFactory::PHP))
             ->get('http://example.com')

@@ -1,13 +1,13 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\ClientRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
 class ClientRequestBodyTest extends TestCase
 {
-
     const URI = 'https://example.org';
 
     public function test_with_string_body()

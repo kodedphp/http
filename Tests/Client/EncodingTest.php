@@ -11,12 +11,8 @@ class EncodingTest extends TestCase
 {
     /**
      * @dataProvider clients
-     *
-     * @param ClientInterface $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_default_encoding($client)
+    public function test_default_encoding(HttpRequestClient $client)
     {
         $encoding = $this->getProperty($client, 'encoding');
         $this->assertSame(PHP_QUERY_RFC3986, $encoding, 'Client ' . get_class($client));
@@ -24,12 +20,8 @@ class EncodingTest extends TestCase
 
     /**
      * @dataProvider clients
-     *
-     * @param ClientInterface $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_encoding_setter_and_object_headers($client)
+    public function test_encoding_setter_and_object_headers(HttpRequestClient $client)
     {
         $client->withEncoding(PHP_QUERY_RFC1738);
 
@@ -42,12 +34,8 @@ class EncodingTest extends TestCase
 
     /**
      * @dataProvider clients
-     *
-     * @param ClientInterface $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_non_supported_encoding_types($client)
+    public function test_non_supported_encoding_types(HttpRequestClient $client)
     {
         $this->expectException(ClientExceptionInterface::class);
         $this->expectExceptionCode(StatusCode::BAD_REQUEST);
@@ -57,14 +45,10 @@ class EncodingTest extends TestCase
     }
 
     /**
-     * @group internet
+     * @group        internet
      * @dataProvider clients
-     *
-     * @param HttpRequestClient $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_rfc1738_encoding($client)
+    public function test_rfc1738_encoding(HttpRequestClient $client)
     {
         $name = get_class($client);
         $client->withEncoding(PHP_QUERY_RFC1738);
@@ -82,12 +66,8 @@ class EncodingTest extends TestCase
     /**
      * @group internet
      * @dataProvider clients
-     *
-     * @param HttpRequestClient $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_rfc3986_encoding($client)
+    public function test_rfc3986_encoding(HttpRequestClient $client)
     {
         $name = get_class($client);
         $client->withEncoding(PHP_QUERY_RFC3986);
@@ -103,14 +83,10 @@ class EncodingTest extends TestCase
     }
 
     /**
-     * @group internet
+     * @group        internet
      * @dataProvider clients
-     *
-     * @param HttpRequestClient $client
-     *
-     * @throws ClientExceptionInterface
      */
-    public function test_with_no_encoding($client)
+    public function test_with_no_encoding(HttpRequestClient $client)
     {
         $name = get_class($client);
         $client->withEncoding(0);
@@ -143,7 +119,7 @@ class EncodingTest extends TestCase
         ];
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
     }

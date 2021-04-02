@@ -1,19 +1,18 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\ClientRequest;
 use Koded\Http\Interfaces\Request;
+use Koded\Http\StatusCode;
+use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
 
 class ClientRequestTest extends TestCase
 {
-
-    /**
-     * @var Request
-     */
-    private $SUT;
+    private ClientRequest|Request $SUT;
 
     public function test_defaults()
     {
@@ -63,8 +62,8 @@ class ClientRequestTest extends TestCase
         $uri     = new Uri('http://example.net/42');
         $request = $this->SUT->withUri($uri, true);
 
-        $this->assertSame(['example.org'], $request->getHeader('host'));
-        $this->assertSame('example.org', $request->getUri()->getHost());
+        $this->assertSame(['example.org'], $request->getHeader('host'), 'The previous host is preserved in the header');
+        $this->assertSame('example.net', $request->getUri()->getHost(), 'Request URI has its own hostname');
         $this->assertEquals('/42', $request->getPath());
     }
 
@@ -87,12 +86,12 @@ class ClientRequestTest extends TestCase
         $this->assertSame('{"foo":"bar"}', $this->SUT->getBody()->getContents());
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->SUT = new ClientRequest('POST', 'http://example.org');
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
     }

@@ -1,12 +1,14 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\CallableStream;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 class CallableStreamTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
     public function test_should_initialize_the_stream()
     {
@@ -25,8 +27,9 @@ class CallableStreamTest extends TestCase
         $stream   = new CallableStream($callable);
         $stream->__destruct();
 
-        $this->assertAttributeSame(null, 'callable', $stream);
-        $this->assertAttributeSame(0, 'position', $stream);
+        $properties = $this->getObjectProperties($stream, ['callable', 'position']);
+        $this->assertSame(null, $properties['callable']);
+        $this->assertSame(0, $properties['position']);
     }
 
     public function test_should_return_content_when_typecasted_to_string()

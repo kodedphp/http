@@ -1,17 +1,19 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
+use Koded\Http\Client\ClientFactory;
 use Koded\Http\Interfaces\HttpRequestClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Koded\Http\AssertionTestSupportTrait;
 
 class CurlClientTest extends TestCase
 {
-    use ClientTestCaseTrait;
+    use ClientTestCaseTrait, AssertionTestSupportTrait;
 
     public function test_php_factory()
     {
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertArrayNotHasKey(CURLOPT_HTTPHEADER, $options, 'The header is not built yet');
         $this->assertArrayHasKey(CURLOPT_MAXREDIRS, $options);
@@ -47,7 +49,7 @@ class CurlClientTest extends TestCase
             ->verifySslHost(false)
             ->verifySslPeer(false);
 
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertSame('foo', $options[CURLOPT_USERAGENT]);
         $this->assertSame(5.0, $options[CURLOPT_TIMEOUT], 'Expects float (timeout)');
@@ -60,18 +62,18 @@ class CurlClientTest extends TestCase
 
     public function test_protocol_version()
     {
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
         $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
 
         $this->SUT = $this->SUT->withProtocolVersion('1.0');
-        $options   = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
         $this->assertSame(CURL_HTTP_VERSION_1_0, $options[CURLOPT_HTTP_VERSION]);
     }
 
     /**
      * @group internet
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         if (false === extension_loaded('curl')) {
             $this->markTestSkipped('cURL extension is not installed on the testing environment');
