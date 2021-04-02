@@ -48,7 +48,7 @@ class HttpFactory implements RequestFactoryInterface,
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
         if ($serverParams) {
-            $_SERVER = array_replace($_SERVER, $serverParams);
+            $_SERVER = \array_replace($_SERVER, $serverParams);
         }
         $_SERVER['REQUEST_METHOD'] = $method;
         $_SERVER['REQUEST_URI']    = (string)$uri;
@@ -82,10 +82,10 @@ class HttpFactory implements RequestFactoryInterface,
 
     public function createUploadedFile(
         StreamInterface $stream,
-        int $size = null,
-        int $error = \UPLOAD_ERR_OK,
-        string $clientFilename = null,
-        string $clientMediaType = null
+        ?int $size = null,
+        ?int $error = \UPLOAD_ERR_OK,
+        ?string $clientFilename = null,
+        ?string $clientMediaType = null
     ): UploadedFileInterface {
         return new UploadedFile([
             'tmp_name' => $stream,
