@@ -22,13 +22,14 @@
   ],
   "require": {
     "php": "^8",
-    "psr/http-message": "~1",
-    "psr/http-factory": "~1",
-    "psr/http-client": "~1",
+    "psr/http-message": "^1",
+    "psr/http-factory": "^1",
+    "psr/http-client": "^1",
     "koded/stdlib": "5.*",
     "ext-json": "*",
     "ext-curl": "*",
-    "ext-fileinfo": "*"
+    "ext-fileinfo": "*",
+    "ext-mbstring": "*"
   },
   "autoload": {
     "classmap": [
@@ -39,21 +40,21 @@
       "functions.php"
     ],
     "exclude-from-classmap": [
-      "/Tests/",
-      "build",
-      "diagrams"
+      "Tests/",
+      "build/",
+      "diagrams/"
     ]
   },
   "suggest": {
     "ext-iconv": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "~8",
-    "php-http/psr7-integration-tests": "^1.0@dev"
+    "phpunit/phpunit": "^9",
+    "php-http/psr7-integration-tests": "^1"
   },
   "autoload-dev": {
     "psr-4": {
-      "Koded\\Http\\": "Tests/"
+      "Tests\\Koded\\Http\\": "Tests/"
     }
   },
   "minimum-stability": "dev",

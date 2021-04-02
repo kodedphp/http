@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.5/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.2/phpunit.xsd"
          convertNoticesToExceptions="false"
          convertWarningsToExceptions="false"
          convertErrorsToExceptions="false"
@@ -28,9 +28,11 @@
 
     <php>
         <ini name="date.timezone" value="UTC"/>
+        <ini name="memory_limit" value="-1"/>
+        <env name="COMPOSER_MEMORY_LIMIT" value="-1"/>
+        <ini name="xdebug.max_nesting_level" value="200"/>
 
         <server name="HTTP_HOST" value="example.com"/>
-
         <cookie name="test" value="fubar"/>
     </php>
 </phpunit>
