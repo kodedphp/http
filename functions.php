@@ -12,38 +12,36 @@ namespace Koded\Http;
  *
  */
 
-use InvalidArgumentException;
 use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
-use RuntimeException;
 
 /**
- * @param null|callable|StreamInterface|object|resource $resource The string that is to be written
- * @param string                                        $mode Type of access to the stream
+ * @param mixed  $resource The string that is to be written
+ * @param string $mode     Type of access to the stream
  *
  * @return StreamInterface
  */
-function create_stream($resource, string $mode = 'r+b'): StreamInterface
+function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
 {
-    if (null === $resource || is_string($resource)) {
-        $stream = fopen('php://temp', $mode);
-        fwrite($stream, $resource);
-        fseek($stream, 0);
+    if (null === $resource || \is_string($resource)) {
+        $stream = \fopen('php://temp', $mode);
+        \fwrite($stream, $resource);
+        \fseek($stream, 0);
         return new Stream($stream);
     }
     if ($resource instanceof StreamInterface) {
         return $resource;
     }
-    if (is_callable($resource)) {
+    if (\is_callable($resource)) {
         return new CallableStream($resource);
     }
-    $type = gettype($resource);
+    $type = \gettype($resource);
     if ('resource' === $type) {
         return new Stream($resource);
     }
-    if ('object' === $type && method_exists($resource, '__toString')) {
+    if ('object' === $type && \method_exists($resource, '__toString')) {
         return create_stream((string)$resource);
     }
-    throw new InvalidArgumentException('Failed to create a stream. '
+    throw new \InvalidArgumentException('Failed to create a stream. '
         . 'Expected a file name, StreamInterface instance, or a resource. '
         . "Given {$type} type.");
 }
@@ -73,14 +71,14 @@ function stream_copy(StreamInterface $source, StreamInterface $destination, int 
  * @param StreamInterface $stream
  *
  * @return string
- * @throws RuntimeException on failure
+ * @throws \RuntimeException on failure
  */
 function stream_to_string(StreamInterface $stream): string
 {
     $content = '';
     $stream->rewind();
     while (false === $stream->eof()) {
-        $content .= $stream->read(1048576); // 1MB
+        $content .= $stream->read(65536); // 64KB
     }
     return $content;
 }
@@ -99,12 +97,12 @@ function normalize_files_array(array $files): array
         foreach ($files as $k => $v) {
             $list   = $path;
             $list[] = $k;
-            if (is_array($v)) {
+            if (\is_array($v)) {
                 $file = $sane($v, $file, $list);
             } else {
-                $next = array_splice($list, 1, 1);
+                $next = \array_splice($list, 1, 1);
                 $copy = &$file;
-                foreach (array_merge($list, $next) as $k) {
+                foreach (\array_merge($list, $next) as $k) {
                     $copy = &$copy[$k];
                 }
                 $copy = $v;
@@ -129,13 +127,13 @@ function build_files_array(array $files): array
     foreach ($files as $index => $file) {
         if ($file instanceof UploadedFileInterface) {
             $files[$index] = $file;
-        } elseif (isset($file['tmp_name']) && is_array($file)) {
+        } elseif (isset($file['tmp_name']) && \is_array($file)) {
             $files[$index] = new UploadedFile($file);
-        } elseif (is_array($file)) {
+        } elseif (\is_array($file)) {
             $files[$index] = build_files_array($file);
             continue;
         } else {
-            throw new InvalidArgumentException('Failed to process the uploaded files. Invalid file structure provided');
+            throw new \InvalidArgumentException('Failed to process the uploaded files. Invalid file structure provided');
         }
     }
     return $files;
