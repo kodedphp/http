@@ -162,16 +162,13 @@ abstract class AcceptHeader
      * @param AcceptHeader   $accept  The accept header part
      * @param AcceptHeader[] $matches Matched types
      *
-     * @return bool TRUE if the accept header part is a match
-     * against the supported (this) header part
-     *
      * This method finds the best match for the Accept header,
      * including lots of nonsense that may be passed by the
      * developers who do not follow RFC standards.
      *
      * @internal
      */
-    public function matches(AcceptHeader $accept, array &$matches = null): bool
+    public function matches(AcceptHeader $accept, array &$matches = null): void
     {
         $matches   = (array)$matches;
         $accept    = clone $accept;
@@ -182,31 +179,30 @@ abstract class AcceptHeader
         if ($accept->catchAll) {
             $accept->type    = $this->type;
             $accept->subtype = $this->subtype;
-            $matches[]       = $this->catchAll ? $this->rank($accept) : $accept;
-            return true;
+            $matches[]       = $accept;
+            return;
         }
         // Explicitly denied
         if (0.0 === $this->quality) {
             $matches[] = clone $this;
-            return true;
+            return;
         }
         // Explicitly denied
         if (0.0 === $accept->quality) {
             $matches[] = $accept;
-            return true;
+            return;
         }
         // Explicit type mismatch (w/o asterisk); bail out
         if ((false === $typeMatch) && ('*' !== $this->type)) {
-            return false;
+            return;
         }
         if ('*' === $accept->subtype) {
             $accept->subtype = $this->subtype;
         }
         if (($accept->subtype !== $this->subtype) && ('*' !== $this->subtype)) {
-            return false;
+            return;
         }
         $matches[] = $this->rank($accept);
-        return true;
     }
 
 
@@ -214,8 +210,7 @@ abstract class AcceptHeader
     {
         // +100 if types are exact match w/o asterisk
         if (($this->type === $accept->type) &&
-            ($this->subtype === $accept->subtype) &&
-            ('*' !== $accept->subtype)) {
+            ($this->subtype === $accept->subtype)) {
             $accept->weight += 100;
         }
         $accept->weight += ($this->catchAll ? 0.0 : $accept->quality);
