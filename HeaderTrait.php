@@ -12,9 +12,7 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpStatus;
-use Throwable;
 
 
 trait HeaderTrait
@@ -22,12 +20,12 @@ trait HeaderTrait
     /**
      * @var array Message headers.
      */
-    protected $headers = [];
+    protected array $headers = [];
 
     /**
      * @var array Used for case-insensitivity header name checks
      */
-    protected $headersMap = [];
+    protected array $headersMap = [];
 
     public function getHeaders(): array
     {
@@ -36,32 +34,37 @@ trait HeaderTrait
 
     public function getHeader($name): array
     {
-        if (false === isset($this->headersMap[$name = strtolower($name)])) {
+        if (false === isset($this->headersMap[$name = \strtolower($name)])) {
             return [];
         }
-        if ($value = $this->headers[$this->headersMap[$name]]) {
-            return (array)$value;
+        $value = $this->headers[$this->headersMap[$name]];
+        if (\is_string($value)) {
+            return empty($value) ? [] : [$value];
         }
-        return [];
+        $header = [];
+        foreach ($value as $_ => $v) {
+            $header[] = \join(',', (array)$v);
+        }
+        return $header;
     }
 
     public function getHeaderLine($name): string
     {
-        return join(',', $this->getHeader($name));
+        return \join(',', $this->getHeader($name));
     }
 
-    public function withHeader($name, $value): self
+    public function withHeader($name, $value): static
     {
         $instance = clone $this;
         $name     = $instance->normalizeHeaderName($name);
 
-        $instance->headersMap[strtolower($name)] = $name;
+        $instance->headersMap[\strtolower($name)] = $name;
 
         $instance->headers[$name] = $this->normalizeHeaderValue($name, $value);
         return $instance;
     }
 
-    public function withHeaders(array $headers): self
+    public function withHeaders(array $headers): static
     {
         $instance = clone $this;
         foreach ($headers as $name => $value) {
@@ -70,24 +73,29 @@ trait HeaderTrait
         return $instance;
     }
 
-    public function withoutHeader($name): self
+    public function withoutHeader($name): static
     {
         $instance = clone $this;
-        $name     = strtolower($name);
+        $name     = \strtolower($name);
         if (isset($instance->headersMap[$name])) {
-            unset($instance->headers[$this->headersMap[$name]], $instance->headersMap[$name]);
+            unset(
+                $instance->headers[$this->headersMap[$name]],
+                $instance->headersMap[$name]
+            );
         }
         return $instance;
     }
 
-    public function withAddedHeader($name, $value): self
+    public function withAddedHeader($name, $value): static
     {
         $instance = clone $this;
         $name     = $instance->normalizeHeaderName($name);
         $value    = $instance->normalizeHeaderValue($name, $value);
-        if (isset($instance->headersMap[$header = strtolower($name)])) {
+        if (isset($instance->headersMap[$header = \strtolower($name)])) {
             $header                     = $instance->headersMap[$header];
-            $instance->headers[$header] = array_unique(array_merge((array)$instance->headers[$header], $value));
+            $instance->headers[$header] = \array_unique(
+                \array_merge_recursive($instance->headers[$header], $value)
+            );
         } else {
             $instance->headersMap[$header] = $name;
             $instance->headers[$name]      = $value;
@@ -97,10 +105,10 @@ trait HeaderTrait
 
     public function hasHeader($name): bool
     {
-        return array_key_exists(strtolower($name), $this->headersMap);
+        return \array_key_exists(\strtolower($name), $this->headersMap);
     }
 
-    public function replaceHeaders(array $headers)
+    public function replaceHeaders(array $headers): static
     {
         $instance          = clone $this;
         $instance->headers = $instance->headersMap = [];
@@ -120,7 +128,7 @@ trait HeaderTrait
     {
         $flattenHeaders = [];
         foreach ($this->headers as $name => $value) {
-            $flattenHeaders[] = $name . ':' . join(',', (array)$value);
+            $flattenHeaders[] = $name . ':' . \join(',', (array)$value);
         }
         return $flattenHeaders;
     }
@@ -128,33 +136,33 @@ trait HeaderTrait
     public function getCanonicalizedHeaders(array $names = []): string
     {
         if (empty($names)) {
-            $names = array_keys($this->headers);
+            $names = \array_keys($this->headers);
         }
-        if (!$headers = array_reduce($names, function($list, $name) {
-            $name   = str_replace('_', '-', $name);
-            $list[] = strtolower($name) . ':' . join(',', $this->getHeader($name));
+        if (!$headers = \array_reduce($names, function($list, $name) {
+            $name   = \str_replace('_', '-', $name);
+            $list[] = \strtolower($name) . ':' . \join(',', $this->getHeader($name));
             return $list;
         })) {
             return '';
         }
-        sort($headers);
-        return join("\n", $headers);
+        \sort($headers);
+        return \join("\n", $headers);
     }
 
     /**
-     * @param string $name
-     * @param mixed  $value
-     * @param bool   $skipKey
+     * @param string          $name
+     * @param string|string[] $value
+     * @param bool            $skipKey
      *
      * @return void
      */
-    protected function normalizeHeader(string $name, $value, bool $skipKey): void
+    protected function normalizeHeader(string $name, array|string $value, bool $skipKey): void
     {
-        $name = str_replace(["\r", "\n", "\t"], '', trim($name));
+        $name = \str_replace(["\r", "\n", "\t"], '', \trim($name));
         if (false === $skipKey) {
-            $name = ucwords(str_replace('_', '-', strtolower($name)), '-');
+            $name = \ucwords(\str_replace('_', '-', \strtolower($name)), '-');
         }
-        $this->headersMap[strtolower($name)] = $name;
+        $this->headersMap[\strtolower($name)] = $name;
 
         $this->headers[$name] = $this->normalizeHeaderValue($name, $value);
     }
@@ -164,12 +172,16 @@ trait HeaderTrait
      *
      * @return static
      */
-    protected function setHeaders(array $headers)
+    protected function setHeaders(array $headers): static
     {
-        foreach (array_filter($headers, 'is_string', ARRAY_FILTER_USE_KEY) as $name => $value) {
-            $this->normalizeHeader($name, $value, false);
+        try {
+            foreach ($headers as $name => $value) {
+                $this->normalizeHeader($name, $value, false);
+            }
+            return $this;
+        } catch (\TypeError $e) {
+            throw new \InvalidArgumentException($e->getMessage(), HttpStatus::BAD_REQUEST, $e);
         }
-        return $this;
     }
 
     /**
@@ -177,19 +189,13 @@ trait HeaderTrait
      *
      * @return string Normalized header name
      */
-    protected function normalizeHeaderName($name): string
+    protected function normalizeHeaderName(string $name): string
     {
-        try {
-            $name = str_replace(["\r", "\n", "\t"], '', trim($name));
-        } catch (Throwable $e) {
-            throw new InvalidArgumentException(
-                sprintf('Header name must be a string, %s given', gettype($name)), HttpStatus::BAD_REQUEST
-            );
+        $name = \str_replace(["\r", "\n", "\t"], '', \trim($name));
+        if ('' !== $name) {
+            return $name;
         }
-        if ('' === $name) {
-            throw new InvalidArgumentException('Empty header name', HttpStatus::BAD_REQUEST);
-        }
-        return $name;
+        throw new \InvalidArgumentException('Empty header name', HttpStatus::BAD_REQUEST);
     }
 
     /**
@@ -198,29 +204,24 @@ trait HeaderTrait
      *
      * @return array
      */
-    protected function normalizeHeaderValue(string $name, $value): array
+    protected function normalizeHeaderValue(string $name, string|array $value): array
     {
-        $type = gettype($value);
-        switch ($type) {
-            case 'array':
-            case 'integer':
-            case 'double':
-            case 'string':
-                $value = (array)$value;
-                break;
-            default:
-                throw new InvalidArgumentException(
-                    sprintf('Invalid header value, expects string or array, "%s" given', $type), HttpStatus::BAD_REQUEST
-                );
+        if (\is_string($value)) {
+            $value = (array)$value;
         }
-
-        if (empty($value = array_map(function($v) {
-            return trim(preg_replace('/\s+/', ' ', (string)$v));
-        }, $value))) {
-            throw new InvalidArgumentException(
-                sprintf('The value for header "%s" cannot be empty', $name), HttpStatus::BAD_REQUEST
-            );
+        try {
+            if (empty($value = \array_map(function($v) {
+                return \trim(\preg_replace('/\s+/', ' ', $v));
+            }, $value))) {
+                throw new \InvalidArgumentException(
+                    \sprintf('The value for header "%s" cannot be empty', $name),
+                    HttpStatus::BAD_REQUEST);
+            }
+            return $value;
+        } catch (\TypeError $e) {
+            throw new \InvalidArgumentException(
+                \sprintf('Invalid value for header "%s", expects a string or array of strings', $name),
+                HttpStatus::BAD_REQUEST, $e);
         }
-        return $value;
     }
 }
