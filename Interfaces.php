@@ -225,10 +225,10 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface, 
      *                     - PHP_QUERY_RFC1738 (+)
      *                     - or "0" to send the body stream content as-is
      *
-     * @return HttpRequestClient
+     * @return static
      * @link https://php.net/manual/en/function.http-build-query.php
      */
-    public function withEncoding(int $type): HttpRequestClient;
+    public function withEncoding(int $type): static;
 }
 
 
