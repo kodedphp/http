@@ -13,7 +13,6 @@
 namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
-use Throwable;
 
 /**
  * Holds HTTP status codes with their text.
@@ -90,9 +89,9 @@ class StatusCode implements HttpStatus
     {
         try {
             $withCode += [false];
-            $status = constant("self::$code");
+            $status = \constant("self::$code");
             return ($withCode[0] ? $status . ' ' : '') . self::CODE[$status];
-        } catch (Throwable $e) {
+        } catch (\Throwable) {
             return null;
         }
     }

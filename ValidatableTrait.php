@@ -13,8 +13,7 @@
 namespace Koded\Http;
 
 use Koded\Http\Interfaces\{HttpInputValidator, Response};
-use Koded\Stdlib\Data;
-use Koded\Stdlib\Immutable;
+use Koded\Stdlib\{Data, Immutable};
 use function Koded\Stdlib\json_serialize;
 
 /**
@@ -32,7 +31,7 @@ trait ValidatableTrait
         if (empty($errors = $validator->validate($input))) {
             return null;
         }
-        $errors['code'] = (int)($errors['code'] ?? StatusCode::BAD_REQUEST);
-        return new ServerResponse(json_serialize($errors), $errors['code']);
+        $errors['status'] = (int)($errors['status'] ?? StatusCode::BAD_REQUEST);
+        return new ServerResponse(json_serialize($errors), $errors['status']);
     }
 }
