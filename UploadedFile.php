@@ -120,7 +120,7 @@ class UploadedFile implements UploadedFileInterface
 
 class UploadedFileException extends KodedException
 {
-    protected $messages = [
+    protected array $messages = [
         \UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the "upload_max_filesize" directive in php.ini',
         \UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the "MAX_FILE_SIZE" directive that was specified in the HTML form',
         \UPLOAD_ERR_PARTIAL    => 'The uploaded file was only partially uploaded',
