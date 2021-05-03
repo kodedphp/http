@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.2/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
          convertNoticesToExceptions="false"
          convertWarningsToExceptions="false"
          convertErrorsToExceptions="false"
@@ -15,16 +15,16 @@
     </testsuites>
 
     <!-- code coverage -->
-    <filter>
-        <whitelist>
+    <coverage>
+        <include>
             <directory suffix=".php">./</directory>
-            <exclude>
-                <directory>vendor</directory>
-                <directory>Tests</directory>
-                <directory>diagrams</directory>
-            </exclude>
-        </whitelist>
-    </filter>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>Tests</directory>
+            <directory>diagrams</directory>
+        </exclude>
+    </coverage>
 
     <php>
         <ini name="date.timezone" value="UTC"/>
