@@ -21,7 +21,7 @@ trait EncodingTrait
 
     public function withEncoding(int $type): static
     {
-        if (in_array($type, [0, PHP_QUERY_RFC1738, PHP_QUERY_RFC3986], true)) {
+        if (\in_array($type, [0, PHP_QUERY_RFC1738, PHP_QUERY_RFC3986], true)) {
             $this->encoding = $type;
             return $this;
         }

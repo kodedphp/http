@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 
-
 trait HeaderTrait
 {
     /**
@@ -210,7 +209,7 @@ trait HeaderTrait
             $value = (array)$value;
         }
         try {
-            if (empty($value = \array_map(function($v) {
+            if (empty($value = \array_map(function($v): string {
                 return \trim(\preg_replace('/\s+/', ' ', $v));
             }, $value))) {
                 throw new \InvalidArgumentException(

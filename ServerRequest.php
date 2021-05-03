@@ -15,7 +15,6 @@ namespace Koded\Http;
 use Koded\Http\Interfaces\Request;
 use Psr\Http\Message\ServerRequestInterface;
 
-
 class ServerRequest extends ClientRequest implements Request
 {
     use CookieTrait, FilesTrait, ValidatableTrait;
@@ -89,7 +88,7 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
         throw new \InvalidArgumentException(
-            \sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', gettype($data))
+            \sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', \gettype($data))
         );
     }
 

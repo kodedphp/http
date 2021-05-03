@@ -57,7 +57,10 @@ function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
  *
  * @return int The total count of bytes copied
  */
-function stream_copy(StreamInterface $source, StreamInterface $destination, int $length = 8192): int
+function stream_copy(
+    StreamInterface $source,
+    StreamInterface $destination,
+    int $length = 8192): int
 {
     $bytes = 0;
     while (false === $source->eof()) {
@@ -110,7 +113,6 @@ function normalize_files_array(array $files): array
         }
         return $file;
     };
-
     return $sane($files);
 }
 

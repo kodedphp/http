@@ -53,7 +53,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function getMethod(): string
     {
-        return strtoupper($this->method);
+        return \strtoupper($this->method);
     }
 
     public function withMethod($method): ClientRequest
@@ -105,7 +105,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function getPath(): string
     {
-        return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
+        return \str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
     }
 
     public function getBaseUri(): string
@@ -187,9 +187,8 @@ class ClientRequest implements RequestInterface, \JsonSerializable
             'title'    => StatusCode::CODE[$status],
             'detail'   => $message ?? \error_get_last()['message'],
             'instance' => (string)$this->getUri(),
-            'type'     => 'https://httpstatuses.com/' . (string)$status,
+            'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
         ]), $status, ['Content-type' => 'application/problem+json']);
     }
-
 }

@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 use Psr\Http\Message\StreamInterface;
 
-
 trait MessageTrait
 {
     protected string $protocolVersion = '1.1';
