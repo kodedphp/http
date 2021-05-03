@@ -1,7 +1,8 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\AcceptHeaderNegotiator;
 use PHPUnit\Framework\TestCase;
 
 class AcceptCharsetHeaderTest extends TestCase

@@ -1,20 +1,25 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use Koded\Http\Interfaces\HttpInputValidator;
-use Koded\Stdlib\Interfaces\Data;
+use Koded\Http\ServerRequest;
+use Koded\Http\StatusCode;
+use Koded\Stdlib\Data;
 use PHPUnit\Framework\TestCase;
 
 class HttpInputValidatorTest extends TestCase
 {
-
     public function test_success_validate_with_empty_body()
     {
         $request = new ServerRequest;
-        $response = $request->validate(new TestSuccessValidator);
+        $response = $request->validate(new TestSuccessValidator, $input);
 
-        $this->assertNull($response);
+        $this->assertSame(StatusCode::BAD_REQUEST, $response->getStatusCode());
+        $this->assertSame('{"validate":"Nothing to validate","code":400}', (string)$response->getBody());
+
+        $this->assertInstanceOf(Data::class, $input);
+        $this->assertCount(0, $input);
     }
 
     public function test_success_validate_with_body()
@@ -22,9 +27,10 @@ class HttpInputValidatorTest extends TestCase
         $_POST = ['key' => 'value'];
 
         $request = new ServerRequest;
-        $response = $request->validate(new TestSuccessValidator);
+        $response = $request->validate(new TestSuccessValidator, $input);
 
         $this->assertNull($response);
+        $this->assertEquals($_POST, $input->toArray());
     }
 
     public function test_failure_validate()
@@ -35,7 +41,7 @@ class HttpInputValidatorTest extends TestCase
         $response = $request->validate(new TestFailureValidator);
 
         $this->assertSame(StatusCode::BAD_REQUEST, $response->getStatusCode());
-        $this->assertSame('{"message":"This is the error message","code":400}', (string)$response->getBody());
+        $this->assertSame('{"message":"This is the error message","status":400}', (string)$response->getBody());
     }
 
     public function test_failure_validate_response_code()
@@ -46,10 +52,10 @@ class HttpInputValidatorTest extends TestCase
         $response = $request->validate(new TestFailureValidatorWithStatusCode);
 
         $this->assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode());
-        $this->assertSame('{"text":"Cannot proceed","code":422}', (string)$response->getBody());
+        $this->assertSame('{"text":"Cannot proceed","status":422}', (string)$response->getBody());
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         $_POST = [];
     }
@@ -79,7 +85,7 @@ class TestFailureValidatorWithStatusCode implements HttpInputValidator {
     {
         return [
             'text' => 'Cannot proceed',
-            'code' => StatusCode::UNPROCESSABLE_ENTITY,
+            'status' => StatusCode::UNPROCESSABLE_ENTITY,
         ];
     }
 }

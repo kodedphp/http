@@ -1,14 +1,14 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
-use function Koded\Stdlib\dump;
+use Koded\Http\StatusCode;
+use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
 class UriGettersTest extends TestCase
 {
-
     /**
      * @test
      */
@@ -99,7 +99,7 @@ class UriGettersTest extends TestCase
     {
         $uri = new Uri('https://example.net?foo=bar&qux');
 
-        $this->assertInternalType('string', $uri->getQuery());
+        $this->assertIsString($uri->getQuery());
         $this->assertEquals('foo=bar&qux', $uri->getQuery());
     }
 

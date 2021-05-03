@@ -12,33 +12,19 @@
 
 namespace Koded\Http;
 
-use InvalidArgumentException;
 use Koded\Exceptions\KodedException;
 use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
-use RuntimeException;
-use Throwable;
 use function Koded\Stdlib\randomstring;
 
 
 class UploadedFile implements UploadedFileInterface
 {
-    /** @var string|null */
-    private $file;
-
-    /** @var string|null */
-    private $name;
-
-    /** @var string|null */
-    private $type;
-
-    /** @var int|null */
-    private $size;
-
-    /** @var int See UPLOAD_ERR_* constants */
-    private $error = \UPLOAD_ERR_OK;
-
-    /** @var bool */
-    private $moved = false;
+    private ?string $file;
+    private ?string $name;
+    private ?string $type;
+    private ?int $size;
+    private int  $error;
+    private bool $moved = false;
 
     public function __construct(array $uploadedFile)
     {
@@ -49,76 +35,66 @@ class UploadedFile implements UploadedFileInterface
 
         // Create a file out of the stream
         if ($this->file instanceof StreamInterface) {
-            $file = sys_get_temp_dir() . '/' . $this->name;
-            file_put_contents($file, $this->file->getContents());
+            $file = \sys_get_temp_dir() . '/' . $this->name;
+            \file_put_contents($file, $this->file->getContents());
             $this->file = $file;
-        } elseif (false === is_string($this->file)) {
+        } elseif (false === \is_string($this->file)) {
             throw UploadedFileException::fileNotSupported();
-        } elseif (0 === strlen($this->file)) {
+        } elseif (0 === \strlen($this->file)) {
             throw UploadedFileException::filenameCannotBeEmpty();
         }
-
         // Never trust the provided mime type
         $this->type = $this->getClientMediaType();
     }
-
 
     public function getStream(): StreamInterface
     {
         if ($this->moved) {
             throw UploadedFileException::streamNotAvailable();
         }
-
         return new FileStream($this->file, 'w+b');
     }
-
 
     public function moveTo($targetPath)
     {
         $this->assertUploadError();
         $this->assertTargetPath($targetPath);
-
         // @codeCoverageIgnoreStart
         try {
-            $this->moved = ('cli' === php_sapi_name())
-                ? rename($this->file, $targetPath)
-                : move_uploaded_file($this->file, $targetPath);
+            $this->moved = ('cli' === \php_sapi_name())
+                ? \rename($this->file, $targetPath)
+                : \move_uploaded_file($this->file, $targetPath);
 
-            @unlink($this->file);
-        } catch (Throwable $e) {
-            throw new RuntimeException($e->getMessage());
+            @\unlink($this->file);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException($e->getMessage());
         }
         // @codeCoverageIgnoreEnd
     }
-
 
     public function getSize(): ?int
     {
         return $this->size;
     }
 
-
     public function getError(): int
     {
         return $this->error;
     }
-
 
     public function getClientFilename(): ?string
     {
         return $this->name;
     }
 
-
     public function getClientMediaType(): ?string
     {
         try {
             return (new \finfo(\FILEINFO_MIME_TYPE))->file($this->file);
-        } catch (Throwable $e) {
+        } catch (\Throwable) {
             return $this->type;
         }
     }
-
 
     private function assertUploadError(): void
     {
@@ -127,19 +103,16 @@ class UploadedFile implements UploadedFileInterface
         }
     }
 
-
     private function assertTargetPath($targetPath): void
     {
         if ($this->moved) {
             throw UploadedFileException::fileAlreadyMoved();
         }
-
-        if (false === is_string($targetPath) || 0 === strlen($targetPath)) {
+        if (false === \is_string($targetPath) || 0 === \mb_strlen($targetPath)) {
             throw UploadedFileException::targetPathIsInvalid();
         }
-
-        if (false === is_dir($dirname = dirname($targetPath))) {
-            @mkdir($dirname, 0777, true);
+        if (false === \is_dir($dirname = \dirname($targetPath))) {
+            @\mkdir($dirname, 0777, true);
         }
     }
 }
@@ -147,7 +120,7 @@ class UploadedFile implements UploadedFileInterface
 
 class UploadedFileException extends KodedException
 {
-    protected $messages = [
+    protected array $messages = [
         \UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the "upload_max_filesize" directive in php.ini',
         \UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the "MAX_FILE_SIZE" directive that was specified in the HTML form',
         \UPLOAD_ERR_PARTIAL    => 'The uploaded file was only partially uploaded',
@@ -157,28 +130,28 @@ class UploadedFileException extends KodedException
         \UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload',
     ];
 
-    public static function streamNotAvailable()
+    public static function streamNotAvailable(): \RuntimeException
     {
-        return new RuntimeException('Stream is not available, because the file was previously moved');
+        return new \RuntimeException('Stream is not available, because the file was previously moved');
     }
 
-    public static function targetPathIsInvalid()
+    public static function targetPathIsInvalid(): \InvalidArgumentException
     {
-        return new InvalidArgumentException('The provided path for moveTo operation is not valid');
+        return new \InvalidArgumentException('The provided path for moveTo operation is not valid');
     }
 
-    public static function fileAlreadyMoved()
+    public static function fileAlreadyMoved(): \RuntimeException
     {
-        return new RuntimeException('File is not available, because it was previously moved');
+        return new \RuntimeException('File is not available, because it was previously moved');
     }
 
-    public static function fileNotSupported()
+    public static function fileNotSupported(): \InvalidArgumentException
     {
-        return new InvalidArgumentException('The uploaded file is not supported');
+        return new \InvalidArgumentException('The uploaded file is not supported');
     }
 
-    public static function filenameCannotBeEmpty()
+    public static function filenameCannotBeEmpty(): \InvalidArgumentException
     {
-        return new InvalidArgumentException('Filename cannot be empty');
+        return new \InvalidArgumentException('Filename cannot be empty');
     }
 }

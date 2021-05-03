@@ -1,17 +1,16 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
 class UriSettersTest extends TestCase
 {
+    private Uri $uri;
 
-    /** @var Uri */
-    private $uri;
-
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->uri = new Uri('https://example.com:8080/foo/bar/#baz');
     }

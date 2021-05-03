@@ -1,7 +1,8 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\UploadedFile;
 use Psr\Http\Message\UploadedFileInterface;
 
 class UploadedFileIntegrationTest extends \Http\Psr7Test\UploadedFileIntegrationTest
@@ -21,10 +22,9 @@ class UploadedFileIntegrationTest extends \Http\Psr7Test\UploadedFileIntegration
         ]);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         \Koded\Stdlib\rmdir('.tmp');
-        @unlink('.tmp/test.txt');
         parent::tearDown();
     }
 }

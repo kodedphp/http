@@ -1,14 +1,14 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\FileStream;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 class FileStreamTest extends TestCase
 {
-
-    private $file = '/tmp/test';
+    private string $file = '/tmp/test';
 
     public function test_should_create_only_writable_stream()
     {
@@ -39,7 +39,7 @@ class FileStreamTest extends TestCase
         $this->assertTrue($stream->isWritable());
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         @unlink($this->file);
     }

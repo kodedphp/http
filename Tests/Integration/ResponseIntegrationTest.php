@@ -1,18 +1,17 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\ServerResponse;
 use Psr\Http\Message\ResponseInterface;
+use function Koded\Http\create_stream;
 
 class ResponseIntegrationTest extends \Http\Psr7Test\ResponseIntegrationTest
 {
-
     protected $skippedTests = [
-        'testStatusCodeInvalidArgument'        => 'Does not make sense for strict type implementation',
-        'testWithHeaderInvalidArguments'       => 'Does not make sense for strict type implementation',
-        'testWithAddedHeaderInvalidArguments'  => 'Does not make sense for strict type implementation',
-        'testWithAddedHeaderArrayValueAndKeys' => 'Skip this weird test',
-        'testWithAddedHeader'                  => 'Skip this weird test',
+        'testStatusCodeInvalidArgument'        => 'Skipped, strict type implementation',
+        'testWithHeaderInvalidArguments'       => 'Skipped, strict type implementation',
+        'testWithAddedHeaderInvalidArguments'  => 'Skipped, strict type implementation',
     ];
 
     /**

@@ -1,13 +1,16 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
+use Koded\Http\StatusCode;
+use Koded\Http\Stream;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Throwable;
 
 class StreamTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
     public function test_constructor_with_invalid_argument()
     {
@@ -32,8 +35,12 @@ class StreamTest extends TestCase
 
         $stream->__destruct();
 
+        $properties = $this->getObjectProperties($stream);
+
         $this->assertFalse(is_resource($resource));
-        $this->assertAttributeSame(null, 'stream', $stream);
+        $this->assertSame(null, $properties['stream']);
+        $this->assertSame('w+b', $properties['mode']);
+        $this->assertFalse($properties['seekable']);
     }
 
     public function test_stream_should_return_content_when_typecasted_to_string()

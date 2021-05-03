@@ -1,14 +1,12 @@
 language: php
 os: linux
-dist: xenial
+dist: bionic
 
 notifications:
   email: false
 
 php:
-  - 7.2
-  - 7.3
-  - 7.4
+  - 8.0.1
   - nightly
 
 cache:
@@ -27,7 +25,7 @@ install:
   - composer update -o --prefer-source --no-interaction
 
 script:
-  - vendor/bin/phpunit --coverage-clover build/clover.xml
+  - vendor/bin/phpunit --exclude-group internet --coverage-clover build/clover.xml
 
 after_script:
   - wget https://scrutinizer-ci.com/ocular.phar

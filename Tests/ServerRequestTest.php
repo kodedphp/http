@@ -1,29 +1,32 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
-use InvalidArgumentException;
 use Koded\Http\Interfaces\Request;
+use Koded\Http\ServerRequest;
+use Koded\Http\Uri;
 use Koded\Stdlib\Arguments;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
 
 class ServerRequestTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
-    /** @var ServerRequest */
-    private $SUT;
+    private ServerRequest $SUT;
 
     public function test_defaults()
     {
         $this->assertSame(Request::POST, $this->SUT->getMethod());
+
+        $serverSoftwareValue = $this->getObjectProperty($this->SUT, 'serverSoftware');
+        $this->assertSame('', $serverSoftwareValue);
 
         // makes a difference
         $this->assertSame('/', $this->SUT->getPath(), 'Much useful and predictable for real life apps');
         $this->assertSame('', $this->SUT->getUri()->getPath(), 'Weird PSR-7 rule satisfied');
 
         $this->assertSame('http://example.org:8080', $this->SUT->getBaseUri());
-        $this->assertAttributeSame('', 'serverSoftware', $this->SUT, 'In testing environment there is no server');
         $this->assertFalse($this->SUT->isXHR());
         $this->assertSame('1.1', $this->SUT->getProtocolVersion());
 
@@ -35,9 +38,9 @@ class ServerRequestTest extends TestCase
         $this->assertTrue(count($this->SUT->getHeaders()) > 0);
         $this->assertSame($_SERVER, $this->SUT->getServerParams());
 
+        $this->assertSame('', $this->SUT->getHeaderLine('Content-type'));
         $this->assertFalse($this->SUT->hasHeader('content-type'),
             'Content-type can be explicitly set in the request headers');
-        $this->assertSame('', $this->SUT->getHeaderLine('Content-type'));
     }
 
     public function test_server_uri_value()
@@ -106,7 +109,7 @@ class ServerRequestTest extends TestCase
 
     public function test_parsed_body_throws_exception_on_unsupported_values()
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported data provided (string), Expects NULL, array or iterable');
         $this->SUT->withParsedBody('junk');
     }
@@ -116,8 +119,8 @@ class ServerRequestTest extends TestCase
         $_SERVER['HTTP_CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
         $_POST                        = ['key' => 'value'];
 
-        $SUT = new ServerRequest;
-        $this->assertSame($_POST, $SUT->getParsedBody(), 'Returns the _POST array');
+        $request = new ServerRequest;
+        $this->assertSame($_POST, $request->getParsedBody(), 'Returns the _POST array');
     }
 
     public function test_return_posted_body_with_parsed_body()
@@ -125,10 +128,10 @@ class ServerRequestTest extends TestCase
         $_SERVER['HTTP_CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
         $_POST                        = ['key' => 'value'];
 
-        $SUT  = new ServerRequest;
-        $_SUT = $SUT->withParsedBody(['key' => 'value']);
+        $request  = new ServerRequest;
+        $actual = $request->withParsedBody(['key' => 'value']);
 
-        $this->assertNotSame($SUT, $_SUT, 'Response objects are immutable');
+        $this->assertNotSame($request, $actual, 'Response objects are immutable');
     }
 
     public function test_put_method_should_parse_the_php_input()
@@ -200,16 +203,16 @@ class ServerRequestTest extends TestCase
     {
         $_POST = ['foo' => 'bar'];
         $this->setUp();
-        $SUT = $this->SUT->withHeader('Content-Type', 'application/x-www-form-urlencoded');
+        $request = $this->SUT->withHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-        $this->assertSame($SUT->getParsedBody(), $_POST);
+        $this->assertSame($request->getParsedBody(), $_POST);
     }
 
     public function test_parsed_body_if_method_is_post_with_json_data()
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
 
-        $SUT = (new class extends ServerRequest
+        $request = (new class extends ServerRequest
         {
 
             protected function getRawInput(): string
@@ -218,14 +221,14 @@ class ServerRequestTest extends TestCase
             }
         });
 
-        $this->assertEquals(['key' => 'value'], $SUT->getParsedBody());
+        $this->assertEquals(['key' => 'value'], $request->getParsedBody());
     }
 
     public function test_parsed_body_if_method_is_post_with_urlencoded_data()
     {
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
 
-        $SUT = (new class extends ServerRequest
+        $request = (new class extends ServerRequest
         {
 
             protected function getRawInput(): string
@@ -234,18 +237,18 @@ class ServerRequestTest extends TestCase
             }
         });
 
-        $this->assertEquals(['key' => 'value'], $SUT->getParsedBody());
+        $this->assertEquals(['key' => 'value'], $request->getParsedBody());
     }
 
     public function test_headers_with_content_type()
     {
         $_SERVER['CONTENT_TYPE'] = 'application/json';
 
-        $SUT = new ServerRequest;
-        $this->assertEquals('application/json', $SUT->getHeaderLine('content-type'));
+        $request = new ServerRequest;
+        $this->assertEquals('application/json', $request->getHeaderLine('content-type'));
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $_SERVER['REQUEST_METHOD']  = 'POST';
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
@@ -260,12 +263,12 @@ class ServerRequestTest extends TestCase
         $this->SUT = new ServerRequest;
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI']    = '';
 
         $_POST     = [];
-        $this->SUT = null;
+        unset($this->SUT);
     }
 }

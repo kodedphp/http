@@ -1,13 +1,12 @@
 <?php
 
-namespace Koded\Tests\Http;
+namespace Tests\Koded\Tests\Http;
 
 use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 
 class HttpStatusTest extends TestCase
 {
-
     /**
      * @test
      */

@@ -1,6 +1,6 @@
 <?php
 
-namespace Koded\Tests\Http;
+namespace Tests\Koded\Http;
 
 use Koded\Http\MessageTrait;
 use Koded\Http\Stream;
@@ -9,11 +9,7 @@ use Psr\Http\Message\StreamInterface;
 
 class MessageTraitTest extends TestCase
 {
-
-    /**
-     * @var TestMessage
-     */
-    private $SUT;
+    private TestMessage $SUT;
 
     public function test_should_deal_with_unsupported_protocol()
     {
@@ -49,7 +45,7 @@ class MessageTraitTest extends TestCase
         $this->assertFalse(property_exists($this->SUT, 'fubar'));
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->SUT = new TestMessage;
     }

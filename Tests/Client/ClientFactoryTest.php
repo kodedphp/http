@@ -1,8 +1,11 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
 use InvalidArgumentException;
+use Koded\Http\Client\ClientFactory;
+use Koded\Http\Client\CurlClient;
+use Koded\Http\Client\PhpClient;
 use Koded\Http\Interfaces\Request;
 use PHPUnit\Framework\TestCase;
 
@@ -70,7 +73,7 @@ class ClientFactoryTest extends TestCase
 
     public function test_psr18_client_create()
     {
-        $client = (new ClientFactory)->psr18();
+        $client = (new ClientFactory)->client();
         $this->assertSame('HEAD', $client->getMethod());
         $this->assertEmpty((string)$client->getUri());
     }

@@ -1,12 +1,13 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\sKoded\Http;
 
+use Koded\Http\ClientRequest;
+use Koded\Http\Interfaces\HttpStatus;
 use PHPUnit\Framework\TestCase;
 
 class ClientRequestHeadersTest extends TestCase
 {
-
     const URI = 'https://example.org';
 
     public function test_should_set_the_associative_header_array()
@@ -22,14 +23,15 @@ class ClientRequestHeadersTest extends TestCase
         $this->assertSame(['Useless value'], $request->getHeader('other-creative-junk'));
     }
 
-    public function test_should_ignore_the_bloated_header_array()
+    public function test_should_throw_exception_for_invalid_header_array()
     {
-        $request = new ClientRequest('post', self::URI, null, [
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
+        $this->expectExceptionMessage('must be of type string, int given');
+
+        new ClientRequest('post', self::URI, null, [
             'Authorization: Bearer 1234567890',
             'X_CUSTOM_CRAP: Hello'
         ]);
-
-        $this->assertFalse($request->hasHeader('Authorization'));
-        $this->assertFalse($request->hasHeader('x-custom-crap'));
     }
 }

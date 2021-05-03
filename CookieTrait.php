@@ -14,19 +14,17 @@ namespace Koded\Http;
 
 trait CookieTrait
 {
-
-    protected $cookieParams = [];
+    protected array $cookieParams = [];
 
     public function getCookieParams(): array
     {
         return $this->cookieParams;
     }
 
-    public function withCookieParams(array $cookies): self
+    public function withCookieParams(array $cookies): static
     {
         $instance               = clone $this;
         $instance->cookieParams = $cookies;
-
         return $instance;
     }
 }

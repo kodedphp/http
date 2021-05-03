@@ -12,7 +12,7 @@
 
 namespace Koded\Http\Interfaces;
 
-use Koded\Stdlib\Interfaces\Data;
+use Koded\Stdlib\Data;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
 
@@ -124,6 +124,12 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
      * @return string The response mime type
      */
     public function getContentType(): string;
+
+    public function sendHeaders(): void;
+
+    public function sendBody(): string;
+
+    public function send(): string;
 }
 
 
@@ -219,10 +225,10 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface, 
      *                     - PHP_QUERY_RFC1738 (+)
      *                     - or "0" to send the body stream content as-is
      *
-     * @return HttpRequestClient
+     * @return static
      * @link https://php.net/manual/en/function.http-build-query.php
      */
-    public function withEncoding(int $type): HttpRequestClient;
+    public function withEncoding(int $type): static;
 }
 
 
@@ -295,11 +301,12 @@ interface ValidatableRequest
      * Validates the request body using a concrete validation instance.
      *
      * @param HttpInputValidator $validator
+     * @param Data|null          $input The input data
      *
      * @return Response|null Should return a NULL if validation has passed,
      * or a Response object with status code 400 and explanation what failed
      */
-    public function validate(HttpInputValidator $validator): ?Response;
+    public function validate(HttpInputValidator $validator, Data &$input = null): ?Response;
 }
 
 

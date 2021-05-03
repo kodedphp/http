@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 trait JsonSerializeTrait
 {
-
     /**
      * Serialize the request object as JSON representation.
      *
@@ -22,6 +21,6 @@ trait JsonSerializeTrait
      */
     public function jsonSerialize(): array
     {
-        return get_object_vars($this);
+        return \get_object_vars($this);
     }
 }

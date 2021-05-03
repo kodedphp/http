@@ -1,10 +1,8 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
-use Koded\Http\{Interfaces\HttpRequestClient, StatusCode, Uri};
-use ReflectionClass;
-use ReflectionException;
+use Koded\Http\{Client\CurlClient, Interfaces\HttpRequestClient, ServerResponse, StatusCode, Uri};
 use function Koded\Http\create_stream;
 
 /**
@@ -18,15 +16,14 @@ use function Koded\Http\create_stream;
  */
 trait ClientTestCaseTrait
 {
-    /** @var HttpRequestClient */
-    private $SUT;
+    private ?HttpRequestClient $SUT;
 
     public function test_read_on_success()
     {
         $response = $this->SUT->read();
 
         $this->assertSame(StatusCode::OK, $response->getStatusCode(), (string)$response->getBody());
-        $this->assertContains('text/html', $response->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('text/html', $response->getHeaderLine('Content-Type'));
         $this->assertGreaterThan(0, (string)$response->getBody()->getSize());
     }
 
@@ -47,27 +44,50 @@ trait ClientTestCaseTrait
         $badResponse = $SUT->read();
 
         $this->assertSame(StatusCode::BAD_REQUEST, $badResponse->getStatusCode(), get_class($SUT));
-        $this->assertContains('failed to open stream: you should not set the message body with safe HTTP methods',
+        $this->assertSame($badResponse->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertStringContainsString('failed to open stream: you should not set the message body with safe HTTP methods',
             (string)$badResponse->getBody());
     }
 
-    public function test_content_type_extraction()
+    public function test_when_curl_returns_error()
     {
-        $response = $this->SUT->read();
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function hasError($resource): bool
+            {
+                return true;
+            }
+        };
 
-        $this->assertSame('text/html; charset=UTF-8', $response->getHeaderLine('content-type'));
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(),
+            (string)$response->getBody());
     }
 
-    /**
-     * @return array
-     * @throws ReflectionException
-     */
-    private function getOptions(): array
+    public function test_when_creating_resource_fails()
     {
-        $proto   = new ReflectionClass($this->SUT);
-        $options = $proto->getProperty('options');
-        $options->setAccessible(true);
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource(): \CurlHandle|bool
+            {
+                return false;
+            }
+        };
 
-        return $options->getValue($this->SUT);
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode());
+        $this->assertStringContainsString('The HTTP client is not created therefore cannot read anything',
+            (string)$response->getBody());
+    }
+
+    protected function tearDown(): void
+    {
+        $this->SUT = null;
     }
 }

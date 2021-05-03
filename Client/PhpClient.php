@@ -14,7 +14,7 @@ namespace Koded\Http\Client;
 
 use Koded\Http\{ClientRequest, ServerResponse};
 use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
-use Throwable;
+use Psr\Http\Message\UriInterface;
 use function Koded\Http\create_stream;
 
 /**
@@ -25,7 +25,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     use EncodingTrait, Psr18ClientTrait;
 
     /** @var array Stream context options */
-    private $options = [
+    private array $options = [
         'protocol_version' => 1.1,
         'user_agent'       => self::USER_AGENT,
         'method'           => 'GET',
@@ -39,10 +39,14 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         ]
     ];
 
-    public function __construct(string $method, $uri, $body = null, array $headers = [])
+    public function __construct(
+        string $method,
+        string|UriInterface $uri,
+        string|iterable $body = null,
+        array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
-        $this->options['timeout'] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
+        $this->options['timeout'] = (\ini_get('default_socket_timeout') ?: 10.0) * 1.0;
     }
 
     public function read(): Response
@@ -50,27 +54,24 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         if ($resource = $this->assertSafeMethod()) {
             return $resource;
         }
-
         $this->prepareRequestBody();
         $this->prepareOptions();
-
         try {
-            if (false === $resource = $this->createResource(stream_context_create(['http' => $this->options]))) {
-                return new ServerResponse(error_get_last()['message'], HttpStatus::FAILED_DEPENDENCY);
+            $resource = $this->createResource(\stream_context_create(['http' => $this->options]));
+            if ($this->hasError($resource)) {
+                return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY);
             }
-
             $this->extractFromResponseHeaders($resource, $headers, $statusCode);
-
-            return new ServerResponse(
-                stream_get_contents($resource),
-                $statusCode,
-                $headers
-            );
-        } catch (Throwable $e) {
-            return new ServerResponse($e->getMessage(), HttpStatus::INTERNAL_SERVER_ERROR);
+            return new ServerResponse(\stream_get_contents($resource), $statusCode, $headers);
+        } catch (\ValueError $e) {
+            return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->getPhpError(
+                $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR,
+                $e->getMessage());
         } finally {
-            if (is_resource($resource)) {
-                fclose($resource);
+            if (\is_resource($resource)) {
+                \fclose($resource);
             }
         }
     }
@@ -78,60 +79,53 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     public function userAgent(string $value): HttpRequestClient
     {
         $this->options['user_agent'] = $value;
-
         return $this;
     }
 
     public function followLocation(bool $value): HttpRequestClient
     {
         $this->options['follow_location'] = (int)$value;
-
         return $this;
     }
 
     public function maxRedirects(int $value): HttpRequestClient
     {
         $this->options['max_redirects'] = $value;
-
         return $this;
     }
 
     public function timeout(float $value): HttpRequestClient
     {
         $this->options['timeout'] = $value * 1.0;
-
         return $this;
     }
 
     public function ignoreErrors(bool $value): HttpRequestClient
     {
         $this->options['ignore_errors'] = $value;
-
         return $this;
     }
 
     public function verifySslHost(bool $value): HttpRequestClient
     {
         $this->options['ssl']['allow_self_signed'] = $value;
-
         return $this;
     }
 
     public function verifySslPeer(bool $value): HttpRequestClient
     {
         $this->options['ssl']['verify_peer'] = $value;
-
         return $this;
     }
 
     /**
      * @param resource $context from stream_context_create()
      *
-     * @return bool|resource
+     * @return resource|bool
      */
     protected function createResource($context)
     {
-        return @fopen((string)$this->getUri(), 'r', false, $context);
+        return \fopen((string)$this->getUri(), 'rb', false, $context);
     }
 
     protected function prepareRequestBody(): void
@@ -139,17 +133,19 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         if (!$this->stream->getSize()) {
             return;
         }
-
         $this->stream->rewind();
-
         if (0 === $this->encoding) {
             $this->options['content'] = $this->stream->getContents();
-        } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
-            $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
-            $this->options['content'] = http_build_query($content, null, '&', $this->encoding);
+        } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
+            $this->normalizeHeader('Content-type', self::X_WWW_FORM_URLENCODED, true);
+            $this->options['content'] = \http_build_query($content, null, '&', $this->encoding);
         }
-
         $this->stream = create_stream($this->options['content']);
+    }
+
+    protected function hasError($resource): bool
+    {
+        return false === \is_resource($resource);
     }
 
     protected function prepareOptions(): void
@@ -169,22 +165,25 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     protected function extractFromResponseHeaders($response, &$headers, &$statusCode): void
     {
         try {
-            $_headers   = stream_get_meta_data($response)['wrapper_data'];
-            $statusCode = array_filter($_headers, function(string $header) {
-                return false !== stripos($header, 'HTTP/', 0);
+            $meta = \stream_get_meta_data($response)['wrapper_data'] ?? [];
+            /* HTTP status may not always be the first header in the response headers,
+             * for example, if the stream follows one or multiple redirects, the last
+             * status line is what is expected here.
+             */
+            $statusCode = \array_filter($meta, function(string $header) {
+                return \str_starts_with($header, 'HTTP/');
             });
-            $statusCode = array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
-            $statusCode = (int)(explode(' ', $statusCode)[1] ?? HttpStatus::OK);
-
-            foreach ($_headers as $header) {
-                [$k, $v] = explode(':', $header, 2) + [1 => null];
+            $statusCode = \array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
+            $statusCode = (int)(\explode(' ', $statusCode)[1] ?? HttpStatus::OK);
+            foreach ($meta as $header) {
+                [$k, $v] = \explode(':', $header, 2) + [1 => null];
                 if (null === $v) {
                     continue;
                 }
                 $headers[$k] = $v;
             }
         } finally {
-            unset($_headers, $header, $k, $v);
+            unset($meta, $header, $k, $v);
         }
     }
 }

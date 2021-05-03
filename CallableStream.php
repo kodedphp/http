@@ -12,28 +12,20 @@
 
 namespace Koded\Http;
 
-use Exception;
-use Generator;
 use Psr\Http\Message\StreamInterface;
-use ReflectionFunction;
-use RuntimeException;
 
 
 class CallableStream implements StreamInterface
 {
-    /** @var callable */
     private $callable;
-
-    /** @var int Current position of the pointer in the buffer */
-    private $position = 0;
-
-    /** @var bool If callable is Generator instance */
-    private $isGenerator = false;
+    private int $position = 0;
+    private bool $isGenerator;
 
     public function __construct(callable $callable)
     {
         $this->callable    = $callable;
-        $this->isGenerator = (new ReflectionFunction($this->callable))->isGenerator();
+        $this->isGenerator = (new \ReflectionFunction($this->callable))
+            ->isGenerator();
     }
 
     public function __destruct()
@@ -45,7 +37,7 @@ class CallableStream implements StreamInterface
     {
         try {
             return $this->getContents();
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException) {
             return '';
         }
     }
@@ -78,23 +70,22 @@ class CallableStream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        throw new RuntimeException('Cannot seek in CallableStream');
+        throw new \RuntimeException('Cannot seek in CallableStream');
     }
 
     public function rewind(): void
     {
-        throw new RuntimeException('Cannot rewind the CallableStream');
+        throw new \RuntimeException('Cannot rewind the CallableStream');
     }
 
     public function write($string): int
     {
-        throw new RuntimeException('Cannot write to CallableStream');
+        throw new \RuntimeException('Cannot write to CallableStream');
     }
 
     public function read($length): string
     {
         $content = '';
-
         if (null === $this->callable) {
             return $content;
         }
@@ -102,14 +93,13 @@ class CallableStream implements StreamInterface
         try {
             foreach ($this->reader($length) as $chunk) {
                 $content        .= $chunk;
-                $this->position += mb_strlen($chunk);
+                $this->position += \mb_strlen($chunk);
             }
-        } catch (Exception $e) {
-            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        } catch (\Exception $e) {
+            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e);
         } finally {
             $this->callable = null;
         }
-
         return $content;
     }
 
@@ -118,7 +108,7 @@ class CallableStream implements StreamInterface
         return $this->read(65536); // 64KB
     }
 
-    public function getMetadata($key = null)
+    public function getMetadata($key = null): ?array
     {
         return $key ? null : [];
     }
@@ -141,23 +131,24 @@ class CallableStream implements StreamInterface
     /**
      * @param int $length
      *
-     * @return Generator
-     * @throws RuntimeException
+     * @return \Generator
+     * @throws \RuntimeException
      */
-    private function reader(int $length): Generator
+    private function reader(int $length): \Generator
     {
         if ($this->isGenerator) {
             yield from ($this->callable)();
-        } elseif ($resource = fopen('php://temp', 'r+')) {
-            if (false === @fwrite($resource, ($this->callable)())) {
-                throw new RuntimeException('Cannot write to stream');
+        } elseif ($resource = \fopen('php://temp', 'r+')) {
+            try {
+                \fwrite($resource, ($this->callable)());
+            } catch (\Throwable $e) {
+                throw new \RuntimeException('Cannot write to stream', 0, $e);
             }
-
-            fseek($resource, 0);
-            while (false === feof($resource)) {
-                yield fread($resource, $length);
+            \fseek($resource, 0);
+            while (false === \feof($resource)) {
+                yield \fread($resource, $length);
             }
-            fclose($resource);
+            \fclose($resource);
         }
     }
 }

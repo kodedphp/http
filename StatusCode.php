@@ -12,7 +12,6 @@
 
 namespace Koded\Http;
 
-use Exception;
 use Koded\Http\Interfaces\HttpStatus;
 
 /**
@@ -90,10 +89,9 @@ class StatusCode implements HttpStatus
     {
         try {
             $withCode += [false];
-            $status = constant("self::$code");
-
+            $status = \constant("self::$code");
             return ($withCode[0] ? $status . ' ' : '') . self::CODE[$status];
-        } catch (Exception $e) {
+        } catch (\Throwable) {
             return null;
         }
     }

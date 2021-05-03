@@ -1,13 +1,20 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\CallableStream;
+use Koded\Http\FileStream;
+use Koded\Http\Stream;
 use PHPUnit\Framework\TestCase;
+use function Koded\Http\build_files_array;
+use function Koded\Http\create_stream;
+use function Koded\Http\normalize_files_array;
+use function Koded\Http\stream_copy;
+use function Koded\Http\stream_to_string;
 
 class FunctionsTest extends TestCase
 {
-
     public function test_create_stream_from_string()
     {
         $stream = create_stream('lorem ipsum');

@@ -5,7 +5,6 @@ namespace Koded\Http\Client;
 use Koded\Http\{ClientRequest, ServerRequest, StatusCode};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
-use Psr\Http\Message\{RequestInterface, ResponseInterface};
 
 /**
  * @group internet
@@ -19,42 +18,11 @@ class Psr18Test extends TestCase
      *
      * @throws ClientExceptionInterface
      */
-    public function test_with_server_request_instance($client)
-    {
-        $response = $client->sendRequest(new ServerRequest);
-
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-        $this->assertSame(StatusCode::OK, $response->getStatusCode());
-    }
-
-    /**
-     * @dataProvider clients
-     *
-     * @param ClientInterface $client
-     *
-     * @throws ClientExceptionInterface
-     */
-    public function test_with_client_request_instance($client)
-    {
-        $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
-
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-        $this->assertSame(StatusCode::OK, $response->getStatusCode());
-    }
-
-    /**
-     * @dataProvider clients
-     *
-     * @param ClientInterface $client
-     *
-     * @throws ClientExceptionInterface
-     */
-    public function test_exception_with_server_request_instance($client)
+    public function test_should_fail_with_server_request_instance($client)
     {
         $this->expectException(Psr18Exception::class);
         $this->expectExceptionCode(StatusCode::FAILED_DEPENDENCY);
 
-        $_SERVER['SERVER_NAME'] = '';
         $client->sendRequest(new ServerRequest);
     }
 
@@ -65,7 +33,20 @@ class Psr18Test extends TestCase
      *
      * @throws ClientExceptionInterface
      */
-    public function test_exception_with_client_request_instance($client)
+    public function test_should_pass_with_client_request_instance($client)
+    {
+        $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
+        $this->assertSame(StatusCode::OK, $response->getStatusCode());
+    }
+
+    /**
+     * @dataProvider clients
+     *
+     * @param ClientInterface $client
+     *
+     * @throws ClientExceptionInterface
+     */
+    public function test_exception_with_client_request_instance_and_empty_url($client)
     {
         $this->expectException(Psr18Exception::class);
         $this->expectExceptionCode(StatusCode::FAILED_DEPENDENCY);
@@ -82,37 +63,36 @@ class Psr18Test extends TestCase
      */
     public function test_exception_class_methods($client)
     {
-        try {
-            $client->sendRequest(new ClientRequest('GET', ''));
-        } catch (Psr18Exception $e) {
-            $request = $e->getRequest();
+        $request = new ClientRequest('GET', '');
 
-            $this->assertInstanceOf(RequestInterface::class, $request);
-            $this->assertGreaterThan(StatusCode::OK, $e->getCode());
+        try {
+            $client->sendRequest($request);
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(Psr18Exception::class, $e);;
+            $this->assertSame($request, $e->getRequest());
         }
     }
-
 
     public function clients()
     {
         return [
             [
                 (new ClientFactory(ClientFactory::PHP))
-                    ->psr18()
+                    ->client()
                     ->timeout(3)
-                    ->maxRedirects(1)
+                    ->maxRedirects(2)
             ],
             [
                 (new ClientFactory(ClientFactory::CURL))
-                    ->psr18()
+                    ->client()
                     ->timeout(3)
-                    ->maxRedirects(1)
+                    ->maxRedirects(2)
             ]
         ];
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
+        $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'] = '';
     }
 }

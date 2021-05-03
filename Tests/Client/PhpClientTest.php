@@ -1,19 +1,19 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
-use Exception;
+use Koded\Http\Client\ClientFactory;
 use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
+use Tests\Koded\Http\AssertionTestSupportTrait;
 
 class PhpClientTest extends TestCase
 {
-    use ClientTestCaseTrait;
+    use ClientTestCaseTrait, AssertionTestSupportTrait;
 
     public function test_php_factory()
     {
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertArrayNotHasKey('header', $options, 'Headers are not set up until read()');
         $this->assertArrayHasKey('protocol_version', $options);
@@ -32,11 +32,11 @@ class PhpClientTest extends TestCase
         $this->assertTrue($options['ignore_errors']);
         $this->assertFalse($options['ssl']['allow_self_signed']);
         $this->assertTrue($options['ssl']['verify_peer']);
+        $this->assertSame(3.0, $options['timeout']);
         $this->assertSame('', (string)$this->SUT->getBody(), 'The body is empty');
-        $this->assertSame(2.0, $options['timeout']);
     }
 
-    public function test_methods()
+    public function test_setting_the_client_with_methods()
     {
         $this->SUT
             ->ignoreErrors(true)
@@ -47,7 +47,7 @@ class PhpClientTest extends TestCase
             ->verifySslPeer(false)
             ->verifySslHost(true);
 
-        $options = $this->getOptions();
+        $options = $this->getObjectProperty($this->SUT, 'options');
 
         $this->assertSame('foo', $options['user_agent']);
         $this->assertSame(5.0, $options['timeout']);
@@ -58,46 +58,10 @@ class PhpClientTest extends TestCase
         $this->assertSame(false, $options['ssl']['verify_peer']);
     }
 
-    /**
-     * @group internet
-     */
-    public function test_internal_server_exception()
-    {
-        $SUT = new class('get', 'http://example.com') extends PhpClient
-        {
-            protected function createResource($context): bool
-            {
-                throw new Exception;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
-    }
-
-    /**
-     * @group internet
-     */
-    public function test_when_creating_stream_fails()
-    {
-        $SUT = new class('get', 'http://example.com') extends PhpClient
-        {
-            protected function createResource($context): bool
-            {
-                return false;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(), (string)$response->getBody());
-    }
-
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->SUT = (new ClientFactory(ClientFactory::PHP))
             ->get('http://example.com')
-            ->timeout(2);
+            ->timeout(3);
     }
 }

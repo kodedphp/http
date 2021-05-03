@@ -1,17 +1,21 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\ServerResponse;
+use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
 class ServerResponseTest extends TestCase
 {
+    use AssertionTestSupportTrait;
+
     /**
-     * @var bool COntrol the testing headers_sent()
+     * @var bool Control the testing headers_sent()
      */
-    public static $HEADERS_SENT = false;
+    public static bool $HEADERS_SENT = false;
 
     public function test_constructor_and_default_state()
     {
@@ -93,8 +97,9 @@ class ServerResponseTest extends TestCase
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
         $this->assertFalse($response->hasHeader('Content-Type'));
-        $this->assertSame(0, $response->getBody()->getSize());
         $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
+        $this->assertSame(null, $response->getBody()->getSize(),
+            'After the body is sent, the stream object is destroyed');
     }
 
     public function test_send_with_head_http_method()
@@ -117,12 +122,13 @@ class ServerResponseTest extends TestCase
 
         $response->send();
 
+        $headers = $this->getObjectProperty($response, 'headers');
         $this->assertArrayNotHasKey('Content-Length', $response->getHeaders());
-        $this->assertAttributeNotContains('content-length', 'headers', $response);
+        $this->assertNotContains('content-length', $headers);
         $this->assertFalse($response->hasHeader('content-length'));
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         self::$HEADERS_SENT = false;
     }

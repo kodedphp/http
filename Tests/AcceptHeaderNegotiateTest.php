@@ -1,8 +1,10 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\AcceptHeaderNegotiator;
+use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 
 class AcceptHeaderNegotiateTest extends TestCase
@@ -16,7 +18,6 @@ class AcceptHeaderNegotiateTest extends TestCase
     {
         $supported = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5';
         $match     = (new AcceptHeaderNegotiator($supported))->match($accept);
-
         $this->assertSame($expects, $match->value(), 'Expects mimetype ' . $expects);
         $this->assertSame($expects, (string)$match);
         $this->assertSame($quality, $match->quality(), 'Expects q=' . $quality);
@@ -45,7 +46,8 @@ class AcceptHeaderNegotiateTest extends TestCase
         $this->assertSame('', $match->value(),
             'Expects EMPTY value, because the Accept header did not match anything');
 
-        $this->assertSame(0.0, $match->quality(), 'Expects q=0, because the Accept header did not match anything');
+        $this->assertSame(0.0, $match->quality(),
+            'Expects q=0, because the Accept header did not match anything');
     }
 
     public function test_spec_wrong_asterisks_for_mediatype_and_q()
@@ -78,25 +80,28 @@ class AcceptHeaderNegotiateTest extends TestCase
         (new AcceptHeaderNegotiator('&^%$'))->match('*');
     }
 
-    public function test_useful_media_type_with_weird_types()
+    public function test_normal_media_type_with_weird_type()
     {
         $accept = new AcceptHeaderNegotiator('application/json;q=0.4, */*;q=0.7');
         $match  = $accept->match('application/vnd.api-v1+json');
         $this->assertSame('application/json', $match->value(), 'Normal media type is expected');
         $this->assertSame(0.4, $match->quality());
+        $this->assertTrue($match->is('json'));
     }
 
-    public function test_weird_media_type_with_useful_type()
+    public function test_weird_media_type_with_normal_type()
     {
         $accept = new AcceptHeaderNegotiator('application/vnd.api-v1+json');
 
         $match = $accept->match('application/json');
         $this->assertSame('application/json', $match->value(), 'Normal media type is expected');
         $this->assertSame(1.0, $match->quality());
+        $this->assertTrue($match->is('json'));
 
         $match = $accept->match('application/*');
         $this->assertSame('application/json', $match->value(), 'Normal media type is expected');
         $this->assertSame(1.0, $match->quality());
+        $this->assertTrue($match->is('json'));
     }
 
     public function test_weird_media_types_with_weird_type()
@@ -105,6 +110,7 @@ class AcceptHeaderNegotiateTest extends TestCase
         $match  = $accept->match('application/vnd.api-v1+json');
         $this->assertSame('application/json', $match->value(), 'Normal media type is expected');
         $this->assertSame(0.4, $match->quality());
+        $this->assertTrue($match->is('json'));
     }
 
     public function test_obscure_media_types_when_both_are_different()
@@ -113,6 +119,7 @@ class AcceptHeaderNegotiateTest extends TestCase
         $match  = $accept->match('application/xhtml+xml');
         $this->assertSame('', $match->value(), 'No match');
         $this->assertSame(0.0, $match->quality());
+        $this->assertTrue($match->is(''));
     }
 
     public function test_denied_supported_header()
@@ -121,6 +128,7 @@ class AcceptHeaderNegotiateTest extends TestCase
         $match  = $accept->match('text/html');
         $this->assertSame('', $match->value());
         $this->assertSame(0.0, $match->quality());
+        $this->assertTrue($match->is(''));
     }
 
     public function test_denied_accept_header()
@@ -129,6 +137,7 @@ class AcceptHeaderNegotiateTest extends TestCase
         $match  = $accept->match('text/html;q=0');
         $this->assertSame('', $match->value());
         $this->assertSame(0.0, $match->quality());
+        $this->assertTrue($match->is(''));
     }
 
     /**
@@ -150,9 +159,19 @@ class AcceptHeaderNegotiateTest extends TestCase
     {
         $supports = 'text/*, text/plain, text/plain;format=flowed, */*;q=0.3';
         $header   = (new AcceptHeaderNegotiator($supports))->match($accept);
-
         $this->assertSame($expected, $header->value());
         $this->assertSame($precedence, $header->weight());
+    }
+
+    /**
+     * @dataProvider dataBrowserAccepts
+     */
+    public function test_default_browser_accept_headers($accept, $expected, $weight, $q)
+    {
+        $header = (new AcceptHeaderNegotiator('*/*'))->match($accept);
+        $this->assertSame($expected, $header->value());
+        $this->assertSame($weight, $header->weight());
+        $this->assertSame($q, $header->quality());
     }
 
     // 'text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5'
@@ -185,8 +204,30 @@ class AcceptHeaderNegotiateTest extends TestCase
         return [
             ['text/plain;format=flowed', 'text/plain', 103.0],
             ['text/plain', 'text/plain', 102.0],
-            ['text/xml', 'text/xml', 102.0],
+            ['text/xml', 'text/xml', 2.0],
             ['any/thing', 'any/thing', 0.3],
+        ];
+    }
+
+    public function dataBrowserAccepts()
+    {
+        return [
+            // Firefox
+            [
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'text/html', 1.0, 1.0
+            ],
+
+            // Chromium
+            [
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'text/html', 1.0, 1.0
+            ],
+
+            // Misc.
+            ['application/json, application/xml', 'application/json', 1.0, 1.0],
+            ['application/xml, application/json', 'application/xml', 1.0, 1.0],
+            ['*/*', '*', 0.0, 1.0],
         ];
     }
 }

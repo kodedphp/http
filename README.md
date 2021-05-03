@@ -6,7 +6,7 @@ Koded - HTTP Library
 [![Code Coverage](https://scrutinizer-ci.com/g/kodedphp/http/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/kodedphp/http/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/koded/http.svg)](https://packagist.org/packages/koded/http)
-[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%207.2-8892BF.svg)](https://php.net/)
+[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-8892BF.svg)](https://php.net/)
 [![Software license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 
@@ -121,7 +121,7 @@ Implementation of [PSR-18][3] (HTTP Client).
 use Koded\Http\Client\ClientFactory;
 use Koded\Http\ClientRequest;
 
-$request = new ClientRequest('POST', 'https://', ['foo' => 'bar']);
+$request = new ClientRequest('POST', 'https://...', ['foo' => 'bar']);
 $response = (new ClientFactory)->sendRequest($request);
 ```
 
@@ -175,7 +175,6 @@ class FormValidator implements HttpInputValidator {
         if (empty($input->get('username'))) {
             return ['message' => 'Username is required'];
         }
-
        return []; 
     }
 }
@@ -183,12 +182,12 @@ class FormValidator implements HttpInputValidator {
 // Somewhere in your app, use the `Request` object to run validation
 
 if ($response = $request->validate(new FormValidator)) {
-    // {"message":"Username is required","code":400}
+    // {"message":"Username is required","status":400}
     return $response;
 }
 ```
 
-The error response will always have a status code set (`code` value) in the error message.  
+The error response will always have a status code set (`status` value) in the error message.  
 If the status code is not provided in the validation, the default is `400 Bad Request`.
 
 

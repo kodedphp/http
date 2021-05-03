@@ -1,29 +1,32 @@
 <?php
 
-namespace Koded\Http;
+namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\UploadedFile;
+use Koded\Http\UploadedFileException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
 class UploadedFileTest extends TestCase
 {
+    use AssertionTestSupportTrait;
 
-    /** @var UploadedFile */
-    private $SUT;
-
-    private $file = '/tmp/y4k9a7fm';
+    private UploadedFile $SUT;
+    private string $file = '/tmp/y4k9a7fm';
 
     public function test_constructor()
     {
+        $properties = $this->getObjectProperties($this->SUT, ['file', 'moved']);
+
         $this->assertSame('text/plain', $this->SUT->getClientMediaType());
         $this->assertSame('filename.txt', $this->SUT->getClientFilename());
         $this->assertSame(5, $this->SUT->getSize());
         $this->assertSame(UPLOAD_ERR_OK, $this->SUT->getError());
         $this->assertSame('w+b', $this->SUT->getStream()->getMetadata('mode'));
 
-        $this->assertAttributeSame($this->file, 'file', $this->SUT);
-        $this->assertAttributeSame(false, 'moved', $this->SUT);
+        $this->assertSame($this->file, $properties['file']);
+        $this->assertSame(false, $properties['moved']);
     }
 
     /**
@@ -31,6 +34,7 @@ class UploadedFileTest extends TestCase
      */
     public function test_stream_should_pass_when_file_is_null($resource)
     {
+        $this->markTestSkipped('Check the PSR...');
         $this->expectException(InvalidArgumentException::class);
 
         $SUT = $this->prepareFile($resource);
@@ -83,7 +87,7 @@ class UploadedFileTest extends TestCase
         $SUT->moveTo('/tmp/test-moved-to/test-copy.txt');
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         touch($this->file);
         file_put_contents($this->file, 'hello');
@@ -92,7 +96,7 @@ class UploadedFileTest extends TestCase
         $this->SUT = new UploadedFile($files['test']);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unlink($this->file);
         @unlink('/tmp/test-moved-to/filename.txt');
