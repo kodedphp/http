@@ -26,7 +26,7 @@ install:
   - wget https://scrutinizer-ci.com/ocular.phar
 
 script:
-  - vendor/bin/phpunit --exclude-group internet --coverage-clover build/clover.xml
+  - vendor/bin/phpunit --exclude-group internet --coverage-clover=build/clover.xml
 
 after_success:
   - php ocular.phar code-coverage:upload --format=php-clover build/clover.xml
