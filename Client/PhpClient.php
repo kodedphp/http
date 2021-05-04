@@ -63,7 +63,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             }
             return new ServerResponse(
                 \stream_get_contents($resource),
-                ...$this->extractHeadersFromResource($resource));
+                ...$this->extractStatusAndHeaders($resource));
         } catch (\ValueError $e) {
             return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
         } catch (\Throwable $e) {
@@ -160,7 +160,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
      * @param resource $resource The resource from fopen()
      * @return array Status code and headers
      */
-    protected function extractHeadersFromResource($resource): array
+    protected function extractStatusAndHeaders($resource): array
     {
         try {
             $headers = [];
