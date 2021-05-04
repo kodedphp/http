@@ -90,7 +90,7 @@ class UploadedFile implements UploadedFileInterface
     public function getClientMediaType(): ?string
     {
         try {
-            return (new \finfo(\FILEINFO_MIME_TYPE))->file($this->file);
+            return @(new \finfo(\FILEINFO_MIME_TYPE))->file($this->file);
         } catch (\Throwable) {
             return $this->type;
         }
