@@ -203,9 +203,9 @@ trait HeaderTrait
      *
      * @return array
      */
-    protected function normalizeHeaderValue(string $name, string|array $value): array
+    protected function normalizeHeaderValue(string $name, $value): array
     {
-        if (\is_string($value)) {
+        if (false === \is_array($value)) {
             $value = (array)$value;
         }
         try {
