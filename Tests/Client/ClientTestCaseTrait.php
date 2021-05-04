@@ -86,6 +86,22 @@ trait ClientTestCaseTrait
             (string)$response->getBody());
     }
 
+    public function test_on_exception()
+    {
+        $SUT = new class('get', 'http://example.com') extends CurlClient
+        {
+            protected function createResource(): \CurlHandle|bool
+            {
+                throw new \Exception('Exception message');
+            }
+        };
+        $response = $SUT->read();
+
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertStringContainsString('Exception message', (string)$response->getBody());
+    }
+
     protected function tearDown(): void
     {
         $this->SUT = null;
