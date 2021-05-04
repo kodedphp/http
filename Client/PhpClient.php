@@ -61,14 +61,12 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             if ($this->hasError($resource)) {
                 return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY);
             }
-            $this->extractFromResponseHeaders($resource, $headers, $statusCode);
+            $this->extractFromResponseHeaders($resource, $statusCode, $headers);
             return new ServerResponse(\stream_get_contents($resource), $statusCode, $headers);
         } catch (\ValueError $e) {
             return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
         } catch (\Throwable $e) {
-            return $this->getPhpError(
-                $e->getCode() ?: HttpStatus::INTERNAL_SERVER_ERROR,
-                $e->getMessage());
+            return $this->getPhpError(HttpStatus::INTERNAL_SERVER_ERROR, $e->getMessage());
         } finally {
             if (\is_resource($resource)) {
                 \fclose($resource);
@@ -137,7 +135,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         if (0 === $this->encoding) {
             $this->options['content'] = $this->stream->getContents();
         } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
-            $this->normalizeHeader('Content-type', self::X_WWW_FORM_URLENCODED, true);
+            $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
             $this->options['content'] = \http_build_query($content, null, '&', $this->encoding);
         }
         $this->stream = create_stream($this->options['content']);
@@ -159,10 +157,10 @@ class PhpClient extends ClientRequest implements HttpRequestClient
      * Extracts the headers and status code from the response.
      *
      * @param resource $response   The resource from fopen()
-     * @param array    $headers    Parsed response headers
      * @param int      $statusCode Response status code
+     * @param array    $headers    Parsed response headers
      */
-    protected function extractFromResponseHeaders($response, &$headers, &$statusCode): void
+    protected function extractFromResponseHeaders($response, &$statusCode, &$headers): void
     {
         try {
             $meta = \stream_get_meta_data($response)['wrapper_data'] ?? [];
@@ -170,9 +168,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
              * for example, if the stream follows one or multiple redirects, the last
              * status line is what is expected here.
              */
-            $statusCode = \array_filter($meta, function(string $header) {
-                return \str_starts_with($header, 'HTTP/');
-            });
+            $statusCode = \array_filter($meta, fn(string $header) => \str_starts_with($header, 'HTTP/'));
             $statusCode = \array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
             $statusCode = (int)(\explode(' ', $statusCode)[1] ?? HttpStatus::OK);
             foreach ($meta as $header) {

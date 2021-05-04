@@ -70,8 +70,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
                 \curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
                 $this->responseHeaders);
         } catch (\TypeError $e) {
-            return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY,
-                $e->getMessage());
+            return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
         } catch (\Throwable $e) {
             return $this->getPhpError(HttpStatus::INTERNAL_SERVER_ERROR, $e->getMessage());
         } finally {
@@ -158,7 +157,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         if (0 === $this->encoding) {
             $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
         } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
-            $this->normalizeHeader('Content-type', self::X_WWW_FORM_URLENCODED, true);
+            $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
             $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, null, '&', $this->encoding);
         }
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
@@ -173,7 +172,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'instance' => \curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
-        ]), $status, ['Content-type' => 'application/problem+json']);
+        ]), $status, ['Content-Type' => 'application/problem+json']);
     }
 
     /**

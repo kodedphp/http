@@ -189,6 +189,6 @@ class ClientRequest implements RequestInterface, \JsonSerializable
             'instance' => (string)$this->getUri(),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
-        ]), $status, ['Content-type' => 'application/problem+json']);
+        ]), $status, ['Content-Type' => 'application/problem+json']);
     }
 }
