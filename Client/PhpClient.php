@@ -61,8 +61,9 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             if ($this->hasError($resource)) {
                 return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY);
             }
-            $this->extractFromResponseHeaders($resource, $statusCode, $headers);
-            return new ServerResponse(\stream_get_contents($resource), $statusCode, $headers);
+            return new ServerResponse(
+                \stream_get_contents($resource),
+                ...$this->extractHeadersFromResource($resource));
         } catch (\ValueError $e) {
             return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
         } catch (\Throwable $e) {
@@ -156,21 +157,21 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     /**
      * Extracts the headers and status code from the response.
      *
-     * @param resource $response   The resource from fopen()
-     * @param int      $statusCode Response status code
-     * @param array    $headers    Parsed response headers
+     * @param resource $resource The resource from fopen()
+     * @return array Status code and headers
      */
-    protected function extractFromResponseHeaders($response, &$statusCode, &$headers): void
+    protected function extractHeadersFromResource($resource): array
     {
         try {
-            $meta = \stream_get_meta_data($response)['wrapper_data'] ?? [];
+            $headers = [];
+            $meta = \stream_get_meta_data($resource)['wrapper_data'] ?? [];
             /* HTTP status may not always be the first header in the response headers,
              * for example, if the stream follows one or multiple redirects, the last
              * status line is what is expected here.
              */
-            $statusCode = \array_filter($meta, fn(string $header) => \str_starts_with($header, 'HTTP/'));
-            $statusCode = \array_pop($statusCode) ?: 'HTTP/1.1 200 OK';
-            $statusCode = (int)(\explode(' ', $statusCode)[1] ?? HttpStatus::OK);
+            $status = \array_filter($meta, fn(string $header) => \str_starts_with($header, 'HTTP/'));
+            $status = \array_pop($status) ?: 'HTTP/1.1 200 OK';
+            $status = (int)(\explode(' ', $status)[1] ?? HttpStatus::OK);
             foreach ($meta as $header) {
                 [$k, $v] = \explode(':', $header, 2) + [1 => null];
                 if (null === $v) {
@@ -178,6 +179,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
                 }
                 $headers[$k] = $v;
             }
+            return [$status, $headers];
         } finally {
             unset($meta, $header, $k, $v);
         }
