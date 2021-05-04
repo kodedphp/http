@@ -40,12 +40,20 @@ class HeaderTraitTest extends TestCase
         $this->assertSame('baz', $response->getHeaderLine('bar'));
     }
 
-    public function test_set_header_line_with_invalid_value()
+    public function test_set_header_line_with_invalid_array_values()
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
         $this->expectExceptionMessage('expects a string or array of strings');
-        $this->SUT->withHeader('foo', [1]);
+        $this->SUT->withHeader('foo', ['bar', 1]);
+    }
+
+     public function test_set_header_line_with_invalid_scalar_value()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
+        $this->expectExceptionMessage('expects a string or array of strings');
+        $this->SUT->withHeader('foo', 0);
     }
 
     public function test_add_header_value()

@@ -8,11 +8,10 @@ use PHPUnit\Framework\TestCase;
 class AcceptLanguageHeaderTest extends TestCase
 {
     /**
-     * @dataProvider dataForAsteriskSupport
+     * @dataProvider dataForSupportedLanguagesWithAsterisk
      */
     public function test_match_with_asterisk($accept, $expect, $quality)
     {
-        $this->markTestSkipped('WIP...');
         $negotiator = (new AcceptHeaderNegotiator('*'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);
@@ -24,7 +23,6 @@ class AcceptLanguageHeaderTest extends TestCase
      */
     public function test_with_preferred_languages($accept, $expect, $quality)
     {
-        $this->markTestIncomplete('WIP...');
         $negotiator = (new AcceptHeaderNegotiator('de,fr,en'))->match($accept);
 
         $this->assertSame($expect, $negotiator->value(), 'Expects ' . $expect);
@@ -37,7 +35,7 @@ class AcceptLanguageHeaderTest extends TestCase
         $this->assertEquals('', $match->value(), 'Empty headers returns empty matched value');
     }
 
-    public function dataForAsteriskSupport()
+    public function dataForSupportedLanguagesWithAsterisk()
     {
         return [
             ['*;q=0.5, fr;q=0.9, en;q=0.8, de;q=0.7', 'fr', 0.9],
@@ -50,7 +48,7 @@ class AcceptLanguageHeaderTest extends TestCase
     {
         return [
             ['fr;q=0.7, en;q=0.8, de;q=0.9, *;q=0.5', 'de', 0.9],
-            ['en-US,en;q=0.5', 'en-US', 1.0],
+            ['en-US,en;q=0.5', 'en', 0.5],
             ['*', 'de', 1.0]
         ];
     }
