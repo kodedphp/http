@@ -23,10 +23,10 @@ before_script:
 
 install:
   - composer update -o --prefer-source --no-interaction
+  - wget https://scrutinizer-ci.com/ocular.phar
 
 script:
   - vendor/bin/phpunit --exclude-group internet --coverage-clover build/clover.xml
 
-after_script:
-  - wget https://scrutinizer-ci.com/ocular.phar
+after_success:
   - php ocular.phar code-coverage:upload --format=php-clover build/clover.xml
