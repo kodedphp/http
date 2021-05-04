@@ -3,7 +3,10 @@
 namespace Tests\Koded\Http\Client;
 
 use Koded\Http\Client\ClientFactory;
+use Koded\Http\Client\PhpClient;
 use Koded\Http\Interfaces\HttpRequestClient;
+use Koded\Http\ServerResponse;
+use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 use Tests\Koded\Http\AssertionTestSupportTrait;
 
@@ -56,6 +59,57 @@ class PhpClientTest extends TestCase
         $this->assertSame(true, $options['ignore_errors']);
         $this->assertSame(true, $options['ssl']['allow_self_signed']);
         $this->assertSame(false, $options['ssl']['verify_peer']);
+    }
+
+    public function test_when_curl_returns_error()
+    {
+        $SUT = new class('get', 'http://example.com') extends PhpClient
+        {
+            protected function hasError($resource): bool
+            {
+                return true;
+            }
+        };
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(),
+            (string)$response->getBody());
+    }
+
+    public function test_when_creating_resource_fails()
+    {
+        $SUT = new class('get', 'http://example.com') extends PhpClient
+        {
+            protected function createResource($resource)
+            {
+                return false;
+            }
+        };
+        $response = $SUT->read();
+
+        $this->assertInstanceOf(ServerResponse::class, $response);
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode());
+        $this->assertStringContainsString('The HTTP client is not created therefore cannot read anything',
+            (string)$response->getBody());
+    }
+
+    public function test_on_exception()
+    {
+        $SUT = new class('get', 'http://example.com') extends PhpClient
+        {
+            protected function createResource($resource)
+            {
+                throw new \Exception('Exception message');
+            }
+        };
+        $response = $SUT->read();
+
+        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
+        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertStringContainsString('Exception message', (string)$response->getBody());
     }
 
     protected function setUp(): void

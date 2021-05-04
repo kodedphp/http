@@ -49,59 +49,6 @@ trait ClientTestCaseTrait
             (string)$badResponse->getBody());
     }
 
-    public function test_when_curl_returns_error()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function hasError($resource): bool
-            {
-                return true;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(),
-            (string)$response->getBody());
-    }
-
-    public function test_when_creating_resource_fails()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function createResource(): \CurlHandle|bool
-            {
-                return false;
-            }
-        };
-
-        $response = $SUT->read();
-
-        $this->assertInstanceOf(ServerResponse::class, $response);
-        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode());
-        $this->assertStringContainsString('The HTTP client is not created therefore cannot read anything',
-            (string)$response->getBody());
-    }
-
-    public function test_on_exception()
-    {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
-        {
-            protected function createResource(): \CurlHandle|bool
-            {
-                throw new \Exception('Exception message');
-            }
-        };
-        $response = $SUT->read();
-
-        $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
-        $this->assertStringContainsString('Exception message', (string)$response->getBody());
-    }
-
     protected function tearDown(): void
     {
         $this->SUT = null;
