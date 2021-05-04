@@ -127,7 +127,7 @@ class FilesTraitTest extends TestCase
         $normalized = normalize_files_array(include __DIR__ . '/fixtures/very-complicated-files-array.php');
 
         $normalized['test'][0]['a']['b']['c'] = new UploadedFile([
-            'tmp_name' => 'very-complicated-files-array.php',
+            'tmp_name' => __DIR__ . '/fixtures/very-complicated-files-array.php',
         ]);
 
         $this->assertInstanceOf(UploadedFile::class, build_files_array($normalized)['test'][0]['a']['b']['c']);
@@ -140,5 +140,4 @@ class FilesTraitTest extends TestCase
 
         new UploadedFile([]);
     }
-
 }
