@@ -185,7 +185,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
     {
         return new ServerResponse(json_serialize([
             'title'    => StatusCode::CODE[$status],
-            'detail'   => $message ?? \error_get_last()['message'],
+            'detail'   => $message ?? \error_get_last()['message'] ?? StatusCode::CODE[$status],
             'instance' => (string)$this->getUri(),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
