@@ -59,7 +59,8 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         try {
             $resource = $this->createResource(\stream_context_create(['http' => $this->options]));
             if ($this->hasError($resource)) {
-                return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY);
+                return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY,
+                    'The HTTP client is not created therefore cannot read anything');
             }
             return new ServerResponse(
                 \stream_get_contents($resource),
@@ -118,13 +119,16 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     }
 
     /**
+     * NOTE: if Content-Type is not provided
+     * fopen() will assume application/x-www-form-urlencoded
+     *
      * @param resource $context from stream_context_create()
      *
      * @return resource|bool
      */
     protected function createResource($context)
     {
-        return \fopen((string)$this->getUri(), 'rb', false, $context);
+        return @\fopen((string)$this->getUri(), 'rb', false, $context);
     }
 
     protected function prepareRequestBody(): void
