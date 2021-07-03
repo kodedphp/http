@@ -16,11 +16,10 @@ use Koded\Exceptions\KodedException;
 use Psr\Http\Message\{StreamInterface, UploadedFileInterface};
 use function Koded\Stdlib\randomstring;
 
-
 class UploadedFile implements UploadedFileInterface
 {
-    private ?string $file;
-    private ?string $name;
+    private mixed $file;
+    private mixed $name;
     private ?string $type;
     private ?int $size;
     private int  $error;
@@ -28,23 +27,12 @@ class UploadedFile implements UploadedFileInterface
 
     public function __construct(array $uploadedFile)
     {
-        $this->size  = $uploadedFile['size'] ?? null;
         $this->file  = $uploadedFile['tmp_name'] ?? null;
         $this->name  = $uploadedFile['name'] ?? randomstring(9);
-        $this->error = (int)($uploadedFile['error'] ?? \UPLOAD_ERR_OK);
-
-        // Create a file out of the stream
-        if ($this->file instanceof StreamInterface) {
-            $file = \sys_get_temp_dir() . '/' . $this->name;
-            \file_put_contents($file, $this->file->getContents());
-            $this->file = $file;
-        } elseif (false === \is_string($this->file)) {
-            throw UploadedFileException::fileNotSupported();
-        } elseif (0 === \strlen($this->file)) {
-            throw UploadedFileException::filenameCannotBeEmpty();
-        }
-        // Never trust the provided mime type
+        $this->size  = $uploadedFile['size'] ?? null;
+        $this->prepareFile();
         $this->type = $this->getClientMediaType();
+        $this->error = (int)($uploadedFile['error'] ?? \UPLOAD_ERR_OK);
     }
 
     public function getStream(): StreamInterface
@@ -115,6 +103,24 @@ class UploadedFile implements UploadedFileInterface
             @\mkdir($dirname, 0777, true);
         }
     }
+
+    private function prepareFile(): void
+    {
+        if ($this->file instanceof StreamInterface) {
+            // Create a temporary file out of the stream object
+            $this->size = $this->file->getSize();
+            $file = \sys_get_temp_dir() . '/' . $this->name;
+            \file_put_contents($file, $this->file->getContents());
+            $this->file = $file;
+            return;
+        }
+        if (false === \is_string($this->file)) {
+            throw UploadedFileException::fileNotSupported($this->file);
+        }
+        if (0 === \mb_strlen($this->file)) {
+            throw UploadedFileException::filenameCannotBeEmpty();
+        }
+    }
 }
 
 
@@ -145,9 +151,11 @@ class UploadedFileException extends KodedException
         return new \RuntimeException('File is not available, because it was previously moved');
     }
 
-    public static function fileNotSupported(): \InvalidArgumentException
+    public static function fileNotSupported(mixed $file): \InvalidArgumentException
     {
-        return new \InvalidArgumentException('The uploaded file is not supported');
+        return new \InvalidArgumentException(sprintf(
+            'The uploaded file is not supported, expected string, %s given', \get_debug_type($file)
+        ));
     }
 
     public static function filenameCannotBeEmpty(): \InvalidArgumentException
