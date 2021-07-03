@@ -26,7 +26,7 @@ trait MessageTrait
 
     public function withProtocolVersion($version): static
     {
-        if (false === \in_array($version, ['1.0', '1.1'], true)) {
+        if (false === \in_array($version, ['1.0', '1.1', '2'], true)) {
             throw new \InvalidArgumentException('Unsupported HTTP protocol version ' . $version);
         }
         $instance                  = clone $this;
