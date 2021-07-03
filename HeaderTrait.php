@@ -205,9 +205,7 @@ trait HeaderTrait
      */
     protected function normalizeHeaderValue(string $name, mixed $value): array
     {
-//        if (false === \is_array($value)) {
-            $value = (array)$value;
-//        }
+        $value = (array)$value;
         try {
             if (empty($value = \array_map(fn($v): string => \trim(\preg_replace('/\s+/', ' ', $v)), $value))) {
                 throw new \InvalidArgumentException(
