@@ -93,7 +93,7 @@ trait HeaderTrait
         if (isset($instance->headersMap[$header = \strtolower($name)])) {
             $header                     = $instance->headersMap[$header];
             $instance->headers[$header] = \array_unique(
-                \array_merge_recursive($instance->headers[$header], $value)
+                @\array_merge_recursive($instance->headers[$header], $value)
             );
         } else {
             $instance->headersMap[$header] = $name;
@@ -203,15 +203,13 @@ trait HeaderTrait
      *
      * @return array
      */
-    protected function normalizeHeaderValue(string $name, $value): array
+    protected function normalizeHeaderValue(string $name, mixed $value): array
     {
-        if (false === \is_array($value)) {
+//        if (false === \is_array($value)) {
             $value = (array)$value;
-        }
+//        }
         try {
-            if (empty($value = \array_map(function($v): string {
-                return \trim(\preg_replace('/\s+/', ' ', $v));
-            }, $value))) {
+            if (empty($value = \array_map(fn($v): string => \trim(\preg_replace('/\s+/', ' ', $v)), $value))) {
                 throw new \InvalidArgumentException(
                     \sprintf('The value for header "%s" cannot be empty', $name),
                     HttpStatus::BAD_REQUEST);

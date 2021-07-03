@@ -32,9 +32,8 @@ class UploadedFileTest extends TestCase
     /**
      * @dataProvider invalidTmpName
      */
-    public function test_stream_should_pass_when_file_is_null($resource)
+    public function test_should_fail_when_tmp_name_is_invalid($resource)
     {
-        $this->markTestSkipped('Check the PSR...');
         $this->expectException(InvalidArgumentException::class);
 
         $SUT = $this->prepareFile($resource);
@@ -98,15 +97,14 @@ class UploadedFileTest extends TestCase
 
     protected function tearDown(): void
     {
-        unlink($this->file);
+        @unlink($this->file);
         @unlink('/tmp/test-moved-to/filename.txt');
     }
 
     private function prepareFile($resource): UploadedFIle
     {
-        $file             = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
+        $file = (include __DIR__ . '/fixtures/simple-file-array.php')['test'];
         $file['tmp_name'] = $resource;
-
         return new UploadedFile($file);
     }
 }
