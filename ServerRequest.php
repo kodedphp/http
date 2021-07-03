@@ -151,8 +151,6 @@ class ServerRequest extends ClientRequest implements Request
             // Calisthenics :)
             \str_starts_with($k, 'HTTP_') && $this->normalizeHeader(\str_replace('HTTP_', '', $k), $v, false);
         }
-        unset($this->headers['X-Forwarded-For'], $this->headers['X-Forwarded-Proto']);
-        unset($this->headersMap['x-forwarded-for'], $this->headersMap['x-forwarded-proto']);
         if (isset($server['HTTP_IF_NONE_MATCH'])) {
             // ETag workaround for various broken Apache2 versions
             $this->headers['ETag']    = \str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
