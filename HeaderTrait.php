@@ -31,6 +31,11 @@ trait HeaderTrait
         return $this->headers;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return array<int, string>
+     */
     public function getHeader($name): array
     {
         if (false === isset($this->headersMap[$name = \strtolower($name)])) {
@@ -41,7 +46,7 @@ trait HeaderTrait
             return empty($value) ? [] : [$value];
         }
         $header = [];
-        foreach ($value as $_ => $v) {
+        foreach ($value as $v) {
             $header[] = \join(',', (array)$v);
         }
         return $header;
@@ -121,7 +126,7 @@ trait HeaderTrait
      * Transforms the nested headers as a flatten array.
      * This method is not part of the PSR-7.
      *
-     * @return array
+     * @return array<int, string>
      */
     public function getFlattenedHeaders(): array
     {
