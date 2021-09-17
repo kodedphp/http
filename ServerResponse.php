@@ -35,7 +35,10 @@ class ServerResponse implements Response, \JsonSerializable
      * @param int   $statusCode [optional]
      * @param array $headers    [optional]
      */
-    public function __construct(mixed $content = '', int $statusCode = HttpStatus::OK, array $headers = [])
+    public function __construct(
+        mixed $content = '',
+        int $statusCode = HttpStatus::OK,
+        array $headers = [])
     {
         $this->setStatus($this, $statusCode);
         $this->setHeaders($headers);
@@ -102,7 +105,7 @@ class ServerResponse implements Response, \JsonSerializable
             );
         }
         $instance->statusCode   = (int)$statusCode;
-        $instance->reasonPhrase = $reasonPhrase ? (string)$reasonPhrase : StatusCode::CODE[$statusCode];
+        $instance->reasonPhrase = $reasonPhrase ?: HttpStatus::CODE[$statusCode];
         return $instance;
     }
 
