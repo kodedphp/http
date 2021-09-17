@@ -21,11 +21,14 @@ use Koded\Stdlib\Serializer\JsonSerializer;
 class JsonResponse extends ServerResponse
 {
     public function __construct(
-        mixed $content,
+        mixed $content = null,
         int $statusCode = HttpStatus::OK,
         array $headers = [])
     {
-        parent::__construct($this->process($content), $statusCode, $headers);
+        parent::__construct(
+            $this->process($content),
+            $statusCode,
+            $headers);
     }
 
     /**
