@@ -4,7 +4,7 @@ namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Http\AcceptHeaderNegotiator;
-use Koded\Http\StatusCode;
+use Koded\Http\Interfaces\HttpStatus;
 use PHPUnit\Framework\TestCase;
 
 class AcceptHeaderNegotiateTest extends TestCase
@@ -67,7 +67,7 @@ class AcceptHeaderNegotiateTest extends TestCase
     public function test_rfc7231_spec_for_invalid_access_header_type()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionCode(StatusCode::NOT_ACCEPTABLE);
+        $this->expectExceptionCode(HttpStatus::NOT_ACCEPTABLE);
         $this->expectExceptionMessage('"*/json" is not a valid Access header');
         (new AcceptHeaderNegotiator('*/json'))->match('*');
     }
@@ -75,7 +75,7 @@ class AcceptHeaderNegotiateTest extends TestCase
     public function test_wrong_media_type()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionCode(StatusCode::NOT_ACCEPTABLE);
+        $this->expectExceptionCode(HttpStatus::NOT_ACCEPTABLE);
         $this->expectExceptionMessage('"&^%$" is not a valid Access header');
         (new AcceptHeaderNegotiator('&^%$'))->match('*');
     }

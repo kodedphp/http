@@ -2,7 +2,8 @@
 
 namespace Tests\Koded\Http\Client;
 
-use Koded\Http\{Client\CurlClient, Interfaces\HttpRequestClient, ServerResponse, StatusCode, Uri};
+use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus};
+use Koded\Http\Uri;
 use function Koded\Http\create_stream;
 
 /**
@@ -22,7 +23,7 @@ trait ClientTestCaseTrait
     {
         $response = $this->SUT->read();
 
-        $this->assertSame(StatusCode::OK, $response->getStatusCode(), (string)$response->getBody());
+        $this->assertSame(HttpStatus::OK, $response->getStatusCode(), (string)$response->getBody());
         $this->assertStringContainsString('text/html', $response->getHeaderLine('Content-Type'));
         $this->assertGreaterThan(0, (string)$response->getBody()->getSize());
     }
@@ -31,7 +32,7 @@ trait ClientTestCaseTrait
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Please provide a valid URI');
-        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
 
         $this->SUT->withUri(new Uri('scheme://host:port'));
     }
@@ -43,7 +44,7 @@ trait ClientTestCaseTrait
 
         $badResponse = $SUT->read();
 
-        $this->assertSame(StatusCode::BAD_REQUEST, $badResponse->getStatusCode(), get_class($SUT));
+        $this->assertSame(HttpStatus::BAD_REQUEST, $badResponse->getStatusCode(), get_class($SUT));
         $this->assertSame($badResponse->getHeaderLine('Content-type'), 'application/problem+json');
         $this->assertStringContainsString('failed to open stream: you should not set the message body with safe HTTP methods',
             (string)$badResponse->getBody());

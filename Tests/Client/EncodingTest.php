@@ -2,7 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{Interfaces\HttpRequestClient, StatusCode};
+use Koded\Http\{Interfaces\HttpRequestClient, Interfaces\HttpStatus};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
 
@@ -38,7 +38,7 @@ class EncodingTest extends TestCase
     public function test_non_supported_encoding_types(HttpRequestClient $client)
     {
         $this->expectException(ClientExceptionInterface::class);
-        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
         $this->expectExceptionMessage('Invalid encoding type');
 
         $client->withEncoding(-1);

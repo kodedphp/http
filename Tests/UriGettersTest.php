@@ -3,7 +3,7 @@
 namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
-use Koded\Http\StatusCode;
+use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
@@ -16,7 +16,7 @@ class UriGettersTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Please provide a valid URI');
-        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
 
         new Uri('scheme://host:junk');
     }
@@ -228,7 +228,7 @@ class UriGettersTest extends TestCase
         $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
-        // - If the path is rootless and an authority is present,
+        // - If the path is rootless and the authority is present,
         // the path MUST be prefixed with "/"
         $template = 'foo/bar';
         $uri      = new Uri($template);

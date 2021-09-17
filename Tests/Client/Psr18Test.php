@@ -2,7 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{ClientRequest, ServerRequest, StatusCode};
+use Koded\Http\{ClientRequest, Interfaces\HttpStatus, ServerRequest};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
 
@@ -21,7 +21,7 @@ class Psr18Test extends TestCase
     public function test_should_fail_with_server_request_instance($client)
     {
         $this->expectException(Psr18Exception::class);
-        $this->expectExceptionCode(StatusCode::FAILED_DEPENDENCY);
+        $this->expectExceptionCode(HttpStatus::FAILED_DEPENDENCY);
 
         $client->sendRequest(new ServerRequest);
     }
@@ -36,7 +36,7 @@ class Psr18Test extends TestCase
     public function test_should_pass_with_client_request_instance($client)
     {
         $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
-        $this->assertSame(StatusCode::OK, $response->getStatusCode());
+        $this->assertSame(HttpStatus::OK, $response->getStatusCode());
     }
 
     /**
@@ -49,7 +49,7 @@ class Psr18Test extends TestCase
     public function test_exception_with_client_request_instance_and_empty_url($client)
     {
         $this->expectException(Psr18Exception::class);
-        $this->expectExceptionCode(StatusCode::FAILED_DEPENDENCY);
+        $this->expectExceptionCode(HttpStatus::FAILED_DEPENDENCY);
 
         $client->sendRequest(new ClientRequest('GET', ''));
     }

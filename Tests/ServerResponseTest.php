@@ -3,8 +3,8 @@
 namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
+use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\ServerResponse;
-use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
@@ -21,7 +21,7 @@ class ServerResponseTest extends TestCase
     {
         $response = new ServerResponse;
 
-        $this->assertSame(StatusCode::OK, $response->getStatusCode());
+        $this->assertSame(HttpStatus::OK, $response->getStatusCode());
         $this->assertSame('OK', $response->getReasonPhrase());
         $this->assertSame('text/html', $response->getContentType());
         $this->assertSame('1.1', $response->getProtocolVersion());
@@ -31,10 +31,10 @@ class ServerResponseTest extends TestCase
 
     public function test_constructor_arguments()
     {
-        $response = (new ServerResponse('エンコーディングは難しくない', StatusCode::BAD_GATEWAY))
+        $response = (new ServerResponse('エンコーディングは難しくない', HttpStatus::BAD_GATEWAY))
             ->withHeader('Content-type', 'application/json');
 
-        $this->assertSame(StatusCode::BAD_GATEWAY, $response->getStatusCode());
+        $this->assertSame(HttpStatus::BAD_GATEWAY, $response->getStatusCode());
         $this->assertSame('Bad Gateway', $response->getReasonPhrase());
         $this->assertSame('application/json', $response->getContentType());
 
@@ -87,7 +87,7 @@ class ServerResponseTest extends TestCase
 
     public function test_send_with_bodiless_status_code()
     {
-        $response = new ServerResponse('hello world', StatusCode::NO_CONTENT, [
+        $response = new ServerResponse('hello world', HttpStatus::NO_CONTENT, [
             'content-type' => 'text/html'
         ]);
 
@@ -97,7 +97,7 @@ class ServerResponseTest extends TestCase
         $this->assertSame('', $output);
         $this->assertFalse($response->hasHeader('Content-Length'));
         $this->assertFalse($response->hasHeader('Content-Type'));
-        $this->assertSame(StatusCode::NO_CONTENT, $response->getStatusCode());
+        $this->assertSame(HttpStatus::NO_CONTENT, $response->getStatusCode());
         $this->assertSame(null, $response->getBody()->getSize(),
             'After the body is sent, the stream object is destroyed');
     }

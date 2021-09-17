@@ -5,8 +5,8 @@ namespace Tests\Koded\Http\Client;
 use Koded\Http\Client\ClientFactory;
 use Koded\Http\Client\PhpClient;
 use Koded\Http\Interfaces\HttpRequestClient;
+use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\ServerResponse;
-use Koded\Http\StatusCode;
 use PHPUnit\Framework\TestCase;
 use Tests\Koded\Http\AssertionTestSupportTrait;
 
@@ -74,7 +74,7 @@ class PhpClientTest extends TestCase
 
         $this->assertInstanceOf(ServerResponse::class, $response);
         $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode(),
+        $this->assertSame(HttpStatus::FAILED_DEPENDENCY, $response->getStatusCode(),
             (string)$response->getBody());
     }
 
@@ -91,7 +91,7 @@ class PhpClientTest extends TestCase
 
         $this->assertInstanceOf(ServerResponse::class, $response);
         $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::FAILED_DEPENDENCY, $response->getStatusCode());
+        $this->assertSame(HttpStatus::FAILED_DEPENDENCY, $response->getStatusCode());
         $this->assertStringContainsString('The HTTP client is not created therefore cannot read anything',
             (string)$response->getBody());
     }
@@ -108,7 +108,7 @@ class PhpClientTest extends TestCase
         $response = $SUT->read();
 
         $this->assertSame($response->getHeaderLine('Content-type'), 'application/problem+json');
-        $this->assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        $this->assertSame(HttpStatus::INTERNAL_SERVER_ERROR, $response->getStatusCode());
         $this->assertStringContainsString('Exception message', (string)$response->getBody());
     }
 

@@ -4,8 +4,8 @@ namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Http\ClientRequest;
+use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\Interfaces\Request;
-use Koded\Http\StatusCode;
 use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
@@ -52,7 +52,7 @@ class ClientRequestTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(ClientRequest::E_INVALID_REQUEST_TARGET);
-        $this->expectExceptionCode(StatusCode::BAD_REQUEST);
+        $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
 
         $this->SUT->withRequestTarget('foo bar');
     }

@@ -2,7 +2,7 @@
 
 namespace Tests\Koded\Http;
 
-use Koded\Http\StatusCode;
+use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\Stream;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -15,7 +15,7 @@ class StreamTest extends TestCase
     public function test_constructor_with_invalid_argument()
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionCode(StatusCode::UNPROCESSABLE_ENTITY);
+        $this->expectExceptionCode(HttpStatus::UNPROCESSABLE_ENTITY);
         $this->expectExceptionMessage('The provided resource is not a valid stream resource');
         new Stream('');
     }

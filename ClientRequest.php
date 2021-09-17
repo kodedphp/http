@@ -81,8 +81,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
         if ($this->requestTarget) {
             return $this->requestTarget;
         }
-        $path = $this->uri->getPath();
-        if (!$path && !$this->requestTarget) {
+        if (!$path = $this->uri->getPath()) {
             return '/';
         }
         if ($query = $this->uri->getQuery()) {
@@ -184,8 +183,8 @@ class ClientRequest implements RequestInterface, \JsonSerializable
     protected function getPhpError(int $status, ?string $message = null): Response
     {
         return new ServerResponse(json_serialize([
-            'title'    => StatusCode::CODE[$status],
-            'detail'   => $message ?? \error_get_last()['message'] ?? StatusCode::CODE[$status],
+            'title'    => HttpStatus::CODE[$status],
+            'detail'   => $message ?? \error_get_last()['message'] ?? HttpStatus::CODE[$status],
             'instance' => (string)$this->getUri(),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
