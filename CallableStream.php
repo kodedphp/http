@@ -12,7 +12,19 @@
 
 namespace Koded\Http;
 
+use Exception;
+use Generator;
 use Psr\Http\Message\StreamInterface;
+use ReflectionFunction;
+use RuntimeException;
+use Throwable;
+use function fclose;
+use function feof;
+use function fopen;
+use function fread;
+use function fseek;
+use function fwrite;
+use function mb_strlen;
 
 
 class CallableStream implements StreamInterface
@@ -24,7 +36,7 @@ class CallableStream implements StreamInterface
     public function __construct(callable $callable)
     {
         $this->callable    = $callable;
-        $this->isGenerator = (new \ReflectionFunction($this->callable))
+        $this->isGenerator = (new ReflectionFunction($this->callable))
             ->isGenerator();
     }
 
@@ -37,7 +49,7 @@ class CallableStream implements StreamInterface
     {
         try {
             return $this->getContents();
-        } catch (\RuntimeException) {
+        } catch (RuntimeException) {
             return '';
         }
     }
@@ -70,17 +82,17 @@ class CallableStream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        throw new \RuntimeException('Cannot seek in CallableStream');
+        throw new RuntimeException('Cannot seek in CallableStream');
     }
 
     public function rewind(): void
     {
-        throw new \RuntimeException('Cannot rewind the CallableStream');
+        throw new RuntimeException('Cannot rewind the CallableStream');
     }
 
     public function write($string): int
     {
-        throw new \RuntimeException('Cannot write to CallableStream');
+        throw new RuntimeException('Cannot write to CallableStream');
     }
 
     public function read($length): string
@@ -93,10 +105,10 @@ class CallableStream implements StreamInterface
         try {
             foreach ($this->reader($length) as $chunk) {
                 $content        .= $chunk;
-                $this->position += \mb_strlen($chunk);
+                $this->position += mb_strlen($chunk);
             }
-        } catch (\Exception $e) {
-            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e);
+        } catch (Exception $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         } finally {
             $this->callable = null;
         }
@@ -131,24 +143,24 @@ class CallableStream implements StreamInterface
     /**
      * @param int $length
      *
-     * @return \Generator
-     * @throws \RuntimeException
+     * @return Generator
+     * @throws RuntimeException
      */
-    private function reader(int $length): \Generator
+    private function reader(int $length): Generator
     {
         if ($this->isGenerator) {
             yield from ($this->callable)();
-        } elseif ($resource = \fopen('php://temp', 'r+')) {
+        } elseif ($resource = fopen('php://temp', 'r+')) {
             try {
-                \fwrite($resource, ($this->callable)());
-            } catch (\Throwable $e) {
-                throw new \RuntimeException('Cannot write to stream', 0, $e);
+                fwrite($resource, ($this->callable)());
+            } catch (Throwable $e) {
+                throw new RuntimeException('Cannot write to stream', 0, $e);
             }
-            \fseek($resource, 0);
-            while (false === \feof($resource)) {
-                yield \fread($resource, $length);
+            fseek($resource, 0);
+            while (false === feof($resource)) {
+                yield fread($resource, $length);
             }
-            \fclose($resource);
+            fclose($resource);
         }
     }
 }
