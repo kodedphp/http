@@ -25,7 +25,19 @@ namespace Koded\Http;
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
  */
 
+use Generator;
+use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpStatus;
+use function array_shift;
+use function explode;
+use function join;
+use function parse_str;
+use function preg_match;
+use function preg_replace;
+use function sprintf;
+use function strtolower;
+use function trim;
+use function usort;
 
 class AcceptHeaderNegotiator
 {
@@ -66,11 +78,11 @@ class AcceptHeaderNegotiator
     /**
      * @param string $header
      *
-     * @return \Generator
+     * @return Generator
      */
-    private function parse(string $header): \Generator
+    private function parse(string $header): Generator
     {
-        foreach (\explode(',', $header) as $header) {
+        foreach (explode(',', $header) as $header) {
             yield new class($header) extends AcceptHeader {};
         }
     }
@@ -92,22 +104,22 @@ abstract class AcceptHeader
     {
         $this->header = $header;
 
-        $header = \preg_replace('/[[:space:]]/', '', $header);
-        $bits   = \explode(';', $header);
-        $type   = \array_shift($bits);
-        if (!empty($type) && !\preg_match('~^(\*|[a-z0-9._]+)([/|_\-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
-            throw new \InvalidArgumentException(\sprintf('"%s" is not a valid Access header', $header),
+        $header = preg_replace('/[[:space:]]/', '', $header);
+        $bits   = explode(';', $header);
+        $type   = array_shift($bits);
+        if (!empty($type) && !preg_match('~^(\*|[a-z0-9._]+)([/|_\-])?(\*|[a-z0-9.\-_+]+)?$~i', $type, $matches)) {
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
                 HttpStatus::NOT_ACCEPTABLE);
         }
         $this->separator = $matches[2] ?? '/';
-        [$type, $subtype] = \explode($this->separator, $type, 2) + [1 => '*'];
+        [$type, $subtype] = explode($this->separator, $type, 2) + [1 => '*'];
         if ('*' === $type && '*' !== $subtype) {
             // @see https://tools.ietf.org/html/rfc7231#section-5.3.2
-            throw new \InvalidArgumentException(\sprintf('"%s" is not a valid Access header', $header),
+            throw new InvalidArgumentException(sprintf('"%s" is not a valid Access header', $header),
                 HttpStatus::NOT_ACCEPTABLE);
         }
         // @see https://tools.ietf.org/html/rfc7540#section-8.1.2
-        $this->type = \trim(\strtolower($type));
+        $this->type = trim(strtolower($type));
         /*
          * Uses a simple heuristic to check if subtype is part of
          * some convoluted media type like "vnd.api-v1+json".
@@ -117,9 +129,9 @@ abstract class AcceptHeader
          * type like "vnd.whatever". The web world is a big mess
          * but this module can handle the Dunning-Kruger effect.
          */
-        $this->subtype  = \trim(\explode('+', $subtype)[1] ?? $subtype);
+        $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
         $this->catchAll = ('*' === $this->type) && ('*' === $this->subtype);
-        \parse_str(\join('&', $bits), $this->params);
+        parse_str(join('&', $bits), $this->params);
         $this->quality = (float)($this->params['q'] ?? 1);
         unset($this->params['q']);
     }
