@@ -24,7 +24,7 @@ function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
 {
     if (null === $resource || \is_string($resource)) {
         $stream = \fopen('php://temp', $mode);
-        \fwrite($stream, $resource);
+        \fwrite($stream, $resource ?? '');
         \fseek($stream, 0);
         return new Stream($stream);
     }
