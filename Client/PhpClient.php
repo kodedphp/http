@@ -141,7 +141,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             $this->options['content'] = $this->stream->getContents();
         } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
-            $this->options['content'] = \http_build_query($content, null, '&', $this->encoding);
+            $this->options['content'] = \http_build_query($content, '', '&', $this->encoding);
         }
         $this->stream = create_stream($this->options['content']);
     }

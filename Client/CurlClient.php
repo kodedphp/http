@@ -158,7 +158,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
         } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
-            $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, null, '&', $this->encoding);
+            $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, '', '&', $this->encoding);
         }
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }
