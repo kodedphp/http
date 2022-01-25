@@ -19,6 +19,7 @@ namespace Koded\Http;
  *
  */
 
+use Koded\Http\Interfaces\HttpMethod;
 use Psr\Http\Message\{RequestFactoryInterface,
     RequestInterface,
     ResponseFactoryInterface,
@@ -42,7 +43,7 @@ class HttpFactory implements RequestFactoryInterface,
 {
     public function createRequest(string $method, $uri): RequestInterface
     {
-        return new ClientRequest($method, $uri);
+        return new ClientRequest(HttpMethod::tryFrom($method), $uri);
     }
 
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface

@@ -13,7 +13,7 @@
 namespace Koded\Http\Client;
 
 use Koded\Http\{ClientRequest, ServerResponse};
-use Koded\Http\Interfaces\{HttpRequestClient, HttpStatus, Response};
+use Koded\Http\Interfaces\{HttpMethod, HttpRequestClient, HttpStatus, Response};
 use Psr\Http\Message\UriInterface;
 use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
@@ -39,7 +39,8 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     private array $responseHeaders = [];
 
     public function __construct(
-        string $method,
+//        string $method,
+        HttpMethod $method,
         string|UriInterface $uri,
         string|iterable $body = null,
         array $headers = [])
@@ -158,7 +159,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
         } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
-            $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, null, '&', $this->encoding);
+            $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, '', '&', $this->encoding);
         }
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }

@@ -12,6 +12,7 @@
 
 namespace Koded\Http;
 
+use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\Request;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -32,7 +33,8 @@ class ServerRequest extends ClientRequest implements Request
      */
     public function __construct(array $attributes = [])
     {
-        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
+//        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
+        parent::__construct(HttpMethod::tryFrom($_SERVER['REQUEST_METHOD'] ?? 'GET'), $this->buildUri());
         $this->attributes = $attributes;
         $this->extractHttpHeaders($_SERVER);
         $this->extractServerData($_SERVER);
@@ -193,7 +195,8 @@ class ServerRequest extends ClientRequest implements Request
         if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
             return false;
         }
-        return $this->method === self::POST && (
+//        return $this->method === self::POST && (
+        return $this->method === HttpMethod::POST && (
             \str_contains('application/x-www-form-urlencoded', $contentType) ||
             \str_contains('multipart/form-data', $contentType));
     }

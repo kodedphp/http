@@ -35,11 +35,12 @@ class UriSerializationTest extends TestCase
         $this->assertSame([
             'scheme' => 'http',
             'host' => 'example.com',
+            'path' => '/',
             'user' => 'username',
         ], $uri->jsonSerialize());
 
         $this->assertJsonStringEqualsJsonString(
-            '{"scheme":"http","host":"example.com","user":"username"}',
+            '{"scheme":"http","host":"example.com","path":"/","user":"username"}',
             json_encode($uri, JSON_UNESCAPED_SLASHES)
         );
     }

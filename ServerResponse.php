@@ -121,7 +121,7 @@ class ServerResponse implements Response, \JsonSerializable
             $this->normalizeHeader('Content-Length', (string)$size, true);
         }
         $method = \strtoupper($_SERVER['REQUEST_METHOD'] ?? '');
-        if (Request::HEAD === $method || Request::OPTIONS === $method) {
+        if ('HEAD' === $method || 'OPTIONS' === $method) {
             $this->stream = create_stream(null);
         }
         if ($this->hasHeader('Transfer-Encoding') || !$size) {

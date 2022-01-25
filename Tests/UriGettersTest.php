@@ -183,10 +183,9 @@ class UriGettersTest extends TestCase
      */
     public function it_should_add_slash_after_host_when_typecast_to_string()
     {
-        $this->markTestSkipped('Need more info');
-
-        $uri = new Uri('https://example.org');
-        $this->assertSame('https://example.org/', (string)$uri);
+        $uri = new Uri('https://user:pass@example.org');
+        $this->assertSame('https://user:pass@example.org/', (string)$uri,
+            'If the path is rootless and an authority is present, the path MUST be prefixed by "/"');
     }
 
     /**
@@ -210,7 +209,6 @@ class UriGettersTest extends TestCase
         $this->assertSame('', $uri->getAuthority());
     }
 
-
     /**
      * @test
      */
@@ -228,17 +226,22 @@ class UriGettersTest extends TestCase
         $uri      = new Uri($template);
         $this->assertSame($template, (string)$uri);
 
-        // - If the path is rootless and the authority is present,
-        // the path MUST be prefixed with "/"
         $template = 'foo/bar';
         $uri      = new Uri($template);
         $uri      = $uri->withUserInfo('username');
-        $this->assertSame("username@/$template", (string)$uri);
+        $this->assertSame("username@/$template", (string)$uri,
+            'If the path is rootless and the authority is present, 
+            the path MUST be prefixed with "/"');
 
-        // - If the path is starting with more than one "/" and no authority is
-        // present, the starting slashes MUST be reduced to one
+        $uri = new Uri('https://user:pass@example.org');
+        $this->assertSame('https://user:pass@example.org/', (string)$uri,
+            'If the path is rootless and an authority is present,
+            the path MUST be prefixed by "/"');
+
         $template = 'http://localhost///foo/bar';
         $uri      = new Uri($template);
-        $this->assertSame('http://localhost/foo/bar', (string)$uri);
+        $this->assertSame('http://localhost/foo/bar', (string)$uri,
+            'If the path is starting with more than one "/" and no authority is 
+            present, the starting slashes MUST be reduced to one');
     }
 }

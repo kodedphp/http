@@ -16,38 +16,61 @@ use Koded\Stdlib\Data;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
 
+enum ClientType {
+    case CURL;
+    case PHP;
+}
+
+/* RFC 7231, 5789 methods */
+enum HttpMethod: string {
+    case GET = 'GET';
+    case POST = 'POST';
+    case PUT = 'PUT';
+    case DELETE = 'DELETE';
+    case HEAD = 'HEAD';
+    case PATCH = 'PATCH';
+    case OPTIONS = 'OPTIONS';
+    case CONNECT = 'CONNECT';
+    case TRACE = 'TRACE';
+}
 
 interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMessageInterface
 {
     /* RFC 7231, 5789 methods */
-    const GET     = 'GET';
-    const POST    = 'POST';
-    const PUT     = 'PUT';
-    const DELETE  = 'DELETE';
-    const HEAD    = 'HEAD';
-    const PATCH   = 'PATCH';
-    const OPTIONS = 'OPTIONS';
-    const CONNECT = 'CONNECT';
-    const TRACE   = 'TRACE';
-
-    const HTTP_METHODS = [
-        self::GET,
-        self::POST,
-        self::PUT,
-        self::PATCH,
-        self::DELETE,
-        self::HEAD,
-        self::OPTIONS,
-        self::TRACE,
-        self::CONNECT,
-    ];
+//    const GET     = 'GET';
+//    const POST    = 'POST';
+//    const PUT     = 'PUT';
+//    const DELETE  = 'DELETE';
+//    const HEAD    = 'HEAD';
+//    const PATCH   = 'PATCH';
+//    const OPTIONS = 'OPTIONS';
+//    const CONNECT = 'CONNECT';
+//    const TRACE   = 'TRACE';
+//
+//    const HTTP_METHODS = [
+//        self::GET,
+//        self::POST,
+//        self::PUT,
+//        self::PATCH,
+//        self::DELETE,
+//        self::HEAD,
+//        self::OPTIONS,
+//        self::TRACE,
+//        self::CONNECT,
+//    ];
 
     const SAFE_METHODS = [
-        self::GET,
-        self::HEAD,
-        self::OPTIONS,
-        self::TRACE,
-        self::CONNECT
+//        self::GET,
+//        self::HEAD,
+//        self::OPTIONS,
+//        self::TRACE,
+//        self::CONNECT
+
+        HttpMethod::GET,
+        HttpMethod::HEAD,
+        HttpMethod::OPTIONS,
+        HttpMethod::TRACE,
+        HttpMethod::CONNECT,
     ];
 
     /* RFC 3253 methods */
@@ -243,9 +266,9 @@ interface ExtendedMessageInterface
      *
      * @param array $headers name => [value]
      *
-     * @return $this A new instance with updated headers
+     * @return static A new instance with updated headers
      */
-    public function withHeaders(array $headers);
+    public function withHeaders(array $headers): static;
 
     /**
      * Replaces all headers with provided ones.
@@ -253,9 +276,9 @@ interface ExtendedMessageInterface
      *
      * @param array $headers
      *
-     * @return $this
+     * @return static
      */
-    public function replaceHeaders(array $headers);
+    public function replaceHeaders(array $headers): static;
 
     /**
      * Transforms the nested headers as a flatten array.

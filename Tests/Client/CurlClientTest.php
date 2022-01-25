@@ -2,10 +2,8 @@
 
 namespace Tests\Koded\Http\Client;
 
-use Koded\Http\Client\ClientFactory;
-use Koded\Http\Client\CurlClient;
-use Koded\Http\Interfaces\HttpRequestClient;
-use Koded\Http\Interfaces\HttpStatus;
+use Koded\Http\Client\{ClientFactory, CurlClient};
+use Koded\Http\Interfaces\{ClientType, HttpMethod, HttpRequestClient, HttpStatus};
 use Koded\Http\ServerResponse;
 use PHPUnit\Framework\TestCase;
 use Tests\Koded\Http\AssertionTestSupportTrait;
@@ -75,7 +73,7 @@ class CurlClientTest extends TestCase
 
     public function test_when_curl_returns_error()
     {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends CurlClient
         {
             protected function hasError($resource): bool
             {
@@ -92,7 +90,7 @@ class CurlClientTest extends TestCase
 
     public function test_when_creating_resource_fails()
     {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends CurlClient
         {
             protected function createResource(): \CurlHandle|bool
             {
@@ -110,7 +108,7 @@ class CurlClientTest extends TestCase
 
     public function test_on_exception()
     {
-        $SUT = new class('get', 'http://example.com') extends CurlClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends CurlClient
         {
             protected function createResource(): \CurlHandle|bool
             {
@@ -133,7 +131,7 @@ class CurlClientTest extends TestCase
             $this->markTestSkipped('cURL extension is not installed on the testing environment');
         }
 
-        $this->SUT = (new ClientFactory(ClientFactory::CURL))
+        $this->SUT = (new ClientFactory(ClientType::CURL))
             ->get('http://example.com')
             ->timeout(3);
     }

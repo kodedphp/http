@@ -14,6 +14,12 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use Koded\Stdlib\Serializer\JsonSerializer;
+use Psr\Http\Message\StreamInterface;
+use function is_array;
+use function is_iterable;
+use function iterator_to_array;
+use function json_decode;
+use function json_encode;
 
 /**
  * HTTP response object for JSON format.
@@ -21,12 +27,12 @@ use Koded\Stdlib\Serializer\JsonSerializer;
 class JsonResponse extends ServerResponse
 {
     public function __construct(
-        mixed $content = null,
+        mixed $content = '',
         int $statusCode = HttpStatus::OK,
         array $headers = [])
     {
         parent::__construct(
-            $this->process($content),
+            $this->preparePayload($content),
             $statusCode,
             $headers);
     }
@@ -37,10 +43,10 @@ class JsonResponse extends ServerResponse
      *
      * @return JsonResponse
      */
-    public function safe(): JsonResponse
+    public function safe(): static
     {
-        $this->stream = create_stream(\json_encode(
-            \json_decode($this->stream->getContents(), true),
+        $this->stream = create_stream(json_encode(
+            json_decode($this->stream->getContents(), true),
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ));
         return $this;
@@ -51,13 +57,13 @@ class JsonResponse extends ServerResponse
         return $this->getHeaderLine('Content-Type') ?: 'application/json';
     }
 
-    private function process(mixed $content): mixed
+    private function preparePayload(mixed $content): mixed
     {
-        if (\is_array($content)) {
-            return \json_encode($content, JsonSerializer::OPTIONS);
+        if (is_array($content)) {
+            return json_encode($content, JsonSerializer::OPTIONS);
         }
-        if (\is_iterable($content)) {
-            return \json_encode(\iterator_to_array($content), JsonSerializer::OPTIONS);
+        if (is_iterable($content)) {
+            return json_encode(iterator_to_array($content), JsonSerializer::OPTIONS);
         }
         return $content;
     }

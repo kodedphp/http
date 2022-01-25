@@ -3,6 +3,7 @@
 namespace Tests\Koded\Http;
 
 use Koded\Http\ClientRequest;
+use Koded\Http\Interfaces\HttpMethod;
 use Psr\Http\Message\RequestInterface;
 
 class RequestIntegrationTest extends \Http\Psr7Test\RequestIntegrationTest
@@ -21,6 +22,6 @@ class RequestIntegrationTest extends \Http\Psr7Test\RequestIntegrationTest
     public function createSubject()
     {
         unset($_SERVER['HTTP_HOST']);
-        return new ClientRequest('GET', '');
+        return new ClientRequest(HttpMethod::GET, '');
     }
 }

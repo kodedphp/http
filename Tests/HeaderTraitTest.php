@@ -31,10 +31,15 @@ class HeaderTraitTest extends TestCase
     {
         $this->assertSame('', $this->SUT->getHeaderLine('foo'));
 
-        $response = $this->SUT->withAddedHeader('foo', ['1']);
+        $response = $this->SUT->withAddedHeader('foo', '1');
+        $response = $response->withAddedHeader('foo', ['1']);
         $response = $response->withAddedHeader('foo', 'two');
+        $response = $response->withAddedHeader('foo', 'two');
+        $response = $response->withAddedHeader('foo', 'two');
+        $response = $response->withAddedHeader('foo', ['1']);
 
-        $this->assertSame('1,two', $response->getHeaderLine('foo'));
+        $this->assertSame('1,two', $response->getHeaderLine('foo'),
+            'Added values are unique / exists only once');
 
         $response = $this->SUT->withAddedHeader('bar', 'baz');
         $this->assertSame('baz', $response->getHeaderLine('bar'));

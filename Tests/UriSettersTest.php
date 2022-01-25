@@ -30,7 +30,7 @@ class UriSettersTest extends TestCase
      */
     public function it_should_unset_the_scheme()
     {
-        $uri = $this->uri->withScheme(null);
+        $uri = $this->uri->withScheme('');
         $this->assertSame('', $uri->getScheme());
         $this->assertNotSame($uri, $this->uri);
     }

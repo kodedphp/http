@@ -2,7 +2,7 @@
 
 namespace Koded\Http\Client;
 
-use Koded\Http\{Interfaces\HttpRequestClient, Interfaces\HttpStatus};
+use Koded\Http\{Interfaces\HttpMethod, Interfaces\HttpRequestClient, Interfaces\HttpStatus};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
 
@@ -104,7 +104,8 @@ class EncodingTest extends TestCase
     public function clients()
     {
         $args = [
-            'POST',
+//            'POST',
+            HttpMethod::POST,
             'https://example.com/',
             [
                 'foo'   => 'bar qux zim',

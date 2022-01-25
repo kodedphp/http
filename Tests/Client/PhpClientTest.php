@@ -4,6 +4,8 @@ namespace Tests\Koded\Http\Client;
 
 use Koded\Http\Client\ClientFactory;
 use Koded\Http\Client\PhpClient;
+use Koded\Http\Interfaces\ClientType;
+use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\HttpRequestClient;
 use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\ServerResponse;
@@ -63,7 +65,7 @@ class PhpClientTest extends TestCase
 
     public function test_when_curl_returns_error()
     {
-        $SUT = new class('get', 'http://example.com') extends PhpClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends PhpClient
         {
             protected function hasError($resource): bool
             {
@@ -80,7 +82,7 @@ class PhpClientTest extends TestCase
 
     public function test_when_creating_resource_fails()
     {
-        $SUT = new class('get', 'http://example.com') extends PhpClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends PhpClient
         {
             protected function createResource($resource)
             {
@@ -98,7 +100,7 @@ class PhpClientTest extends TestCase
 
     public function test_on_exception()
     {
-        $SUT = new class('get', 'http://example.com') extends PhpClient
+        $SUT = new class(HttpMethod::GET, 'http://example.com') extends PhpClient
         {
             protected function createResource($resource)
             {
@@ -114,7 +116,7 @@ class PhpClientTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->SUT = (new ClientFactory(ClientFactory::PHP))
+        $this->SUT = (new ClientFactory(ClientType::PHP))
             ->get('http://example.com')
             ->timeout(3);
     }

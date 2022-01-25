@@ -1,8 +1,9 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
-use Koded\Http\{ClientRequest, Interfaces\HttpStatus, ServerRequest};
+use Koded\Http\{Client\ClientFactory, Client\Psr18Exception, ClientRequest, ServerRequest};
+use Koded\Http\Interfaces\{ClientType, HttpMethod, HttpStatus};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
 
@@ -35,7 +36,8 @@ class Psr18Test extends TestCase
      */
     public function test_should_pass_with_client_request_instance($client)
     {
-        $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
+//        $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
+        $response = $client->sendRequest(new ClientRequest(HttpMethod::GET, 'http://example.com'));
         $this->assertSame(HttpStatus::OK, $response->getStatusCode());
     }
 
@@ -51,7 +53,7 @@ class Psr18Test extends TestCase
         $this->expectException(Psr18Exception::class);
         $this->expectExceptionCode(HttpStatus::FAILED_DEPENDENCY);
 
-        $client->sendRequest(new ClientRequest('GET', ''));
+        $client->sendRequest(new ClientRequest(HttpMethod::GET, ''));
     }
 
     /**
@@ -63,7 +65,7 @@ class Psr18Test extends TestCase
      */
     public function test_exception_class_methods($client)
     {
-        $request = new ClientRequest('GET', '');
+        $request = new ClientRequest(HttpMethod::GET, '');
 
         try {
             $client->sendRequest($request);
@@ -77,13 +79,13 @@ class Psr18Test extends TestCase
     {
         return [
             [
-                (new ClientFactory(ClientFactory::PHP))
+                (new ClientFactory(ClientType::PHP))
                     ->client()
                     ->timeout(3)
                     ->maxRedirects(2)
             ],
             [
-                (new ClientFactory(ClientFactory::CURL))
+                (new ClientFactory(ClientType::CURL))
                     ->client()
                     ->timeout(3)
                     ->maxRedirects(2)

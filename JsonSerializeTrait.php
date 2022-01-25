@@ -12,15 +12,18 @@
 
 namespace Koded\Http;
 
+use function get_object_vars;
+
 trait JsonSerializeTrait
 {
     /**
      * Serialize the request object as JSON representation.
      *
-     * @return array Request object properties (not a JSON serialized request object)
+     * @return mixed Request / Response object properties
+     *               that can be serialized by json_encode()
      */
-    public function jsonSerialize(): array
+    public function jsonSerialize(): mixed
     {
-        return \get_object_vars($this);
+        return get_object_vars($this);
     }
 }

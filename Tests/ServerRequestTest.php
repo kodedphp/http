@@ -2,6 +2,7 @@
 
 namespace Tests\Koded\Http;
 
+use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\Request;
 use Koded\Http\ServerRequest;
 use Koded\Http\Uri;
@@ -17,7 +18,8 @@ class ServerRequestTest extends TestCase
 
     public function test_defaults()
     {
-        $this->assertSame(Request::POST, $this->SUT->getMethod());
+//        $this->assertSame(Request::POST, $this->SUT->getMethod());
+        $this->assertSame(HttpMethod::POST->value, $this->SUT->getMethod());
 
         $serverSoftwareValue = $this->getObjectProperty($this->SUT, 'serverSoftware');
         $this->assertSame('', $serverSoftwareValue);

@@ -4,6 +4,7 @@ namespace Tests\Koded\Http;
 
 use InvalidArgumentException;
 use Koded\Http\ClientRequest;
+use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\HttpStatus;
 use Koded\Http\Interfaces\Request;
 use Koded\Http\Uri;
@@ -16,7 +17,7 @@ class ClientRequestTest extends TestCase
 
     public function test_defaults()
     {
-        $this->assertSame(Request::POST, $this->SUT->getMethod());
+        $this->assertSame(HttpMethod::POST->value, $this->SUT->getMethod());
         $this->assertInstanceOf(UriInterface::class, $this->SUT->getUri());
         $this->assertSame('/', $this->SUT->getRequestTarget(), "No URI (path) and no request-target is provided");
     }
@@ -76,19 +77,19 @@ class ClientRequestTest extends TestCase
 
     public function test_construction_with_array_body()
     {
-        $this->SUT = new ClientRequest('GET', 'http://example.org', ['foo' => 'bar']);
+        $this->SUT = new ClientRequest(HttpMethod::GET, 'http://example.org', ['foo' => 'bar']);
         $this->assertSame('{"foo":"bar"}', $this->SUT->getBody()->getContents());
     }
 
     public function test_construction_with_iterable_body()
     {
-        $this->SUT = new ClientRequest('GET', 'http://example.org', new \ArrayObject(['foo' => 'bar']));
+        $this->SUT = new ClientRequest(HttpMethod::GET, 'http://example.org', new \ArrayObject(['foo' => 'bar']));
         $this->assertSame('{"foo":"bar"}', $this->SUT->getBody()->getContents());
     }
 
     protected function setUp(): void
     {
-        $this->SUT = new ClientRequest('POST', 'http://example.org');
+        $this->SUT = new ClientRequest(HttpMethod::POST, 'http://example.org');
     }
 
     protected function tearDown(): void

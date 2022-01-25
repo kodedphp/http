@@ -12,11 +12,19 @@
 
 namespace Koded\Http;
 
-use Koded\Http\Interfaces\{HttpStatus, Request, Response};
+use Koded\Http\Interfaces\{HttpMethod, HttpStatus, Request, Response};
+use InvalidArgumentException;
+use JsonSerializable;
 use Psr\Http\Message\{RequestInterface, UriInterface};
+use function error_get_last;
+use function in_array;
+use function is_iterable;
 use function Koded\Stdlib\json_serialize;
+use function preg_match;
+use function str_replace;
+use function strtoupper;
 
-class ClientRequest implements RequestInterface, \JsonSerializable
+class ClientRequest implements RequestInterface, JsonSerializable
 {
     use HeaderTrait, MessageTrait, JsonSerializeTrait;
 
@@ -24,7 +32,8 @@ class ClientRequest implements RequestInterface, \JsonSerializable
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
 
     protected UriInterface $uri;
-    protected string $method        = Request::GET;
+//    protected string $method        = Request::GET;
+    protected HttpMethod|string $method        = HttpMethod::GET;
     protected string $requestTarget = '';
 
     /**
@@ -39,7 +48,8 @@ class ClientRequest implements RequestInterface, \JsonSerializable
      * @param array               $headers [optional]
      */
     public function __construct(
-        string $method,
+//        string $method,
+        HttpMethod $method,
         string|UriInterface $uri,
         string|iterable $body = null,
         array $headers = [])
@@ -53,12 +63,15 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function getMethod(): string
     {
-        return \strtoupper($this->method);
+        return $this->method?->value ?? $this->method;
     }
 
     public function withMethod($method): ClientRequest
     {
-        return $this->setMethod($method, clone $this);
+        return $this->setMethod(
+            HttpMethod::tryFrom(strtoupper($method)) ?? $method,
+            clone $this
+        );
     }
 
     public function getUri(): UriInterface
@@ -92,8 +105,8 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function withRequestTarget($requestTarget): static
     {
-        if (\preg_match('/\s+/', $requestTarget)) {
-            throw new \InvalidArgumentException(
+        if (preg_match('/\s+/', $requestTarget)) {
+            throw new InvalidArgumentException(
                 self::E_INVALID_REQUEST_TARGET,
                 HttpStatus::BAD_REQUEST);
         }
@@ -104,7 +117,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function getPath(): string
     {
-        return \str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
+        return str_replace($_SERVER['SCRIPT_NAME'], '', $this->uri->getPath()) ?: '/';
     }
 
     public function getBaseUri(): string
@@ -124,7 +137,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
 
     public function isSafeMethod(): bool
     {
-        return \in_array($this->method, Request::SAFE_METHODS);
+        return in_array($this->method, Request::SAFE_METHODS);
     }
 
     protected function setHost(): void
@@ -140,9 +153,11 @@ class ClientRequest implements RequestInterface, \JsonSerializable
      *
      * @return static
      */
-    protected function setMethod(string $method, RequestInterface $instance): RequestInterface
+//    protected function setMethod(string $method, RequestInterface $instance): RequestInterface
+    protected function setMethod(HttpMethod|string $method, RequestInterface $instance): RequestInterface
     {
-        $instance->method = \strtoupper($method);
+//        $instance->method = strtoupper($method);
+        $instance->method = $method;
         return $instance;
     }
 
@@ -167,7 +182,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
      */
     protected function prepareBody(mixed $body): mixed
     {
-        if (\is_iterable($body)) {
+        if (is_iterable($body)) {
             return json_serialize($body);
         }
         return $body;
@@ -184,7 +199,7 @@ class ClientRequest implements RequestInterface, \JsonSerializable
     {
         return new ServerResponse(json_serialize([
             'title'    => HttpStatus::CODE[$status],
-            'detail'   => $message ?? \error_get_last()['message'] ?? HttpStatus::CODE[$status],
+            'detail'   => $message ?? error_get_last()['message'] ?? HttpStatus::CODE[$status],
             'instance' => (string)$this->getUri(),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,

@@ -3,6 +3,7 @@
 namespace Tests\sKoded\Http;
 
 use Koded\Http\ClientRequest;
+use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\HttpStatus;
 use PHPUnit\Framework\TestCase;
 
@@ -12,7 +13,7 @@ class ClientRequestHeadersTest extends TestCase
 
     public function test_should_set_the_associative_header_array()
     {
-        $request = new ClientRequest('post', self::URI, null, [
+        $request = new ClientRequest(HttpMethod::POST, self::URI, null, [
             'Authorization'       => 'Bearer 1234567890',
             'X_CUSTOM_CRAP'       => 'Hello',
             'Other-Creative-Junk' => 'Useless value'
@@ -29,7 +30,7 @@ class ClientRequestHeadersTest extends TestCase
         $this->expectExceptionCode(HttpStatus::BAD_REQUEST);
         $this->expectExceptionMessage('must be of type string, int given');
 
-        new ClientRequest('post', self::URI, null, [
+        new ClientRequest(HttpMethod::POST, self::URI, null, [
             'Authorization: Bearer 1234567890',
             'X_CUSTOM_CRAP: Hello'
         ]);
