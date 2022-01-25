@@ -219,7 +219,7 @@ class Uri implements UriInterface, JsonSerializable
         return \in_array($this->port, static::STANDARD_PORTS);
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return \array_filter([
             'scheme' => $this->getScheme(),

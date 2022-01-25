@@ -19,7 +19,7 @@ trait JsonSerializeTrait
      *
      * @return array Request object properties (not a JSON serialized request object)
      */
-    public function jsonSerialize(): array
+    public function jsonSerialize(): mixed
     {
         return \get_object_vars($this);
     }
