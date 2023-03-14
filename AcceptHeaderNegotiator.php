@@ -91,7 +91,7 @@ class AcceptHeaderNegotiator
 
 abstract class AcceptHeader
 {
-    private string $header    = '';
+    protected string $header  = '';
     private string $separator = '/';
     private string $type      = '';
     private string $subtype   = '*';
@@ -186,7 +186,7 @@ abstract class AcceptHeader
         $accept    = clone $accept;
         $typeMatch = ($this->type === $accept->type);
         if (1.0 === $accept->quality) {
-            $accept->quality = (float)$this->quality;
+            $accept->quality = $this->quality;
         }
         if ($accept->catchAll) {
             $accept->type    = $this->type;

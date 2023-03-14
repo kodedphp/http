@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use Koded\Stdlib\Serializer\JsonSerializer;
-use Psr\Http\Message\StreamInterface;
 use function is_array;
 use function is_iterable;
 use function iterator_to_array;

@@ -6,7 +6,7 @@ Koded - HTTP Library
 [![Code Coverage](https://scrutinizer-ci.com/g/kodedphp/http/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/kodedphp/http/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/kodedphp/http/?branch=master)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/koded/http.svg)](https://packagist.org/packages/koded/http)
-[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-8892BF.svg)](https://php.net/)
+[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892BF.svg)](https://php.net/)
 [![Software license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 

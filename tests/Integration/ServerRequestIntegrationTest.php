@@ -1,10 +1,13 @@
 <?php
 
-namespace Tests\Koded\Http;
+namespace Tests\Koded\Http\Integration;
 
 use Koded\Http\ServerRequest;
 use Psr\Http\Message\RequestInterface;
 
+/**
+ * @group integration
+ */
 class ServerRequestIntegrationTest extends \Http\Psr7Test\ServerRequestIntegrationTest
 {
     /**

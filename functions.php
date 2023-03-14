@@ -35,7 +35,7 @@ function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
 {
     if (null === $resource || is_string($resource)) {
         $stream = fopen('php://temp', $mode);
-        fwrite($stream, $resource ?? '');
+        fwrite($stream, (string)$resource);
         fseek($stream, 0);
         return new Stream($stream);
     }
@@ -45,8 +45,7 @@ function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
     if (is_callable($resource)) {
         return new CallableStream($resource);
     }
-    $type = gettype($resource);
-    if ('resource' === $type) {
+    if ('resource' === $type = gettype($resource)) {
         return new Stream($resource);
     }
     if ('object' === $type && method_exists($resource, '__toString')) {
@@ -54,7 +53,7 @@ function create_stream(mixed $resource, string $mode = 'r+b'): StreamInterface
     }
     throw new InvalidArgumentException('Failed to create a stream. '
         . 'Expected a file name, StreamInterface instance, or a resource. '
-        . "Given {$type} type.");
+        . "Given $type type.");
 }
 
 /**
@@ -98,7 +97,7 @@ function stream_to_string(StreamInterface $stream): string
 }
 
 /**
- * Transforms the array to much desired files array structure.
+ * Transforms the array into much desired files array structure.
  * Deals with any nested level.
  *
  * @param array $files Typically the $_FILES array

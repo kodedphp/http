@@ -1,10 +1,13 @@
 <?php
 
-namespace Tests\Koded\Http;
+namespace Tests\Koded\Http\Integration;
 
 use Psr\Http\Message\StreamInterface;
 use function Koded\Http\create_stream;
 
+/**
+ * @group integration
+ */
 class StreamIntegrationTest extends \Http\Psr7Test\StreamIntegrationTest
 {
     /**

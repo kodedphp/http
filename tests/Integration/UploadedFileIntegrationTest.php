@@ -1,10 +1,13 @@
 <?php
 
-namespace Tests\Koded\Http;
+namespace Tests\Koded\Http\Integration;
 
 use Koded\Http\UploadedFile;
 use Psr\Http\Message\UploadedFileInterface;
 
+/**
+ * @group integration
+ */
 class UploadedFileIntegrationTest extends \Http\Psr7Test\UploadedFileIntegrationTest
 {
     /**

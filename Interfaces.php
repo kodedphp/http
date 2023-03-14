@@ -23,15 +23,15 @@ enum ClientType {
 
 /* RFC 7231, 5789 methods */
 enum HttpMethod: string {
-    case GET = 'GET';
-    case POST = 'POST';
-    case PUT = 'PUT';
-    case DELETE = 'DELETE';
-    case HEAD = 'HEAD';
-    case PATCH = 'PATCH';
+    case GET     = 'GET';
+    case POST    = 'POST';
+    case PUT     = 'PUT';
+    case DELETE  = 'DELETE';
+    case HEAD    = 'HEAD';
+    case PATCH   = 'PATCH';
     case OPTIONS = 'OPTIONS';
     case CONNECT = 'CONNECT';
-    case TRACE = 'TRACE';
+    case TRACE   = 'TRACE';
 }
 
 interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMessageInterface

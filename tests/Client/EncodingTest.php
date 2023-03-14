@@ -1,8 +1,12 @@
 <?php
 
-namespace Koded\Http\Client;
+namespace Tests\Koded\Http\Client;
 
-use Koded\Http\{Interfaces\HttpMethod, Interfaces\HttpRequestClient, Interfaces\HttpStatus};
+use Koded\Http\{Client\CurlClient,
+    Client\PhpClient,
+    Interfaces\HttpMethod,
+    Interfaces\HttpRequestClient,
+    Interfaces\HttpStatus};
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\{ClientExceptionInterface, ClientInterface};
 

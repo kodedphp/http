@@ -32,6 +32,9 @@ use Psr\Http\Message\{RequestFactoryInterface,
     UploadedFileInterface,
     UriFactoryInterface,
     UriInterface};
+use function array_replace;
+use function strtoupper;
+use const UPLOAD_ERR_OK;
 
 
 class HttpFactory implements RequestFactoryInterface,
@@ -43,15 +46,15 @@ class HttpFactory implements RequestFactoryInterface,
 {
     public function createRequest(string $method, $uri): RequestInterface
     {
-        return new ClientRequest(HttpMethod::tryFrom($method), $uri);
+        return new ClientRequest(HttpMethod::tryFrom(strtoupper($method)), $uri);
     }
 
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
         if ($serverParams) {
-            $_SERVER = \array_replace($_SERVER, $serverParams);
+            $_SERVER = array_replace($_SERVER, $serverParams);
         }
-        $_SERVER['REQUEST_METHOD'] = $method;
+        $_SERVER['REQUEST_METHOD'] = strtoupper($method);
         $_SERVER['REQUEST_URI']    = (string)$uri;
         return new ServerRequest;
     }
@@ -84,7 +87,7 @@ class HttpFactory implements RequestFactoryInterface,
     public function createUploadedFile(
         StreamInterface $stream,
         ?int $size = null,
-        ?int $error = \UPLOAD_ERR_OK,
+        ?int $error = UPLOAD_ERR_OK,
         ?string $clientFilename = null,
         ?string $clientMediaType = null
     ): UploadedFileInterface {

@@ -14,7 +14,19 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use Psr\Http\Message\StreamInterface;
-
+use RuntimeException;
+use Throwable;
+use function fclose;
+use function feof;
+use function fread;
+use function fseek;
+use function fstat;
+use function ftell;
+use function fwrite;
+use function get_resource_type;
+use function is_resource;
+use function stream_get_contents;
+use function stream_get_meta_data;
 
 class Stream implements StreamInterface
 {
@@ -41,13 +53,13 @@ class Stream implements StreamInterface
 
     public function __construct($stream)
     {
-        if (false === \is_resource($stream) || 'stream' !== \get_resource_type($stream)) {
-            throw new \RuntimeException(
-                'The provided resource is not a valid stream resource, ' . \gettype($stream) . ' given.',
+        if (false === is_resource($stream) || 'stream' !== get_resource_type($stream)) {
+            throw new RuntimeException(
+                'The provided resource is not a valid stream resource, ' . get_debug_type($stream) . ' given.',
                 HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
-        $metadata       = \stream_get_meta_data($stream);
+        $metadata       = stream_get_meta_data($stream);
         $this->mode     = $metadata['mode'] ?? 'w+b';
         $this->seekable = $metadata['seekable'] ?? false;
         $this->stream   = $stream;
@@ -63,7 +75,7 @@ class Stream implements StreamInterface
         try {
             $this->seek(0);
             return $this->getContents();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return '';
         }
     }
@@ -71,7 +83,7 @@ class Stream implements StreamInterface
     public function close(): void
     {
         if ($this->stream) {
-            \fclose($this->stream);
+            fclose($this->stream);
             $this->detach();
         }
     }
@@ -93,33 +105,33 @@ class Stream implements StreamInterface
         if (empty($this->stream)) {
             return null;
         }
-        return \fstat($this->stream)['size'] ?? null;
+        return fstat($this->stream)['size'] ?? null;
     }
 
     public function tell(): int
     {
-        if (false === $position = \ftell($this->stream)) {
-            throw new \RuntimeException('Failed to find the position of the file pointer');
+        if (false === $position = ftell($this->stream)) {
+            throw new RuntimeException('Failed to find the position of the file pointer');
         }
         return $position;
     }
 
     public function eof(): bool
     {
-        return \feof($this->stream);
+        return feof($this->stream);
     }
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if (0 !== @\fseek($this->stream, $offset, $whence)) {
-            throw new \RuntimeException('Failed to seek to file pointer');
+        if (0 !== @fseek($this->stream, $offset, $whence)) {
+            throw new RuntimeException('Failed to seek to file pointer');
         }
     }
 
     public function rewind(): void
     {
         if (false === $this->seekable) {
-            throw new \RuntimeException('The stream is not seekable');
+            throw new RuntimeException('The stream is not seekable');
         }
         $this->seek(0);
     }
@@ -127,10 +139,10 @@ class Stream implements StreamInterface
     public function write($string): int
     {
         if (false === $this->isWritable()) {
-            throw new \RuntimeException('The stream is not writable');
+            throw new RuntimeException('The stream is not writable');
         }
-        if (false === $bytes = \fwrite($this->stream, $string)) {
-            throw new \RuntimeException('Failed to write data to the stream');
+        if (false === $bytes = fwrite($this->stream, (string)$string)) {
+            throw new RuntimeException('Failed to write data to the stream');
         }
         return $bytes;
     }
@@ -138,28 +150,28 @@ class Stream implements StreamInterface
     public function read($length): string
     {
         if (false === $this->isReadable()) {
-            throw new \RuntimeException('The stream is not readable');
+            throw new RuntimeException('The stream is not readable');
         }
         if (empty($length)) {
             return '';
         }
-        if (false === $data = \fread($this->stream, $length)) {
-            throw new \RuntimeException('Failed to read the data from stream');
+        if (false === $data = fread($this->stream, $length)) {
+            throw new RuntimeException('Failed to read the data from stream');
         }
         return $data;
     }
 
     public function getContents(): string
     {
-        if (false === $content = \stream_get_contents($this->stream)) {
-            throw new \RuntimeException('Unable to read the stream content');
+        if (false === $content = stream_get_contents($this->stream)) {
+            throw new RuntimeException('Unable to read the stream content');
         }
         return $content;
     }
 
     public function getMetadata($key = null)
     {
-        $metadata = \stream_get_meta_data($this->stream);
+        $metadata = stream_get_meta_data($this->stream);
         if (null === $key) {
             return $metadata;
         }

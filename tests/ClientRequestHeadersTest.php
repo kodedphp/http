@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\sKoded\Http;
+namespace Tests\Koded\Http;
 
 use Koded\Http\ClientRequest;
 use Koded\Http\Interfaces\HttpMethod;

@@ -29,7 +29,7 @@
     "psr/http-message": "^1",
     "psr/http-factory": "^1",
     "psr/http-client": "^1",
-    "koded/stdlib": "^5",
+    "koded/stdlib": "^6",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-fileinfo": "*",
@@ -42,10 +42,11 @@
     ],
     "files": [
       "Interfaces.php",
-      "functions.php"
+      "functions.php",
+      "errors.php"
     ],
     "exclude-from-classmap": [
-      "Tests/",
+      "tests/",
       "build/",
       "diagrams/"
     ]
@@ -68,7 +69,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\Koded\\Http\\": "Tests/"
+      "Tests\\Koded\\Http\\": "tests/"
     }
   },
   "minimum-stability": "dev",

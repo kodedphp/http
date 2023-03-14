@@ -4,13 +4,13 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          convertErrorsToExceptions="true"
-         bootstrap="Tests/bootstrap.php"
+         bootstrap="tests/bootstrap.php"
          stopOnFailure="true"
          verbose="true"
          colors="true">
     <testsuites>
         <testsuite name="Koded HTTP Library Test Suite">
-            <directory>Tests</directory>
+            <directory>tests</directory>
         </testsuite>
     </testsuites>
 
@@ -21,7 +21,7 @@
         </include>
         <exclude>
             <directory>vendor</directory>
-            <directory>Tests</directory>
+            <directory>tests</directory>
             <directory>diagrams</directory>
         </exclude>
     </coverage>

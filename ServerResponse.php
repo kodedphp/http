@@ -12,13 +12,19 @@
 
 namespace Koded\Http;
 
-use Koded\Http\Interfaces\{HttpStatus, Request, Response};
+use Koded\Http\Interfaces\{HttpStatus, Response};
+use InvalidArgumentException;
+use JsonSerializable;
+use function in_array;
+use function join;
+use function sprintf;
+use function strtoupper;
 
 /**
  * Class ServerResponse
  *
  */
-class ServerResponse implements Response, \JsonSerializable
+class ServerResponse implements Response, JsonSerializable
 {
     use HeaderTrait, MessageTrait, CookieTrait, JsonSerializeTrait;
 
@@ -57,7 +63,7 @@ class ServerResponse implements Response, \JsonSerializable
 
     public function getReasonPhrase(): string
     {
-        return (string)$this->reasonPhrase;
+        return $this->reasonPhrase;
     }
 
     public function getContentType(): string
@@ -70,10 +76,10 @@ class ServerResponse implements Response, \JsonSerializable
         $this->prepareResponse();
         if (false === headers_sent()) {
             foreach ($this->getHeaders() as $name => $values) {
-                header($name . ':' . \join(',', (array)$values), false, $this->statusCode);
+                header($name . ':' . join(',', (array)$values), false, $this->statusCode);
             }
             // Status header
-            header(\sprintf('HTTP/%s %d %s',
+            header(sprintf('HTTP/%s %d %s',
                 $this->getProtocolVersion(),
                 $this->getStatusCode(),
                 $this->getReasonPhrase()),
@@ -100,8 +106,8 @@ class ServerResponse implements Response, \JsonSerializable
     protected function setStatus(ServerResponse $instance, int $statusCode, string $reasonPhrase = ''): ServerResponse
     {
         if ($statusCode < 100 || $statusCode > 599) {
-            throw new \InvalidArgumentException(
-                \sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
+            throw new InvalidArgumentException(
+                sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
         $instance->statusCode   = (int)$statusCode;
@@ -111,7 +117,7 @@ class ServerResponse implements Response, \JsonSerializable
 
     protected function prepareResponse(): void
     {
-        if (\in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
+        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
             $this->stream = create_stream(null);
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
             unset($this->headersMap['content-type'], $this->headers['Content-Type']);
@@ -120,7 +126,7 @@ class ServerResponse implements Response, \JsonSerializable
         if ($size = $this->stream->getSize()) {
             $this->normalizeHeader('Content-Length', (string)$size, true);
         }
-        $method = \strtoupper($_SERVER['REQUEST_METHOD'] ?? '');
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? '');
         if ('HEAD' === $method || 'OPTIONS' === $method) {
             $this->stream = create_stream(null);
         }

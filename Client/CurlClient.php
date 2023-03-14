@@ -15,8 +15,22 @@ namespace Koded\Http\Client;
 use Koded\Http\{ClientRequest, ServerResponse};
 use Koded\Http\Interfaces\{HttpMethod, HttpRequestClient, HttpStatus, Response};
 use Psr\Http\Message\UriInterface;
+use Throwable;
+use TypeError;
+use function curl_errno;
+use function curl_error;
+use function curl_exec;
+use function curl_getinfo;
+use function curl_init;
+use function curl_setopt_array;
+use function curl_strerror;
+use function explode;
+use function http_build_query;
+use function ini_get;
+use function json_decode;
 use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
+use function mb_strlen;
 
 /**
  * @link http://php.net/manual/en/context.curl.php
@@ -46,7 +60,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
-        $this->options[CURLOPT_TIMEOUT] = (\ini_get('default_socket_timeout') ?: 10.0) * 1.0;
+        $this->options[CURLOPT_TIMEOUT] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
     }
 
     public function read(): Response
@@ -59,20 +73,22 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         try {
             if (false === $resource = $this->createResource()) {
                 return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY,
-                    'The HTTP client is not created therefore cannot read anything');
+                    'The HTTP client is not created therefore cannot read anything'
+                );
             }
-            \curl_setopt_array($resource, $this->options);
-            $response = \curl_exec($resource);
+            curl_setopt_array($resource, $this->options);
+            $response = curl_exec($resource);
             if ($this->hasError($resource)) {
                 return $this->getCurlError(HttpStatus::FAILED_DEPENDENCY, $resource);
             }
             return new ServerResponse(
                 $response,
-                \curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
-                $this->responseHeaders);
-        } catch (\TypeError $e) {
+                curl_getinfo($resource, CURLINFO_RESPONSE_CODE),
+                $this->responseHeaders
+            );
+        } catch (TypeError $e) {
             return $this->getPhpError(HttpStatus::FAILED_DEPENDENCY, $e->getMessage());
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->getPhpError(HttpStatus::INTERNAL_SERVER_ERROR, $e->getMessage());
         } finally {
             unset($response);
@@ -133,12 +149,12 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     protected function createResource(): \CurlHandle|bool
     {
-        return \curl_init((string)$this->getUri());
+        return curl_init((string)$this->getUri());
     }
 
     protected function hasError($resource): bool
     {
-        return \curl_errno($resource) > 0;
+        return curl_errno($resource) > 0;
     }
 
     protected function prepareOptions(): void
@@ -157,9 +173,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         $this->stream->rewind();
         if (0 === $this->encoding) {
             $this->options[CURLOPT_POSTFIELDS] = $this->stream->getContents();
-        } elseif ($content = \json_decode($this->stream->getContents() ?: '[]', true)) {
+        } elseif ($content = json_decode($this->stream->getContents() ?: '[]', true)) {
             $this->normalizeHeader('Content-Type', self::X_WWW_FORM_URLENCODED, true);
-            $this->options[CURLOPT_POSTFIELDS] = \http_build_query($content, '', '&', $this->encoding);
+            $this->options[CURLOPT_POSTFIELDS] = http_build_query($content, '', '&', $this->encoding);
         }
         $this->stream = create_stream($this->options[CURLOPT_POSTFIELDS]);
     }
@@ -168,9 +184,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     {
         //see https://tools.ietf.org/html/rfc7807
         return new ServerResponse(json_serialize([
-            'title'    => \curl_error($resource),
-            'detail'   => \curl_strerror(\curl_errno($resource)),
-            'instance' => \curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
+            'title'    => curl_error($resource),
+            'detail'   => curl_strerror(curl_errno($resource)),
+            'instance' => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
             'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
         ]), $status, ['Content-Type' => 'application/problem+json']);
@@ -187,12 +203,12 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     protected function extractFromResponseHeaders($_, string $header): int
     {
         try {
-            [$k, $v] = \explode(':', $header, 2) + [1 => null];
+            [$k, $v] = explode(':', $header, 2) + [1 => null];
             null === $v || $this->responseHeaders[$k] = $v;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             /** NOOP **/
         } finally {
-            return \mb_strlen($header);
+            return mb_strlen($header);
         }
     }
 }

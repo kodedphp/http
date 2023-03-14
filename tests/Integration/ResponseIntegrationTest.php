@@ -1,11 +1,14 @@
 <?php
 
-namespace Tests\Koded\Http;
+namespace Tests\Koded\Http\Integration;
 
 use Koded\Http\ServerResponse;
 use Psr\Http\Message\ResponseInterface;
 use function Koded\Http\create_stream;
 
+/**
+ * @group integration
+ */
 class ResponseIntegrationTest extends \Http\Psr7Test\ResponseIntegrationTest
 {
     protected $skippedTests = [

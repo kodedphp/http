@@ -4,8 +4,6 @@ namespace Tests\Koded\Http;
 
 use Koded\Http\FileStream;
 use Koded\Http\HttpFactory;
-use Koded\Http\Interfaces\HttpMethod;
-use Koded\Http\Interfaces\Request;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
@@ -15,14 +13,14 @@ class FactoriesTest extends TestCase
 {
     public function test_request_factory()
     {
-        $request = (new HttpFactory)->createRequest(HttpMethod::GET->value, '/');
+        $request = (new HttpFactory)->createRequest('get', '/');
         $this->assertInstanceOf(RequestInterface::class, $request);
     }
 
     public function test_server_request_factory()
     {
         $request = (new HttpFactory)->createServerRequest(
-            HttpMethod::HEAD->value, '/', ['X_Request_Id' => '123']
+            'head', '/', ['X_Request_Id' => '123']
         );
 
         $this->assertSame('/', $request->getUri()->getPath());

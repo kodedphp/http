@@ -42,7 +42,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * If body is provided, the content internally is encoded in JSON
      * and stored in body Stream object.
      *
-     * @param string              $method
+     * @param HttpMethod          $method
      * @param UriInterface|string $uri
      * @param mixed               $body    [optional] \Psr\Http\Message\StreamInterface|iterable|resource|callable|string|null
      * @param array               $headers [optional]

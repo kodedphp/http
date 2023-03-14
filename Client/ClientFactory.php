@@ -21,9 +21,9 @@ class ClientFactory
     private ClientType $clientType;
 
 //    public function __construct(int $clientType = ClientFactory::CURL)
-    public function __construct(ClientType $clientType = ClientType::CURL)
+    public function __construct(ClientType $type = ClientType::CURL)
     {
-        $this->clientType = $clientType;
+        $this->clientType = $type;
     }
 
     public function get($uri, array $headers = []): HttpRequestClient

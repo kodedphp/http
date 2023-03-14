@@ -12,9 +12,27 @@
 
 namespace Koded\Http;
 
+use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\Request;
 use Psr\Http\Message\ServerRequestInterface;
+use function array_merge;
+use function file_get_contents;
+use function gettype;
+use function is_array;
+use function is_iterable;
+use function is_object;
+use function iterator_to_array;
+use function json_decode;
+use function parse_str;
+use function sprintf;
+use function str_contains;
+use function str_ireplace;
+use function str_replace;
+use function str_starts_with;
+use function strpos;
+use function strtolower;
+use function strtoupper;
 
 class ServerRequest extends ClientRequest implements Request
 {
@@ -53,7 +71,7 @@ class ServerRequest extends ClientRequest implements Request
     public function withQueryParams(array $query): static
     {
         $instance              = clone $this;
-        $instance->queryParams = \array_merge($instance->queryParams, $query);
+        $instance->queryParams = array_merge($instance->queryParams, $query);
         return $instance;
     }
 
@@ -81,16 +99,16 @@ class ServerRequest extends ClientRequest implements Request
             return $instance;
         }
         // Supports array or iterable object
-        if (\is_iterable($data)) {
-            $instance->parsedBody = \is_array($data) ? $data : \iterator_to_array($data);
+        if (is_iterable($data)) {
+            $instance->parsedBody = is_array($data) ? $data : iterator_to_array($data);
             return $instance;
         }
-        if (\is_object($data)) {
+        if (is_object($data)) {
             $instance->parsedBody = $data;
             return $instance;
         }
-        throw new \InvalidArgumentException(
-            \sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', \gettype($data))
+        throw new InvalidArgumentException(
+            sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', gettype($data))
         );
     }
 
@@ -129,12 +147,12 @@ class ServerRequest extends ClientRequest implements Request
 
     public function isXHR(): bool
     {
-        return 'XMLHTTPREQUEST' === \strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        return 'XMLHTTPREQUEST' === strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
     }
 
     protected function buildUri(): Uri
     {
-        if (\strpos($_SERVER['REQUEST_URI'] ?? '', '://')) {
+        if (strpos($_SERVER['REQUEST_URI'] ?? '', '://')) {
             return new Uri($_SERVER['REQUEST_URI']);
         }
         if ($host = $_SERVER['SERVER_NAME'] ?? $_SERVER['SERVER_ADDR'] ?? '') {
@@ -151,15 +169,15 @@ class ServerRequest extends ClientRequest implements Request
     {
         foreach ($server as $k => $v) {
             // Calisthenics :)
-            \str_starts_with($k, 'HTTP_') && $this->normalizeHeader(\str_replace('HTTP_', '', $k), $v, false);
+            str_starts_with($k, 'HTTP_') && $this->normalizeHeader(str_replace('HTTP_', '', $k), $v, false);
         }
         if (isset($server['HTTP_IF_NONE_MATCH'])) {
             // ETag workaround for various broken Apache2 versions
-            $this->headers['ETag']    = \str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
+            $this->headers['ETag']    = str_replace('-gzip', '', $server['HTTP_IF_NONE_MATCH']);
             $this->headersMap['etag'] = 'ETag';
         }
         if (isset($server['CONTENT_TYPE'])) {
-            $this->headers['Content-Type']    = \strtolower($server['CONTENT_TYPE']);
+            $this->headers['Content-Type']    = strtolower($server['CONTENT_TYPE']);
             $this->headersMap['content-type'] = 'Content-Type';
         }
         $this->setHost();
@@ -167,7 +185,7 @@ class ServerRequest extends ClientRequest implements Request
 
     protected function extractServerData(array $server): void
     {
-        $this->protocolVersion = \str_ireplace('HTTP/', '', $server['SERVER_PROTOCOL'] ?? $this->protocolVersion);
+        $this->protocolVersion = str_ireplace('HTTP/', '', $server['SERVER_PROTOCOL'] ?? $this->protocolVersion);
         $this->serverSoftware  = $server['SERVER_SOFTWARE'] ?? '';
         $this->queryParams     = $_GET;
         $this->cookieParams    = $_COOKIE;
@@ -197,8 +215,8 @@ class ServerRequest extends ClientRequest implements Request
         }
 //        return $this->method === self::POST && (
         return $this->method === HttpMethod::POST && (
-            \str_contains('application/x-www-form-urlencoded', $contentType) ||
-            \str_contains('multipart/form-data', $contentType));
+            str_contains('application/x-www-form-urlencoded', $contentType) ||
+            str_contains('multipart/form-data', $contentType));
     }
 
     /**
@@ -211,14 +229,14 @@ class ServerRequest extends ClientRequest implements Request
             return;
         }
         // Try JSON deserialization
-        $this->parsedBody = \json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
+        $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
         if (null === $this->parsedBody) {
-            \parse_str($input, $this->parsedBody);
+            parse_str($input, $this->parsedBody);
         }
     }
 
     protected function getRawInput(): string
     {
-        return \file_get_contents('php://input') ?: '';
+        return file_get_contents('php://input') ?: '';
     }
 }

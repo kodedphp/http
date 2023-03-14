@@ -1,12 +1,10 @@
 *.php diff=php
 
-/build            export-ignore
-/Tests            export-ignore
-/vendor           export-ignore
-/diagrams         export-ignore
-/.gitattributes   export-ignore
-/.gitignore       export-ignore
-/.env             export-ignore
-/phpunit.xml.dist export-ignore
-/composer.lock    export-ignore
-/*.yml            export-ignore
+build/    export-ignore
+tests/    export-ignore
+vendor/   export-ignore
+diagrams/ export-ignore
+.git*     export-ignore
+.env      export-ignore
+*dist     export-ignore
+*.yml     export-ignore

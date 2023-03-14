@@ -1,7 +1,9 @@
-build
-vendor
-.DS_Store
-.idea
+build/
+vendor/
+.idea/
+.vscode/
+.fleet/
+.DS_Store/
 .tmp
 composer.lock
 *.cache

@@ -31,7 +31,6 @@ use function rawurlencode;
 use function sprintf;
 use function str_contains;
 use function str_replace;
-use function strlen;
 use function strtolower;
 use function trim;
 
@@ -74,12 +73,6 @@ class Uri implements UriInterface, JsonSerializable
         return ($userInfo = $this->getUserInfo())
             ? $userInfo . '@' . $this->getHostWithPort()
             : '';
-
-        $userInfo = $this->getUserInfo();
-        if (0 === mb_strlen($userInfo)) {
-            return '';
-        }
-        return $userInfo . '@' . $this->getHostWithPort();
     }
 
     public function getUserInfo(): string

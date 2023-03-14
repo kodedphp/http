@@ -56,4 +56,4 @@ jobs:
 
       - name: Run integration tests
         if: success() || failure()
-        run: vendor/bin/phpunit tests/Integration --verbose
+        run: vendor/bin/phpunit --group integration --verbose
