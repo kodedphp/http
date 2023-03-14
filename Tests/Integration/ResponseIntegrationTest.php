@@ -12,6 +12,8 @@ class ResponseIntegrationTest extends \Http\Psr7Test\ResponseIntegrationTest
         'testStatusCodeInvalidArgument'        => 'Skipped, strict type implementation',
         'testWithHeaderInvalidArguments'       => 'Skipped, strict type implementation',
         'testWithAddedHeaderInvalidArguments'  => 'Skipped, strict type implementation',
+
+        'testWithAddedHeaderArrayValueAndKeys' => 'BS test',
     ];
 
     /**

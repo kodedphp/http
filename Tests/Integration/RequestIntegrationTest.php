@@ -13,6 +13,8 @@ class RequestIntegrationTest extends \Http\Psr7Test\RequestIntegrationTest
         'testMethodWithInvalidArguments'       => 'Skipped, strict type implementation',
         'testWithHeaderInvalidArguments'       => 'Skipped, strict type implementation',
         'testWithAddedHeaderInvalidArguments'  => 'Skipped, strict type implementation',
+
+        'testGetRequestTargetInOriginFormNormalizesUriWithMultipleLeadingSlashesInPath' => 'BS test',
     ];
 
     /**

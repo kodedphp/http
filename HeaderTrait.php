@@ -95,15 +95,16 @@ trait HeaderTrait
         $instance = clone $this;
         $name     = $instance->normalizeHeaderName($name);
         $value    = $instance->normalizeHeaderValue($name, $value);
-        if (isset($instance->headersMap[$header = \strtolower($name)])) {
-            $header                     = $instance->headersMap[$header];
-            $instance->headers[$header] = \array_unique(
-                @\array_merge_recursive($instance->headers[$header], $value)
-            );
-        } else {
+        if (!isset($instance->headersMap[$header = strtolower($name)])) {
             $instance->headersMap[$header] = $name;
             $instance->headers[$name]      = $value;
+            return $instance;
         }
+        $header = $instance->headersMap[$header];
+        foreach ($value as $v) {
+            $instance->headers[$header][] = $v;
+        }
+        $instance->headers[$header] = array_unique($instance->headers[$header]);
         return $instance;
     }
 
