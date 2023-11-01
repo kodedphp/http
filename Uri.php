@@ -52,7 +52,7 @@ class Uri implements UriInterface, JsonSerializable
         $uri && $this->parse($uri);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return sprintf('%s%s%s%s%s',
             $this->scheme ? ($this->getScheme() . '://') : '',
