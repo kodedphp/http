@@ -32,7 +32,6 @@ use function str_replace;
 use function str_starts_with;
 use function strpos;
 use function strtolower;
-use function strtoupper;
 
 class ServerRequest extends ClientRequest implements Request
 {
@@ -51,8 +50,10 @@ class ServerRequest extends ClientRequest implements Request
      */
     public function __construct(array $attributes = [])
     {
-//        parent::__construct($_SERVER['REQUEST_METHOD'] ?? Request::GET, $this->buildUri());
-        parent::__construct(HttpMethod::tryFrom($_SERVER['REQUEST_METHOD'] ?? 'GET'), $this->buildUri());
+        parent::__construct(
+            HttpMethod::tryFrom($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+            $this->buildUri()
+        );
         $this->attributes = $attributes;
         $this->extractHttpHeaders($_SERVER);
         $this->extractServerData($_SERVER);
@@ -107,8 +108,9 @@ class ServerRequest extends ClientRequest implements Request
             $instance->parsedBody = $data;
             return $instance;
         }
-        throw new InvalidArgumentException(
-            sprintf('Unsupported data provided (%s), Expects NULL, array or iterable', gettype($data))
+        throw new InvalidArgumentException(sprintf(
+            'Unsupported data provided (%s), Expects NULL, array or iterable',
+            gettype($data))
         );
     }
 
@@ -147,7 +149,10 @@ class ServerRequest extends ClientRequest implements Request
 
     public function isXHR(): bool
     {
-        return 'XMLHTTPREQUEST' === strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        $mode = strtolower($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '');
+        return 'cors' === $mode
+            || 'no-cors' === $mode
+            || 'xmlhttprequest' === strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
     }
 
     protected function buildUri(): Uri
@@ -213,7 +218,7 @@ class ServerRequest extends ClientRequest implements Request
         if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
             return false;
         }
-//        return $this->method === self::POST && (
+        //return $this->method === self::POST && (
         return $this->method === HttpMethod::POST && (
             str_contains('application/x-www-form-urlencoded', $contentType) ||
             str_contains('multipart/form-data', $contentType));

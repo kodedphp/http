@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of the Koded package.
@@ -21,7 +21,6 @@ use function array_filter;
 use function explode;
 use function in_array;
 use function is_int;
-use function is_string;
 use function join;
 use function mb_strlen;
 use function parse_url;
@@ -77,10 +76,10 @@ class Uri implements UriInterface, JsonSerializable
 
     public function getUserInfo(): string
     {
-        if (0 === mb_strlen($this->user)) {
+        if (empty($this->user)) {
             return '';
         }
-        return trim($this->user . ':' . $this->pass, ':');
+        return trim(rawurlencode($this->user) . ':' . rawurlencode($this->pass), ':');
     }
 
     public function getHost(): string
@@ -128,57 +127,50 @@ class Uri implements UriInterface, JsonSerializable
         return $this->fragment;
     }
 
-    public function withScheme($scheme): UriInterface
+    public function withScheme(string $scheme): UriInterface
     {
-        if (false === is_string($scheme)) {
-            throw new InvalidArgumentException(
-                'Invalid URI scheme',
-                HttpStatus::BAD_REQUEST);
-        }
         $instance         = clone $this;
-        $instance->scheme = (string)$scheme;
+        $instance->scheme = $scheme;
         return $instance;
     }
 
-    public function withUserInfo($user, $password = null): UriInterface
+    public function withUserInfo(string $user, ?string $password = null): UriInterface
     {
         $instance       = clone $this;
-        $instance->user = (string)$user;
-        $instance->pass = (string)$password;
+        $instance->user = rawurldecode($user);
+        $instance->pass = rawurldecode((string)$password);
         return $instance;
     }
 
-    public function withHost($host): UriInterface
+    public function withHost(string $host): UriInterface
     {
         $instance       = clone $this;
-        $instance->host = (string)$host;
+        $instance->host = $host;
         return $instance;
     }
 
-    public function withPort($port): UriInterface
+    public function withPort(?int $port): UriInterface
     {
         $instance = clone $this;
         if (null === $port) {
             $instance->port = null;
             return $instance;
         }
-        if (false === is_int($port) || $port < 1) {
-            throw new InvalidArgumentException(
-                'Invalid port',
-                HttpStatus::BAD_REQUEST);
+        if ($port < 1) {
+            throw new InvalidArgumentException('Invalid port', HttpStatus::BAD_REQUEST);
         }
         $instance->port = $port;
         return $instance;
     }
 
-    public function withPath($path): UriInterface
+    public function withPath(string $path): UriInterface
     {
         $instance       = clone $this;
-        $instance->path = (string)$path;
+        $instance->path = $path;
         return $instance;
     }
 
-    public function withQuery($query): UriInterface
+    public function withQuery(string $query): UriInterface
     {
         try {
             $query = rawurldecode($query);
@@ -192,7 +184,7 @@ class Uri implements UriInterface, JsonSerializable
         return $instance;
     }
 
-    public function withFragment($fragment): UriInterface
+    public function withFragment(string $fragment): UriInterface
     {
         $instance           = clone $this;
         $instance->fragment = str_replace(['#', '%23'], '', $fragment);
@@ -206,6 +198,8 @@ class Uri implements UriInterface, JsonSerializable
                 'Please provide a valid URI',
                 HttpStatus::BAD_REQUEST);
         }
+        $this->port = (int) ($parts['port'] ?? 443);
+        unset($parts['port']);
         foreach ($parts as $k => $v) {
             $this->$k = trim($v);
         }

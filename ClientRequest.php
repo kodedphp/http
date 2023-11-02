@@ -32,8 +32,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     const E_SAFE_METHODS_WITH_BODY = 'failed to open stream: you should not set the message body with safe HTTP methods';
 
     protected UriInterface $uri;
-//    protected string $method        = Request::GET;
-    protected HttpMethod|string $method        = HttpMethod::GET;
+    protected HttpMethod|string $method;
     protected string $requestTarget = '';
 
     /**
@@ -48,7 +47,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param array               $headers [optional]
      */
     public function __construct(
-//        string $method,
         HttpMethod $method,
         string|UriInterface $uri,
         string|iterable $body = null,
@@ -56,8 +54,8 @@ class ClientRequest implements RequestInterface, JsonSerializable
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
         $this->stream = create_stream($this->prepareBody($body));
+        $this->method = $method;
         $this->setHost();
-        $this->setMethod($method, $this);
         $this->setHeaders($headers);
     }
 
@@ -66,12 +64,11 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return $this->method?->value ?? $this->method;
     }
 
-    public function withMethod($method): ClientRequest
+    public function withMethod(string $method): ClientRequest
     {
-        return $this->setMethod(
-            HttpMethod::tryFrom(strtoupper($method)) ?? $method,
-            clone $this
-        );
+        $instance = clone $this;
+        $instance->method = HttpMethod::tryFrom(strtoupper($method)) ?? $method;
+        return $instance;
     }
 
     public function getUri(): UriInterface
@@ -79,14 +76,15 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return $this->uri;
     }
 
-    public function withUri(UriInterface $uri, $preserveHost = false): static
+    public function withUri(UriInterface $uri, bool $preserveHost = false): static
     {
         $instance = clone $this;
         $instance->uri = $uri;
         if (true === $preserveHost) {
             return $instance->withHeader('Host', $this->uri->getHost() ?: $uri->getHost());
         }
-        return $instance->withHeader('Host', $uri->getHost());
+        //return $instance->withHeader('Host', $uri->getHost());
+        return $instance->withHeader('Host', $uri->getHost() ?: $this->uri->getHost());
     }
 
     public function getRequestTarget(): string
@@ -103,7 +101,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
         return $path;
     }
 
-    public function withRequestTarget($requestTarget): static
+    public function withRequestTarget(string $requestTarget): static
     {
         if (preg_match('/\s+/', $requestTarget)) {
             throw new InvalidArgumentException(
@@ -148,20 +146,6 @@ class ClientRequest implements RequestInterface, JsonSerializable
     }
 
     /**
-     * @param string           $method The HTTP method
-     * @param RequestInterface $instance
-     *
-     * @return static
-     */
-//    protected function setMethod(string $method, RequestInterface $instance): RequestInterface
-    protected function setMethod(HttpMethod|string $method, RequestInterface $instance): RequestInterface
-    {
-//        $instance->method = strtoupper($method);
-        $instance->method = $method;
-        return $instance;
-    }
-
-    /**
      * Checks if body is non-empty if HTTP method is one of the *safe* methods.
      * The consuming code may disallow this and return the response object.
      *
@@ -201,7 +185,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
             'title'    => HttpStatus::CODE[$status],
             'detail'   => $message ?? error_get_last()['message'] ?? HttpStatus::CODE[$status],
             'instance' => (string)$this->getUri(),
-            'type'     => 'https://httpstatuses.com/' . $status,
+            //'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
         ]), $status, ['Content-Type' => 'application/problem+json']);
     }

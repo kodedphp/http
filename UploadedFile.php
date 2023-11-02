@@ -68,7 +68,7 @@ class UploadedFile implements UploadedFileInterface
         return new FileStream($this->file, 'w+b');
     }
 
-    public function moveTo($targetPath)
+    public function moveTo(string $targetPath): void
     {
         $this->assertUploadError();
         $this->assertTargetPath($targetPath);
@@ -116,12 +116,12 @@ class UploadedFile implements UploadedFileInterface
         }
     }
 
-    private function assertTargetPath($targetPath): void
+    private function assertTargetPath(string $targetPath): void
     {
         if ($this->moved) {
             throw UploadedFileException::fileAlreadyMoved();
         }
-        if (false === is_string($targetPath) || 0 === mb_strlen($targetPath)) {
+        if (empty($targetPath)) {
             throw UploadedFileException::targetPathIsInvalid();
         }
         if (false === is_dir($dirname = dirname($targetPath))) {
@@ -179,7 +179,8 @@ class UploadedFileException extends KodedException
     public static function fileNotSupported(mixed $file): InvalidArgumentException
     {
         return new InvalidArgumentException(sprintf(
-            'The uploaded file is not supported, expected string, %s given', get_debug_type($file)
+            'The uploaded file is not supported, expected string, %s given',
+            get_debug_type($file)
         ));
     }
 

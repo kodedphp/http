@@ -55,7 +55,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     ];
 
     public function __construct(
-//        string $method,
         HttpMethod $method,
         string|UriInterface $uri,
         string|iterable $body = null,

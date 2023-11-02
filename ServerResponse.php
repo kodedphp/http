@@ -56,9 +56,9 @@ class ServerResponse implements Response, JsonSerializable
         return $this->statusCode;
     }
 
-    public function withStatus($code, $reasonPhrase = ''): static
+    public function withStatus(int $code, string $reasonPhrase = ''): static
     {
-        return $this->setStatus(clone $this, (int)$code, (string)$reasonPhrase);
+        return $this->setStatus(clone $this, $code, $reasonPhrase);
     }
 
     public function getReasonPhrase(): string
@@ -110,7 +110,7 @@ class ServerResponse implements Response, JsonSerializable
                 sprintf(self::E_INVALID_STATUS_CODE, $statusCode), HttpStatus::UNPROCESSABLE_ENTITY
             );
         }
-        $instance->statusCode   = (int)$statusCode;
+        $instance->statusCode   = $statusCode;
         $instance->reasonPhrase = $reasonPhrase ?: HttpStatus::CODE[$statusCode];
         return $instance;
     }

@@ -53,7 +53,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     private array $responseHeaders = [];
 
     public function __construct(
-//        string $method,
         HttpMethod $method,
         string|UriInterface $uri,
         string|iterable $body = null,
@@ -187,7 +186,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
             'title'    => curl_error($resource),
             'detail'   => curl_strerror(curl_errno($resource)),
             'instance' => curl_getinfo($resource, CURLINFO_EFFECTIVE_URL),
-            'type'     => 'https://httpstatuses.com/' . $status,
+            //'type'     => 'https://httpstatuses.com/' . $status,
             'status'   => $status,
         ]), $status, ['Content-Type' => 'application/problem+json']);
     }
