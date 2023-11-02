@@ -3,7 +3,6 @@
 namespace Tests\Koded\Http;
 
 use Koded\Http\Interfaces\HttpMethod;
-use Koded\Http\Interfaces\Request;
 use Koded\Http\ServerRequest;
 use Koded\Http\Uri;
 use Koded\Stdlib\Arguments;
