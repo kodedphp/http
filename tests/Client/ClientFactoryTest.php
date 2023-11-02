@@ -2,7 +2,6 @@
 
 namespace Tests\Koded\Http\Client;
 
-use InvalidArgumentException;
 use Koded\Http\Client\{ClientFactory, CurlClient, PhpClient};
 use Koded\Http\Interfaces\{ClientType, HttpMethod};
 use PHPUnit\Framework\TestCase;
