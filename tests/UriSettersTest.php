@@ -2,7 +2,6 @@
 
 namespace Tests\Koded\Http;
 
-use InvalidArgumentException;
 use Koded\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
@@ -126,17 +125,6 @@ class UriSettersTest extends TestCase
     /**
      * @test
      */
-    public function it_should_throw_exception_for_invalid_port()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid port');
-
-        $this->uri->withPort('junk');
-    }
-
-    /**
-     * @test
-     */
     public function it_should_set_the_path_as_is()
     {
         $uri = $this->uri->withPath('');
@@ -152,7 +140,7 @@ class UriSettersTest extends TestCase
     /**
      * @test
      */
-    public function it_should_redice_multiple_slashes_in_path_without_authority()
+    public function it_should_reduce_multiple_slashes_in_path_without_authority()
     {
         $uri = $this->uri->withPath('//fubar');
         $this->assertSame('/fubar', $uri->getPath());

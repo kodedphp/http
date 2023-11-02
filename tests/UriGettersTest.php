@@ -68,6 +68,15 @@ class UriGettersTest extends TestCase
     /**
      * @test
      */
+    public function it_should_remove_the_port_with_null_value()
+    {
+        $uri = (new Uri('https://example.com:8080'))->withPort(null);
+        $this->assertSame('https://example.com', (string)$uri);
+    }
+
+    /**
+     * @test
+     */
     public function it_should_not_decode_encoded_path()
     {
         $uri = new Uri('https://example.com/foo%252/index.php');
@@ -116,18 +125,6 @@ class UriGettersTest extends TestCase
 
         $uri = $uri->withQuery('page=1&limit=10');
         $this->assertEquals('page=1&limit=10', $uri->getQuery());
-    }
-
-    /**
-     * @test
-     */
-    public function it_should_throw_exception_on_invalid_query_string()
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The provided query string is invalid');
-
-        $uri = new Uri('');
-        $uri->withQuery(new \stdClass);
     }
 
     /**

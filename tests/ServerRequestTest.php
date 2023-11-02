@@ -152,6 +152,20 @@ class ServerRequestTest extends TestCase
         $this->assertFalse($this->SUT->isSecure());
     }
 
+    public function test_xhr_with_wrong_sec_fetch_header()
+    {
+        $_SERVER['HTTP_SEC_FETCH_MODE'] = 'fubar';
+        $request = new ServerRequest;
+        $this->assertFalse($request->isXHR());
+    }
+
+    public function test_xhr_with_sec_fetch_header()
+    {
+        $_SERVER['HTTP_SEC_FETCH_MODE'] = 'cors';
+        $request = new ServerRequest;
+        $this->assertTrue($request->isXHR());
+    }
+
     public function test_should_create_uri_instance_without_server_name_or_address()
     {
         unset($_SERVER['SERVER_NAME'], $_SERVER['SERVER_ADDR']);
@@ -216,7 +230,6 @@ class ServerRequestTest extends TestCase
 
         $request = (new class extends ServerRequest
         {
-
             protected function getRawInput(): string
             {
                 return '{"key":"value"}';
@@ -232,7 +245,6 @@ class ServerRequestTest extends TestCase
 
         $request = (new class extends ServerRequest
         {
-
             protected function getRawInput(): string
             {
                 return 'key=value';
@@ -247,7 +259,10 @@ class ServerRequestTest extends TestCase
         $_SERVER['CONTENT_TYPE'] = 'application/json';
 
         $request = new ServerRequest;
-        $this->assertEquals('application/json', $request->getHeaderLine('content-type'));
+        $this->assertEquals(
+            'application/json',
+            $request->getHeaderLine('content-type')
+        );
     }
 
     protected function setUp(): void
@@ -267,6 +282,9 @@ class ServerRequestTest extends TestCase
 
     protected function tearDown(): void
     {
+        unset($_SERVER['HTTP_X_REQUESTED_WITH']);
+        unset($_SERVER['HTTP_SEC_FETCH_MODE']);
+
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI']    = '';
 
