@@ -149,10 +149,7 @@ class ServerRequest extends ClientRequest implements Request
 
     public function isXHR(): bool
     {
-        $mode = strtolower($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '');
-        return 'cors' === $mode
-            || 'no-cors' === $mode
-            || 'xmlhttprequest' === strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        return 'XMLHTTPREQUEST' === strtoupper($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
     }
 
     protected function buildUri(): Uri
