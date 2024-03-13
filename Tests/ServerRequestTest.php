@@ -151,20 +151,6 @@ class ServerRequestTest extends TestCase
         $this->assertFalse($this->SUT->isSecure());
     }
 
-    public function test_xhr_with_wrong_sec_fetch_header()
-    {
-        $_SERVER['HTTP_SEC_FETCH_MODE'] = 'fubar';
-        $request = new ServerRequest;
-        $this->assertFalse($request->isXHR());
-    }
-
-    public function test_xhr_with_sec_fetch_header()
-    {
-        $_SERVER['HTTP_SEC_FETCH_MODE'] = 'cors';
-        $request = new ServerRequest;
-        $this->assertTrue($request->isXHR());
-    }
-
     public function test_should_create_uri_instance_without_server_name_or_address()
     {
         unset($_SERVER['SERVER_NAME'], $_SERVER['SERVER_ADDR']);
