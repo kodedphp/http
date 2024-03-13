@@ -4,6 +4,7 @@ namespace Tests\Koded\Http;
 
 use Koded\Http\Interfaces\HttpInputValidator;
 use Koded\Http\Interfaces\HttpStatus;
+use Koded\Http\JsonResponse;
 use Koded\Http\ServerRequest;
 use Koded\Stdlib\Data;
 use PHPUnit\Framework\TestCase;
@@ -15,8 +16,10 @@ class HttpInputValidatorTest extends TestCase
         $request = new ServerRequest;
         $response = $request->validate(new TestSuccessValidator, $input);
 
+        $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(HttpStatus::BAD_REQUEST, $response->getStatusCode());
         $this->assertSame('{"validate":"Nothing to validate","code":400}', (string)$response->getBody());
+        $this->assertSame('application/problem+json', $response->getHeaderLine('Content-Type'));
 
         $this->assertInstanceOf(Data::class, $input);
         $this->assertCount(0, $input);
@@ -40,8 +43,10 @@ class HttpInputValidatorTest extends TestCase
         $request = new ServerRequest;
         $response = $request->validate(new TestFailureValidator);
 
+        $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(HttpStatus::BAD_REQUEST, $response->getStatusCode());
         $this->assertSame('{"message":"This is the error message","status":400}', (string)$response->getBody());
+        $this->assertSame('application/problem+json', $response->getHeaderLine('Content-Type'));
     }
 
     public function test_failure_validate_response_code()
@@ -51,8 +56,10 @@ class HttpInputValidatorTest extends TestCase
         $request = new ServerRequest;
         $response = $request->validate(new TestFailureValidatorWithStatusCode);
 
+        $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(HttpStatus::UNPROCESSABLE_ENTITY, $response->getStatusCode());
         $this->assertSame('{"text":"Cannot proceed","status":422}', (string)$response->getBody());
+        $this->assertSame('application/problem+json', $response->getHeaderLine('Content-Type'));
     }
 
     protected function tearDown(): void
