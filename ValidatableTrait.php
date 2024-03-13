@@ -23,15 +23,19 @@ trait ValidatableTrait
 {
     public function validate(HttpInputValidator $validator, Data &$input = null): ?Response
     {
-        $input = new Immutable($this->getParsedBody() ?? []);
+        $input ??= new Immutable($this->getParsedBody() ?? []);
         if (0 === $input->count()) {
             $errors = ['validate' => 'Nothing to validate', 'code' => HttpStatus::BAD_REQUEST];
-            return new ServerResponse(json_serialize($errors), HttpStatus::BAD_REQUEST);
+            return new JsonResponse($errors, HttpStatus::BAD_REQUEST, [
+                'Content-Type' => 'application/problem+json'
+            ]);
         }
         if (empty($errors = $validator->validate($input))) {
             return null;
         }
         $errors['status'] = (int)($errors['status'] ?? HttpStatus::BAD_REQUEST);
-        return new ServerResponse(json_serialize($errors), $errors['status']);
+        return new JsonResponse($errors, $errors['status'], [
+            'Content-Type' => 'application/problem+json'
+        ]);
     }
 }
