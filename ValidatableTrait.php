@@ -14,7 +14,6 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\{HttpInputValidator, HttpStatus, Response};
 use Koded\Stdlib\{Data, Immutable};
-use function Koded\Stdlib\json_serialize;
 
 /**
  * @method Response|null getParsedBody
