@@ -28,6 +28,8 @@ class PhpClientTest extends TestCase
         $this->assertArrayHasKey('max_redirects', $options);
         $this->assertArrayHasKey('follow_location', $options);
         $this->assertArrayHasKey('ignore_errors', $options);
+        // "read_buffer_size" is not set at all by default
+        $this->assertArrayNotHasKey('read_buffer_size', $options);
 
         $this->assertSame(1.1, $options['protocol_version']);
         $this->assertSame(HttpRequestClient::USER_AGENT, $options['user_agent']);
@@ -47,6 +49,7 @@ class PhpClientTest extends TestCase
             ->ignoreErrors(true)
             ->timeout(5)
             ->followLocation(false)
+            //->returnTransfer(false)
             ->maxRedirects(2)
             ->userAgent('foo')
             ->verifySslPeer(false)
@@ -58,6 +61,7 @@ class PhpClientTest extends TestCase
         $this->assertSame(5.0, $options['timeout']);
         $this->assertSame(2, $options['max_redirects']);
         $this->assertSame(0, $options['follow_location']);
+        //$this->assertSame(0, $options['read_buffer_size']);
         $this->assertSame(true, $options['ignore_errors']);
         $this->assertSame(true, $options['ssl']['allow_self_signed']);
         $this->assertSame(false, $options['ssl']['verify_peer']);

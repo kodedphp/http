@@ -45,6 +45,7 @@ class CurlClientTest extends TestCase
             ->ignoreErrors(true)
             ->timeout(5)
             ->followLocation(false)
+            //->returnTransfer(false)
             ->maxRedirects(2)
             ->userAgent('foo')
             ->verifySslHost(false)
@@ -56,6 +57,7 @@ class CurlClientTest extends TestCase
         $this->assertSame(5.0, $options[CURLOPT_TIMEOUT], 'Expects float (timeout)');
         $this->assertSame(2, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(false, $options[CURLOPT_FOLLOWLOCATION]);
+        //$this->assertSame(false, $options[CURLOPT_RETURNTRANSFER]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame(0, $options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertSame(0, $options[CURLOPT_SSL_VERIFYPEER]);
