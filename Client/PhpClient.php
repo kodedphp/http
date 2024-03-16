@@ -192,8 +192,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             $status = (int)(explode(' ', $status)[1] ?? HttpStatus::OK);
             foreach ($meta as $header) {
                 [$k, $v] = explode(':', $header, 2) + [1 => null];
-                if (null === $v) continue;
-                $headers[$k] = $v;
+                null === $v || $headers[$k] = $v;
             }
             return [$status, $headers];
         } finally {
