@@ -15,6 +15,7 @@ namespace Koded\Http;
 use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpMethod;
 use Koded\Http\Interfaces\Request;
+use Koded\Stdlib\Serializer\XmlSerializer;
 use Psr\Http\Message\ServerRequestInterface;
 use function array_merge;
 use function file_get_contents;
@@ -200,25 +201,32 @@ class ServerRequest extends ClientRequest implements Request
     }
 
     /**
+     * [IMPORTANT]  In REST apps PUT and PATCH are essential methods.
+     *              This rule is changed to support them in a same
+     *              way as being a POST method, by not checking for
+     *              Content-Type value.
+     *
      * Per recommendation:
      *
      * @return bool If the request Content-Type is either
      * application/x-www-form-urlencoded or multipart/form-data
      * and the request method is POST,
      * then it MUST return the contents of $_POST
-     * @see ServerRequestInterface::withParsedBody()
      *
+     * @see ServerRequestInterface::withParsedBody()
      * @see ServerRequestInterface::getParsedBody()
      */
     protected function useOnlyPost(): bool
     {
-        if (empty($contentType = $this->getHeaderLine('Content-Type'))) {
+        if ($this->method === HttpMethod::PUT ||
+            $this->method === HttpMethod::PATCH ||
+            empty($contentType = $this->getHeaderLine('Content-Type'))) {
             return false;
         }
-        //return $this->method === self::POST && (
         return $this->method === HttpMethod::POST && (
-            str_contains('application/x-www-form-urlencoded', $contentType) ||
-            str_contains('multipart/form-data', $contentType));
+            str_contains($contentType, 'application/x-www-form-urlencoded') ||
+            str_contains($contentType, 'multipart/form-data')
+        );
     }
 
     /**
@@ -230,9 +238,15 @@ class ServerRequest extends ClientRequest implements Request
         if (empty($input = $this->getRawInput())) {
             return;
         }
+        // Try XML deserialization
+        if (str_starts_with($input, '<?xml')) {
+            $this->parsedBody = (new XmlSerializer(null))->unserialize($input) ?: [];
+            return;
+        }
         // Try JSON deserialization
         $this->parsedBody = json_decode($input, true, 512, JSON_BIGINT_AS_STRING);
         if (null === $this->parsedBody) {
+            // Fallback to application/x-www-form-urlencoded
             parse_str($input, $this->parsedBody);
         }
     }
