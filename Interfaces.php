@@ -14,14 +14,16 @@ namespace Koded\Http\Interfaces;
 
 use Koded\Stdlib\Data;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\{RequestInterface, ResponseInterface, ServerRequestInterface};
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 enum ClientType {
     case CURL;
     case PHP;
 }
 
-/* RFC 7231, 5789 methods */
+/* RFC 7231, 5789 and 3253 methods */
 enum HttpMethod: string {
     case GET     = 'GET';
     case POST    = 'POST';
@@ -32,40 +34,22 @@ enum HttpMethod: string {
     case OPTIONS = 'OPTIONS';
     case CONNECT = 'CONNECT';
     case TRACE   = 'TRACE';
+
+    case CHECKIN         = 'CHECKIN';
+    case CHECKOUT        = 'CHECKOUT';
+    case REPORT          = 'REPORT';
+    case UNCHECKIN       = 'UNCHECKIN';
+    case UPDATE          = 'UPDATE';
+    case VERSION_CONTROL = 'VERSION_CONTROL';
 }
 
-interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMessageInterface
+interface Request extends
+    ServerRequestInterface,
+    ValidatableRequest,
+    ExtendedMessageInterface
 {
     /* RFC 7231, 5789 methods */
-//    const GET     = 'GET';
-//    const POST    = 'POST';
-//    const PUT     = 'PUT';
-//    const DELETE  = 'DELETE';
-//    const HEAD    = 'HEAD';
-//    const PATCH   = 'PATCH';
-//    const OPTIONS = 'OPTIONS';
-//    const CONNECT = 'CONNECT';
-//    const TRACE   = 'TRACE';
-//
-//    const HTTP_METHODS = [
-//        self::GET,
-//        self::POST,
-//        self::PUT,
-//        self::PATCH,
-//        self::DELETE,
-//        self::HEAD,
-//        self::OPTIONS,
-//        self::TRACE,
-//        self::CONNECT,
-//    ];
-
     const SAFE_METHODS = [
-//        self::GET,
-//        self::HEAD,
-//        self::OPTIONS,
-//        self::TRACE,
-//        self::CONNECT
-
         HttpMethod::GET,
         HttpMethod::HEAD,
         HttpMethod::OPTIONS,
@@ -74,20 +58,13 @@ interface Request extends ServerRequestInterface, ValidatableRequest, ExtendedMe
     ];
 
     /* RFC 3253 methods */
-    const CHECKIN         = 'CHECKIN';
-    const CHECKOUT        = 'CHECKOUT';
-    const REPORT          = 'REPORT';
-    const UNCHECKIN       = 'UNCHECKIN';
-    const UPDATE          = 'UPDATE';
-    const VERSION_CONTROL = 'VERSION-CONTROL';
-
     const WEBDAV_METHODS = [
-        self::CHECKIN,
-        self::CHECKOUT,
-        self::REPORT,
-        self::UNCHECKIN,
-        self::UPDATE,
-        self::VERSION_CONTROL,
+        HttpMethod::CHECKIN,
+        HttpMethod::CHECKOUT,
+        HttpMethod::REPORT,
+        HttpMethod::UNCHECKIN,
+        HttpMethod::UPDATE,
+        HttpMethod::VERSION_CONTROL,
     ];
 
     /**
@@ -156,10 +133,14 @@ interface Response extends ResponseInterface, ExtendedMessageInterface
 }
 
 
-interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface, ClientInterface
+interface HttpRequestClient extends
+    RequestInterface,
+    ExtendedMessageInterface,
+    ClientInterface
 {
     const USER_AGENT            = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
     const X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
+    const MULTIPART_FORM_DATA   = 'multipart/form-data';
 
     /**
      * Fetch the internet resource using the HTTP client.
@@ -191,6 +172,15 @@ interface HttpRequestClient extends RequestInterface, ExtendedMessageInterface, 
      * @return HttpRequestClient
      */
     public function followLocation(bool $value): HttpRequestClient;
+
+    /**
+     * Sets the return transfer for clients that support streaming.
+     *
+     * @param bool $value Default is TRUE
+     *
+     * @return HttpRequestClient
+     */
+    //public function returnTransfer(bool $value): HttpRequestClient;
 
     /**
      * The max number of redirects to follow. Value 1 or less means that no redirects are followed.
