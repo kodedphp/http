@@ -39,7 +39,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 {
     use EncodingTrait, Psr18ClientTrait;
 
-    private array $options = [
+    protected array $options = [
         CURLOPT_MAXREDIRS      => 20,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
@@ -50,7 +50,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         CURLOPT_FAILONERROR    => 0,
     ];
 
-    private array $responseHeaders = [];
+    protected array $responseHeaders = [];
 
     public function __construct(
         HttpMethod $method,
@@ -112,9 +112,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
-    public function timeout(float $value): HttpRequestClient
+    public function timeout(float $seconds): HttpRequestClient
     {
-        $this->options[CURLOPT_TIMEOUT] = $value;
+        $this->options[CURLOPT_TIMEOUT] = $seconds;
         return $this;
     }
 
