@@ -4,10 +4,8 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use RuntimeException;
-use TheSeer\Tokenizer\XMLSerializer;
 use Throwable;
 use function array_filter;
-use function array_merge;
 use function Koded\Stdlib\json_serialize;
 use function Koded\Stdlib\xml_serialize;
 use function rawurldecode;
@@ -171,9 +169,8 @@ class HTTPError extends RuntimeException implements HTTPException
                 ];
             }
         }
-//        dd($data);
         return rawurldecode(xml_serialize('problem', array_filter($data)));
-        return rawurldecode(xml_serialize('problem', array_filter($this->toArray())));
+        //return rawurldecode(xml_serialize('problem', array_filter($this->toArray())));
     }
 
     /**
@@ -217,40 +214,5 @@ class HTTPError extends RuntimeException implements HTTPException
             'members'  => $this->members,
             'headers'  => $this->headers,
         ] = $serialized;
-    }
-}
-
-
-class HTTPErrorXmlSerializer extends XMLSerializer
-{
-    public function serialize(mixed $data): string|null
-    {
-        $document = new \DOMDocument('1.0', 'UTF-8');
-        $document->formatOutput = false;
-
-        $root = $document->createElement($this->root);
-        $document->appendChild($root);
-        $document->createAttributeNS('urn:ietf:rfc:7807', 'xmlns:' . $this->root);
-        $this->buildXml($document, $root, $data);
-        return trim($document->saveXML());
-    }
-
-    public function unserialize(string $xml): mixed
-    {
-        try {
-            $document = new \DOMDocument('1.0', 'UTF-8');
-            $document->preserveWhiteSpace = false;
-            $document->loadXML($xml);
-            if ($document->documentElement->hasChildNodes()) {
-                return $this->parseXml($document->documentElement);
-            }
-            return !$document->documentElement->getAttributeNode('xmlns')
-                ? $this->parseXml($document->documentElement)
-                : [];
-
-        } catch (Throwable $e) {
-            error_log(PHP_EOL . "[{$e->getLine()}]: " . $e->getMessage());
-            return null;
-        }
     }
 }
