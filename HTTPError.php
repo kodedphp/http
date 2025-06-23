@@ -4,6 +4,7 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use RuntimeException;
+use TheSeer\Tokenizer\XMLSerializer;
 use Throwable;
 use function array_filter;
 use function array_merge;
@@ -11,7 +12,7 @@ use function Koded\Stdlib\json_serialize;
 use function Koded\Stdlib\xml_serialize;
 use function rawurldecode;
 
-interface HTTPException
+interface HTTPException extends Throwable
 {
     public function getStatusCode(): int;
 
@@ -37,8 +38,8 @@ interface HTTPException
 }
 
 /**
- * Represents a generic HTTP error.
- * Follows the RFC-7807 (https://tools.ietf.org/html/rfc7807)
+ * Represents a generic HTTP error, that
+ * follows the RFC-9457 (and RFC-7807) standard.
  *
  * Raise an instance of subclass of `HTTPError` to have Koded return
  * a formatted error response and appropriate HTTP status code to
@@ -50,7 +51,7 @@ interface HTTPException
  *  your own HTTPError subclass and register it with the error
  *  handler method to convert it into the desired HTTP response.
  *
- * @link https://tools.ietf.org/html/rfc7807
+ * @link https://datatracker.ietf.org/doc/html/rfc9457
  */
 class HTTPError extends RuntimeException implements HTTPException
 {
@@ -74,7 +75,7 @@ class HTTPError extends RuntimeException implements HTTPException
      * @param string          $instance A URI reference that identifies the specific occurrence of the problem.
      * @param string          $type     A URI reference that identifies the problem type and points to a human-readable documentation
      * @param array|null      $headers  Extra headers to add to the response
-     * @param Throwable|null $previous The previous Throwable, if any
+     * @param Throwable|null $previous  The previous Throwable, if any
      */
     public function __construct(
         int              $status,
@@ -87,12 +88,12 @@ class HTTPError extends RuntimeException implements HTTPException
     {
         $this->code = $status;
         $this->code = static::status($this);
-        $this->message = $title ?: HttpStatus::CODE[$this->code];
+        $this->message = $detail ?: StatusCode::description($this->code);
         [
             'title'    => $this->title,
-            'type'     => $this->type,
             'detail'   => $this->detail,
-            'instance' => $this->instance
+            'instance' => $this->instance,
+            'type'     => $this->type,
         ] = $this->toArray();
         parent::__construct($this->message, $this->code, $previous);
     }
@@ -154,6 +155,24 @@ class HTTPError extends RuntimeException implements HTTPException
 
     public function toXml(): string
     {
+        $data = array_filter($this->toArray());
+        foreach ($data as $k => $v) {
+            if (is_array($v)) {
+                $data[$k] = $v;
+            } else if ($k === 'status') {
+                $data[$k] = [
+                    '@type' => 'xsd:positiveInteger',
+                    '#'     => $v
+                ];
+            } else if ($k === 'instance' || $k === 'type') {
+                $data[$k] = [
+                    '@type' => 'xsd:anyURI',
+                    '#'     => $v
+                ];
+            }
+        }
+//        dd($data);
+        return rawurldecode(xml_serialize('problem', array_filter($data)));
         return rawurldecode(xml_serialize('problem', array_filter($this->toArray())));
     }
 
@@ -163,15 +182,18 @@ class HTTPError extends RuntimeException implements HTTPException
     public function toArray(): array
     {
         $status = static::status($this);
-        return array_merge([
+        return [
             'status'   => $status,
             'instance' => $this->instance,
-            'detail'   => $this->detail ?: StatusCode::description($status),
-            'title'    => $this->title ?: $this->message,
+            'detail'   => $this->detail ?: $this->message,
+            'title'    => $this->title ?: HttpStatus::CODE[$this->code],
             'type'     => $this->type ?: "https://httpstatuses.com/$status",
-        ], $this->members);
+        ] + $this->members;
     }
 
+    /**
+     * @internal
+     */
     public function __serialize(): array
     {
         return $this->toArray() + [
@@ -180,17 +202,55 @@ class HTTPError extends RuntimeException implements HTTPException
         ];
     }
 
+    /**
+     * @internal
+     */
     public function __unserialize(array $serialized): void
     {
-        list(
+        [
             'status'   => $this->code,
-            'title'    => $this->title,
-            'title'    => $this->message,
-            'type'     => $this->type,
             'detail'   => $this->detail,
+            'detail'   => $this->message, // copy message
+            'title'    => $this->title,
             'instance' => $this->instance,
+            'type'     => $this->type,
             'members'  => $this->members,
             'headers'  => $this->headers,
-        ) = $serialized;
+        ] = $serialized;
+    }
+}
+
+
+class HTTPErrorXmlSerializer extends XMLSerializer
+{
+    public function serialize(mixed $data): string|null
+    {
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $document->formatOutput = false;
+
+        $root = $document->createElement($this->root);
+        $document->appendChild($root);
+        $document->createAttributeNS('urn:ietf:rfc:7807', 'xmlns:' . $this->root);
+        $this->buildXml($document, $root, $data);
+        return trim($document->saveXML());
+    }
+
+    public function unserialize(string $xml): mixed
+    {
+        try {
+            $document = new \DOMDocument('1.0', 'UTF-8');
+            $document->preserveWhiteSpace = false;
+            $document->loadXML($xml);
+            if ($document->documentElement->hasChildNodes()) {
+                return $this->parseXml($document->documentElement);
+            }
+            return !$document->documentElement->getAttributeNode('xmlns')
+                ? $this->parseXml($document->documentElement)
+                : [];
+
+        } catch (Throwable $e) {
+            error_log(PHP_EOL . "[{$e->getLine()}]: " . $e->getMessage());
+            return null;
+        }
     }
 }

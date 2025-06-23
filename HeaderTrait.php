@@ -21,7 +21,7 @@ use function array_map;
 use function array_reduce;
 use function array_unique;
 use function is_string;
-use function join;
+use function implode;
 use function preg_replace;
 use function sort;
 use function sprintf;
@@ -63,14 +63,14 @@ trait HeaderTrait
         }
         $header = [];
         foreach ($value as $v) {
-            $header[] = join(',', (array)$v);
+            $header[] = implode(',', (array)$v);
         }
         return $header;
     }
 
     public function getHeaderLine($name): string
     {
-        return join(',', $this->getHeader($name));
+        return implode(',', $this->getHeader($name));
     }
 
     public function withHeader($name, $value): static
@@ -149,7 +149,7 @@ trait HeaderTrait
     {
         $flattenHeaders = [];
         foreach ($this->headers as $name => $value) {
-            $flattenHeaders[] = $name . ':' . join(',', (array)$value);
+            $flattenHeaders[] = $name . ':' . implode(',', (array)$value);
         }
         return $flattenHeaders;
     }
@@ -161,13 +161,13 @@ trait HeaderTrait
         }
         if (!$headers = array_reduce($names, function($list, $name) {
             $name   = str_replace('_', '-', $name);
-            $list[] = strtolower($name) . ':' . join(',', $this->getHeader($name));
+            $list[] = strtolower($name) . ':' . implode(',', $this->getHeader($name));
             return $list;
         })) {
             return '';
         }
         sort($headers);
-        return join("\n", $headers);
+        return implode("\n", $headers);
     }
 
     /**

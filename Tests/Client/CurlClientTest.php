@@ -3,7 +3,7 @@
 namespace Tests\Koded\Http\Client;
 
 use Koded\Http\Client\{ClientFactory, CurlClient};
-use Koded\Http\Interfaces\{ClientType, HttpMethod, HttpRequestClient, HttpStatus};
+use Koded\Http\Interfaces\{ClientType, HttpMethod, HttpStatus};
 use Koded\Http\ServerResponse;
 use PHPUnit\Framework\TestCase;
 use Tests\Koded\Http\AssertionTestSupportTrait;
@@ -15,7 +15,7 @@ class CurlClientTest extends TestCase
     public function test_php_factory()
     {
         $options = $this->getObjectProperty($this->SUT, 'options');
-
+        // keys
         $this->assertArrayNotHasKey(CURLOPT_HTTPHEADER, $options, 'The header is not built yet');
         $this->assertArrayHasKey(CURLOPT_MAXREDIRS, $options);
         $this->assertArrayHasKey(CURLOPT_RETURNTRANSFER, $options);
@@ -27,12 +27,13 @@ class CurlClientTest extends TestCase
         $this->assertArrayHasKey(CURLOPT_HTTP_VERSION, $options);
         $this->assertArrayHasKey(CURLOPT_TIMEOUT, $options);
 
+        // values
         $this->assertSame(20, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(true, $options[CURLOPT_RETURNTRANSFER]);
         $this->assertSame(true, $options[CURLOPT_FOLLOWLOCATION]);
         $this->assertSame(1, $options[CURLOPT_SSL_VERIFYPEER]);
         $this->assertSame(2, $options[CURLOPT_SSL_VERIFYHOST]);
-        $this->assertSame(HttpRequestClient::USER_AGENT, $options[CURLOPT_USERAGENT]);
+        $this->assertStringContainsString(' curl/' . curl_version()['version'], $options[CURLOPT_USERAGENT]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame(CURL_HTTP_VERSION_1_1, $options[CURLOPT_HTTP_VERSION]);
         $this->assertSame(3.0, $options[CURLOPT_TIMEOUT]);
@@ -45,7 +46,7 @@ class CurlClientTest extends TestCase
             ->ignoreErrors(true)
             ->timeout(5)
             ->followLocation(false)
-            //->returnTransfer(false)
+            ->returnTransfer(false)
             ->maxRedirects(2)
             ->userAgent('foo')
             ->verifySslHost(false)
@@ -57,7 +58,7 @@ class CurlClientTest extends TestCase
         $this->assertSame(5.0, $options[CURLOPT_TIMEOUT], 'Expects float (timeout)');
         $this->assertSame(2, $options[CURLOPT_MAXREDIRS]);
         $this->assertSame(false, $options[CURLOPT_FOLLOWLOCATION]);
-        //$this->assertSame(false, $options[CURLOPT_RETURNTRANSFER]);
+        $this->assertSame(false, $options[CURLOPT_RETURNTRANSFER]);
         $this->assertSame(0, $options[CURLOPT_FAILONERROR]);
         $this->assertSame(0, $options[CURLOPT_SSL_VERIFYHOST]);
         $this->assertSame(0, $options[CURLOPT_SSL_VERIFYPEER]);

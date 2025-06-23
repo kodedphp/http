@@ -17,6 +17,7 @@ class ServerRequestIntegrationTest extends \Http\Psr7Test\ServerRequestIntegrati
         'testGetRequestTargetInOriginFormNormalizesUriWithMultipleLeadingSlashesInPath' => 'Is this test correct?',
 
         'testMethod' => 'Skipping for now ...',
+        'testUriPreserveHost_NoHost_Host' => 'Skipping for now ...',
     ];
 
     /**

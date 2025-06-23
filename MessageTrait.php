@@ -18,6 +18,12 @@ trait MessageTrait
 {
     protected string $protocolVersion = '1.1';
     protected StreamInterface $stream;
+    protected static array $supportedProtocolVersions = [
+        '1.0' => true,
+        '1.1' => true,
+        '2.0' => true,
+        '2'   => true,
+    ];
 
     public function getProtocolVersion(): string
     {
@@ -26,8 +32,8 @@ trait MessageTrait
 
     public function withProtocolVersion(string $version): static
     {
-        if (false === \in_array($version, ['1.0', '1.1', '2'], true)) {
-            throw new \InvalidArgumentException('Unsupported HTTP protocol version ' . $version);
+        if (false === isset(self::$supportedProtocolVersions[$version])) {
+            throw new \InvalidArgumentException("Unsupported HTTP protocol version $version");
         }
         $instance                  = clone $this;
         $instance->protocolVersion = $version;

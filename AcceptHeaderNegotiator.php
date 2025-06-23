@@ -30,7 +30,7 @@ use InvalidArgumentException;
 use Koded\Http\Interfaces\HttpStatus;
 use function array_shift;
 use function explode;
-use function join;
+use function implode;
 use function parse_str;
 use function preg_match;
 use function preg_replace;
@@ -131,7 +131,7 @@ abstract class AcceptHeader
          */
         $this->subtype  = trim(explode('+', $subtype)[1] ?? $subtype);
         $this->catchAll = ('*' === $this->type) && ('*' === $this->subtype);
-        parse_str(join('&', $bits), $this->params);
+        parse_str(implode('&', $bits), $this->params);
         $this->quality = (float)($this->params['q'] ?? 1);
         unset($this->params['q']);
     }
@@ -180,7 +180,7 @@ abstract class AcceptHeader
      *
      * @internal
      */
-    public function matches(AcceptHeader $accept, array &$matches = null): void
+    public function matches(AcceptHeader $accept, ?array &$matches = null): void
     {
         $matches   = (array)$matches;
         $accept    = clone $accept;

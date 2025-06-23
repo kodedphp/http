@@ -138,7 +138,7 @@ interface HttpRequestClient extends
     ExtendedMessageInterface,
     ClientInterface
 {
-    const USER_AGENT            = 'Koded/HttpClient (+https://github.com/kodedphp/http)';
+    const USER_AGENT            = 'HttpClient/%s (+https://github.com/kodedphp/http) %s';
     const X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
     const MULTIPART_FORM_DATA   = 'multipart/form-data';
 
@@ -174,13 +174,13 @@ interface HttpRequestClient extends
     public function followLocation(bool $value): HttpRequestClient;
 
     /**
-     * Sets the return transfer for clients that support streaming.
+     * Should disable the output buffering of the entire response.
      *
      * @param bool $value Default is TRUE
      *
      * @return HttpRequestClient
      */
-    //public function returnTransfer(bool $value): HttpRequestClient;
+    public function returnTransfer(bool $value): HttpRequestClient;
 
     /**
      * The max number of redirects to follow. Value 1 or less means that no redirects are followed.
@@ -197,11 +197,11 @@ interface HttpRequestClient extends
      * This method should use the "default_socket_timeout" php.ini setting (usually 60).
      * or 10 if this value is not set in the ini.php
      *
-     * @param float $value
+     * @param float $seconds
      *
      * @return HttpRequestClient
      */
-    public function timeout(float $value): HttpRequestClient;
+    public function timeout(float $seconds): HttpRequestClient;
 
     /**
      * Fetch the content even on failure status codes.
@@ -319,7 +319,7 @@ interface ValidatableRequest
      * @return Response|null Should return a NULL if validation has passed,
      * or a Response object with status code 400 and explanation what failed
      */
-    public function validate(HttpInputValidator $validator, Data &$input = null): ?Response;
+    public function validate(HttpInputValidator $validator, ?Data &$input = null): ?Response;
 }
 
 

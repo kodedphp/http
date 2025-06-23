@@ -15,7 +15,8 @@ class HTTPErrorSerializationTest extends TestCase
         $actual = unserialize(serialize($expected));
 
         $this->assertEquals($expected, $actual);
-        $this->assertNotSame($expected, $actual, '(just test for obvious reasons)');
+        $this->assertNotSame($expected, $actual,
+            '(the instances are not same)');
     }
 
     public function test_full_object_serialization()
@@ -32,6 +33,7 @@ class HTTPErrorSerializationTest extends TestCase
 
         $actual = unserialize(serialize($expected));
         $this->assertEquals($expected, $actual);
-        $this->assertNotSame($expected, $actual);
+        $this->assertNotSame($expected, $actual,
+            '(the instances are not same)');
     }
 }

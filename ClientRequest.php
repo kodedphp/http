@@ -49,7 +49,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
     public function __construct(
         HttpMethod $method,
         string|UriInterface $uri,
-        string|iterable $body = null,
+        string|iterable|null $body = null,
         array $headers = [])
     {
         $this->uri    = $uri instanceof UriInterface ? $uri : new Uri($uri);
@@ -177,7 +177,7 @@ class ClientRequest implements RequestInterface, JsonSerializable
      * @param string|null $message
      *
      * @return Response JSON error message
-     * @link https://tools.ietf.org/html/rfc7807
+     * @link https://datatracker.ietf.org/doc/html/rfc9457
      */
     protected function getPhpError(int $status, ?string $message = null): Response
     {

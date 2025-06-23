@@ -19,7 +19,8 @@ class EncodingTest extends TestCase
     public function test_default_encoding(HttpRequestClient $client)
     {
         $encoding = $this->getProperty($client, 'encoding');
-        $this->assertSame(PHP_QUERY_RFC3986, $encoding, 'Client ' . get_class($client));
+        //$this->assertSame(PHP_QUERY_RFC3986, $encoding, 'Client: ' . get_class($client));
+        $this->assertSame(0, $encoding, 'Client: ' . get_class($client));
     }
 
     /**

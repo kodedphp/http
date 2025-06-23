@@ -21,7 +21,7 @@ use const PHP_QUERY_RFC3986;
 
 trait EncodingTrait
 {
-    private int $encoding = PHP_QUERY_RFC3986;
+    private int $encoding = 0; //PHP_QUERY_RFC3986;
 
     public function withEncoding(int $type): static
     {

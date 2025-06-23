@@ -15,8 +15,7 @@ namespace Koded\Http;
 use Koded\Http\Interfaces\{HttpStatus, Response};
 use InvalidArgumentException;
 use JsonSerializable;
-use function in_array;
-use function join;
+use function implode;
 use function sprintf;
 use function strtoupper;
 
@@ -30,6 +29,16 @@ class ServerResponse implements Response, JsonSerializable
 
     private const E_CLIENT_RESPONSE_SEND = 'Cannot send the client response.';
     private const E_INVALID_STATUS_CODE  = 'Invalid status code %s, expected range between [100-599]';
+
+    protected static array $skippableStatusCodes = [
+        //100 => true, // @version 4.0.0
+        101 => true,
+        //102 => true, // @version 4.0.0
+        103 => true, // @version 4.0.0
+        204 => true,
+        205 => true, // @version 4.0.0
+        304 => true,
+    ];
 
     protected int    $statusCode   = HttpStatus::OK;
     protected string $reasonPhrase = 'OK';
@@ -76,7 +85,7 @@ class ServerResponse implements Response, JsonSerializable
         $this->prepareResponse();
         if (false === headers_sent()) {
             foreach ($this->getHeaders() as $name => $values) {
-                header($name . ':' . join(',', (array)$values), false, $this->statusCode);
+                header($name . ':' . implode(',', (array)$values), false, $this->statusCode);
             }
             // Status header
             header(sprintf('HTTP/%s %d %s',
@@ -117,7 +126,7 @@ class ServerResponse implements Response, JsonSerializable
 
     protected function prepareResponse(): void
     {
-        if (in_array($this->getStatusCode(), [100, 101, 102, 204, 304])) {
+        if (isset(static::$skippableStatusCodes[$this->statusCode])) {
             $this->stream = create_stream(null);
             unset($this->headersMap['content-length'], $this->headers['Content-Length']);
             unset($this->headersMap['content-type'], $this->headers['Content-Type']);

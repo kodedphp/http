@@ -30,7 +30,10 @@ use function ini_get;
 use function json_decode;
 use function Koded\Http\create_stream;
 use function Koded\Stdlib\json_serialize;
-use function mb_strlen;
+use function sprintf;
+use function strlen;
+use function strtolower;
+use function trim;
 
 /**
  * @link http://php.net/manual/en/context.curl.php
@@ -45,7 +48,6 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_SSL_VERIFYPEER => 1,
         CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_USERAGENT      => self::USER_AGENT,
         CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
         CURLOPT_FAILONERROR    => 0,
     ];
@@ -55,11 +57,12 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     public function __construct(
         HttpMethod $method,
         string|UriInterface $uri,
-        string|iterable $body = null,
+        string|iterable|null $body = null,
         array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
         $this->options[CURLOPT_TIMEOUT] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
+        $this->options[CURLOPT_USERAGENT] = sprintf(self::USER_AGENT, get_version(), 'curl/' . curl_version()['version']);
     }
 
     public function read(): Response
@@ -106,6 +109,12 @@ class CurlClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
+    public function returnTransfer(bool $value): HttpRequestClient
+    {
+        $this->options[CURLOPT_RETURNTRANSFER] = $value;
+        return $this;
+    }
+
     public function maxRedirects(int $value): HttpRequestClient
     {
         $this->options[CURLOPT_MAXREDIRS] = $value;
@@ -141,7 +150,9 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     {
         $instance = parent::withProtocolVersion($version);
         $instance->options[CURLOPT_HTTP_VERSION] =
-            ['1.1' => CURL_HTTP_VERSION_1_1,
+            ['2' => CURL_HTTP_VERSION_2_0,
+             '2.0' => CURL_HTTP_VERSION_2_0,
+             '1.1' => CURL_HTTP_VERSION_1_1,
              '1.0' => CURL_HTTP_VERSION_1_0][$version];
         return $instance;
     }
@@ -181,7 +192,7 @@ class CurlClient extends ClientRequest implements HttpRequestClient
 
     protected function getCurlError(int $status, $resource): Response
     {
-        //see https://tools.ietf.org/html/rfc7807
+        //see https://datatracker.ietf.org/doc/html/rfc9457
         return new ServerResponse(json_serialize([
             'title'    => curl_error($resource),
             'detail'   => curl_strerror(curl_errno($resource)),
@@ -203,11 +214,11 @@ class CurlClient extends ClientRequest implements HttpRequestClient
     {
         try {
             [$k, $v] = explode(':', $header, 2) + [1 => null];
-            null === $v || $this->responseHeaders[$k] = $v;
+            null === $v || $this->responseHeaders[strtolower(trim($k))] = trim($v);
         } catch (Throwable) {
             /** NOOP **/
         } finally {
-            return mb_strlen($header);
+            return strlen($header);
         }
     }
 }

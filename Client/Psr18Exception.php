@@ -15,7 +15,7 @@ class Psr18Exception extends Exception implements RequestExceptionInterface, Net
         string $message,
         int $code,
         RequestInterface $request,
-        Throwable $previous = null)
+        Throwable|null $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->request = $request;

@@ -27,10 +27,13 @@ use function ini_get;
 use function is_resource;
 use function json_decode;
 use function Koded\Http\create_stream;
+use function sprintf;
 use function str_starts_with;
 use function stream_context_create;
 use function stream_get_contents;
 use function stream_get_meta_data;
+use function strtolower;
+use function trim;
 
 /**
  * @link http://php.net/manual/en/context.http.php
@@ -42,7 +45,6 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     /** @var array Stream context options */
     private array $options = [
         'protocol_version' => 1.1,
-        'user_agent'       => self::USER_AGENT,
         'method'           => 'GET',
         'max_redirects'    => 20,
         'follow_location'  => 1,
@@ -57,11 +59,12 @@ class PhpClient extends ClientRequest implements HttpRequestClient
     public function __construct(
         HttpMethod $method,
         string|UriInterface $uri,
-        string|iterable $body = null,
+        string|iterable|null $body = null,
         array $headers = [])
     {
         parent::__construct($method, $uri, $body, $headers);
         $this->options['timeout'] = (ini_get('default_socket_timeout') ?: 10.0) * 1.0;
+        $this->options['user_agent'] = sprintf(self::USER_AGENT, get_version(), 'stream/' . PHP_VERSION);
     }
 
     public function read(): Response
@@ -102,15 +105,22 @@ class PhpClient extends ClientRequest implements HttpRequestClient
         return $this;
     }
 
+    public function returnTransfer(bool $value): HttpRequestClient
+    {
+        unset($this->options['read_buffer_size']);
+        $value || $this->options['read_buffer_size'] = 0;
+        return $this;
+    }
+
     public function maxRedirects(int $value): HttpRequestClient
     {
         $this->options['max_redirects'] = $value;
         return $this;
     }
 
-    public function timeout(float $value): HttpRequestClient
+    public function timeout(float $seconds): HttpRequestClient
     {
-        $this->options['timeout'] = $value * 1.0;
+        $this->options['timeout'] = $seconds * 1.0;
         return $this;
     }
 
@@ -192,7 +202,7 @@ class PhpClient extends ClientRequest implements HttpRequestClient
             $status = (int)(explode(' ', $status)[1] ?? HttpStatus::OK);
             foreach ($meta as $header) {
                 [$k, $v] = explode(':', $header, 2) + [1 => null];
-                null === $v || $headers[$k] = $v;
+                null === $v || $headers[strtolower(trim($k))] = trim($v);
             }
             return [$status, $headers];
         } finally {

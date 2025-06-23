@@ -13,6 +13,8 @@ namespace Koded\Http\Client;
 
 use Koded\Http\Interfaces\{ClientType, HttpMethod, HttpRequestClient};
 use InvalidArgumentException;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class ClientFactory
 {
@@ -57,6 +59,17 @@ class ClientFactory
     {
         return $this->new(HttpMethod::HEAD, '');
     }
+
+    // FIXME: implement this?
+//    public function sendRequest(RequestInterface $request): ResponseInterface
+//    {
+//        return $this->new(
+//            HttpMethod::tryFrom($request->getMethod()),
+//            $request->getUri(),
+//            $request->getBody()->getContents(),
+//            $request->getHeaders()
+//        )->read();
+//    }
 
     protected function new(
         HttpMethod $method,

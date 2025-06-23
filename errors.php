@@ -4,7 +4,7 @@ namespace Koded\Http;
 
 use Koded\Http\Interfaces\HttpStatus;
 use function array_map;
-use function join;
+use function implode;
 
 class HTTPNotFound extends HTTPError
 {
@@ -26,7 +26,7 @@ class HTTPMethodNotAllowed extends HTTPError
 {
     public function __construct(array $allowed, ...$args)
     {
-        $args['headers']['Allow'] = join(',', array_map('strtoupper', $allowed));
+        $args['headers']['Allow'] = implode(', ', array_map('strtoupper', $allowed));
         parent::__construct(HttpStatus::METHOD_NOT_ALLOWED, ...$args);
     }
 }

@@ -20,7 +20,7 @@ use Koded\Stdlib\{Data, Immutable};
  */
 trait ValidatableTrait
 {
-    public function validate(HttpInputValidator $validator, Data &$input = null): ?Response
+    public function validate(HttpInputValidator $validator, ?Data &$input = null): ?Response
     {
         $input ??= new Immutable($this->getParsedBody() ?? []);
         if (0 === $input->count()) {

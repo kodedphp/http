@@ -17,8 +17,7 @@ class ServerRequestTest extends TestCase
 
     public function test_defaults()
     {
-//        $this->assertSame(Request::POST, $this->SUT->getMethod());
-        $this->assertSame(HttpMethod::POST->value, $this->SUT->getMethod());
+        $this->assertSame('POST', $this->SUT->getMethod());
 
         $serverSoftwareValue = $this->getObjectProperty($this->SUT, 'serverSoftware');
         $this->assertSame('', $serverSoftwareValue);
@@ -105,7 +104,8 @@ class ServerRequestTest extends TestCase
         $request = $request->withHeader('Content-type', 'application/x-www-form-urlencoded; charset=utf-8');
 
         $request = $request->withParsedBody(['ignored', 'values']);
-        $this->assertSame($_POST, $request->getParsedBody(), 'Supplied data is ignored per spec (Content-Type)');
+        $this->assertSame($_POST, $request->getParsedBody(),
+            'Supplied data is ignored per spec (Content-Type)');
     }
 
     public function test_parsed_body_throws_exception_on_unsupported_values()
@@ -121,7 +121,8 @@ class ServerRequestTest extends TestCase
         $_POST                        = ['key' => 'value'];
 
         $request = new ServerRequest;
-        $this->assertSame($_POST, $request->getParsedBody(), 'Returns the _POST array');
+        $this->assertSame($_POST, $request->getParsedBody(),
+            'Returns the _POST array');
     }
 
     public function test_return_posted_body_with_parsed_body()
@@ -132,7 +133,8 @@ class ServerRequestTest extends TestCase
         $request  = new ServerRequest;
         $actual = $request->withParsedBody(['key' => 'value']);
 
-        $this->assertNotSame($request, $actual, 'Response objects are immutable');
+        $this->assertNotSame($request, $actual,
+            'Response objects are immutable');
     }
 
     public function test_put_method_should_parse_the_php_input()
@@ -209,37 +211,52 @@ class ServerRequestTest extends TestCase
         $this->assertSame($request->getParsedBody(), $_POST);
     }
 
-    public function test_parsed_body_if_method_is_post_with_json_data()
+    public function test_parsed_body_for_unsafe_method_with_json_data()
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
 
-        $request = (new class extends ServerRequest
+        $request = new class extends ServerRequest
         {
             protected function getRawInput(): string
             {
                 return '{"key":"value"}';
             }
-        });
+        };
 
         $this->assertEquals(['key' => 'value'], $request->getParsedBody());
     }
 
-    public function test_parsed_body_if_method_is_post_with_urlencoded_data()
+    public function test_parsed_body_for_unsafe_method_with_urlencoded_data()
     {
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
 
-        $request = (new class extends ServerRequest
+        $request = new class extends ServerRequest
         {
             protected function getRawInput(): string
             {
-                return 'key=value';
+                return 'foo=bar';
             }
-        });
+        };
+
+        $this->assertEquals(['foo' => 'bar'], $request->getParsedBody());
+    }
+
+    public function test_parsed_body_for_unsafe_method_with_xml_data()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PATCH';
+
+        $request = new class extends ServerRequest
+        {
+            protected function getRawInput(): string
+            {
+                return '<?xml version="1.0" encoding="UTF-8"?><doc><key>value</key></doc>';
+            }
+        };
 
         $this->assertEquals(['key' => 'value'], $request->getParsedBody());
     }
 
-    public function test_headers_with_content_type()
+    public function test_headers_with_content_type_json()
     {
         $_SERVER['CONTENT_TYPE'] = 'application/json';
 

@@ -19,9 +19,7 @@ use Psr\Http\Message\UriInterface;
 use Throwable;
 use function array_filter;
 use function explode;
-use function in_array;
-use function is_int;
-use function join;
+use function implode;
 use function mb_strlen;
 use function parse_url;
 use function preg_replace;
@@ -35,16 +33,26 @@ use function trim;
 
 class Uri implements UriInterface, JsonSerializable
 {
-    public const STANDARD_PORTS = [80, 443, 21, 23, 70, 110, 119, 143, 389];
+    public static array $standardPorts = [
+        80  => true,
+        443 => true,
+        21  => true,
+        23  => true,
+        70  => true,
+        110 => true,
+        119 => true,
+        143 => true,
+        389 => true,
+    ];
 
-    private string $scheme = '';
-    private string $host = '';
-    private ?int $port = 80;
-    private string $path = '';
-    private string $user = '';
-    private string $pass = '';
+    private string $scheme   = '';
+    private string $host     = '';
+    private ?int $port       = 80;
+    private string $path     = '';
+    private string $user     = '';
+    private string $pass     = '';
     private string $fragment = '';
-    private string $query = '';
+    private string $query    = '';
 
     public function __construct(string $uri)
     {
@@ -57,8 +65,8 @@ class Uri implements UriInterface, JsonSerializable
             $this->scheme ? ($this->getScheme() . '://') : '',
             $this->getAuthority() ?: $this->getHostWithPort(),
             $this->getPath(),
-            mb_strlen($this->query) ? ('?' . $this->query) : '',
-            mb_strlen($this->fragment) ? ('#' . $this->fragment) : ''
+            mb_strlen($this->query) ? ("?$this->query") : '',
+            mb_strlen($this->fragment) ? ("#$this->fragment") : ''
         );
     }
 
@@ -101,7 +109,7 @@ class Uri implements UriInterface, JsonSerializable
         // If the path is rootless and an authority is present,
         // the path MUST be prefixed with "/"
         if ($this->user && '/' !== ($path[0] ?? '')) {
-            return '/' . $path;
+            return "/$path";
         }
         // If the path is starting with more than one "/" and no authority is
         // present, the starting slashes MUST be reduced to one
@@ -114,7 +122,7 @@ class Uri implements UriInterface, JsonSerializable
             $path[$k] = str_contains($part, '%') ? $part : rawurlencode($part);
         }
         // TODO remove the entry script from the path?
-        return str_replace('/index.php', '', join('/', $path));
+        return str_replace('/index.php', '', implode('/', $path));
     }
 
     public function getQuery(): string
@@ -180,7 +188,7 @@ class Uri implements UriInterface, JsonSerializable
                 HttpStatus::BAD_REQUEST);
         }
         $instance        = clone $this;
-        $instance->query = (string)$query;
+        $instance->query = $query;
         return $instance;
     }
 
@@ -211,27 +219,27 @@ class Uri implements UriInterface, JsonSerializable
     private function getHostWithPort(): string
     {
         if ($this->port) {
-            return $this->host . ($this->isStandardPort() ? '' : ':' . $this->port);
+            return $this->host . ($this->isStandardPort() ? '' : ":$this->port");
         }
         return $this->host;
     }
 
     private function isStandardPort(): bool
     {
-        return in_array($this->port, static::STANDARD_PORTS);
+        return isset(static::$standardPorts[$this->port]);
     }
 
     public function jsonSerialize(): mixed
     {
         return array_filter([
-            'scheme' => $this->getScheme(),
-            'host' => $this->getHost(),
-            'port' => $this->getPort(),
-            'path' => $this->getPath(),
-            'user' => $this->user,
-            'pass' => $this->pass,
+            'scheme'   => $this->getScheme(),
+            'host'     => $this->getHost(),
+            'port'     => $this->getPort(),
+            'path'     => $this->getPath(),
+            'user'     => $this->user,
+            'pass'     => $this->pass,
             'fragment' => $this->fragment,
-            'query' => $this->query,
+            'query'    => $this->query,
         ]);
     }
 }
