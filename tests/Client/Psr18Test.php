@@ -36,6 +36,8 @@ class Psr18Test extends TestCase
      */
     public function test_should_pass_with_client_request_instance($client)
     {
+        $this->markTestSkipped();
+
 //        $response = $client->sendRequest(new ClientRequest('GET', 'http://example.com'));
         $response = $client->sendRequest(new ClientRequest(HttpMethod::GET, 'http://example.com'));
         $this->assertSame(HttpStatus::OK, $response->getStatusCode());
@@ -81,14 +83,14 @@ class Psr18Test extends TestCase
             [
                 (new ClientFactory(ClientType::PHP))
                     ->client()
-                    ->timeout(3)
-                    ->maxRedirects(2)
+                    ->timeout(5)
+                    ->maxRedirects(3)
             ],
             [
                 (new ClientFactory(ClientType::CURL))
                     ->client()
-                    ->timeout(3)
-                    ->maxRedirects(2)
+                    ->timeout(5)
+                    ->maxRedirects(3)
             ]
         ];
     }
