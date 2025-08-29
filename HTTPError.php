@@ -189,6 +189,19 @@ class HTTPError extends RuntimeException implements HTTPException
     }
 
     /**
+     * Implements the Stringable interface.
+     * Useful when converting the instance as \Psr\Http\Message\StreamInterface,
+     * or typecasting it as a string.
+     *
+     * @return string JSON representation of the HTTPError.
+     * @implements \Stringable
+     */
+    public function __toString(): string
+    {
+        return $this->toJson();
+    }
+
+    /**
      * @internal
      */
     public function __serialize(): array
